@@ -15,9 +15,12 @@ to generate this file without the comments in this block.
   [ "console"
   , "easy-ffi"
   , "effect"
+  , "halogen"
+  , "maybe"
   , "prelude"
   , "psci-support"
   , "purescript-three"
+  , "web-uievents"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]
