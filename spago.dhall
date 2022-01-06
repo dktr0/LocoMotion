@@ -17,9 +17,11 @@ to generate this file without the comments in this block.
   , "effect"
   , "halogen"
   , "maybe"
+  , "numbers"
   , "prelude"
   , "psci-support"
   , "purescript-three"
+  , "refs"
   , "web-uievents"
   ]
 , packages = ./packages.dhall
