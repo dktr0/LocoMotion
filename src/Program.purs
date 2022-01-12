@@ -30,8 +30,7 @@ parseProgram x = case (runParser x program) of
   Right prog -> Right prog
 
 showParseError :: ParseError -> String
-showParseError (ParseError e (Position p)) = e -- placeholder
--- Position { column :: Int, line :: Int }
+showParseError (ParseError e (Position p)) = show p.line <> ":" <> show p.column <> " " <> e
 
 type P a = ParserT String Identity a
 
@@ -46,9 +45,6 @@ tokenParser :: GenTokenParser String Identity
 tokenParser = makeTokenParser $ LanguageDef (unGenLanguageDef emptyDef) {
   reservedNames = ["stationary","fast","slow"]
   }
-
-  {-  LanguageDef { caseSensitive :: Boolean, commentEnd :: String, commentLine :: String, commentStart :: String, identLetter :: ParserT s m Char, identStart :: ParserT s m Char, nestedComments :: Boolean, opLetter :: ParserT s m Char, opStart :: ParserT s m Char, reservedNames :: Array String, reservedOpNames :: Array String } -}
-
 
 angles :: forall a. P a -> P a
 angles = tokenParser.angles
