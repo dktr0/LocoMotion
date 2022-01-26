@@ -27,12 +27,17 @@ initialState _ = { text: "", status: "" }
 data EditorAction = TextChanged String | Evaluate
 
 render :: forall m. EditorState -> H.ComponentHTML EditorAction () m
-render st = H.div [ H.class_ $ H.ClassName "editor" ]
+render st = H.div [ H.class_ $ H.ClassName "editorAndStatus" ]
   [
-    H.div [] [H.text "untitled NFRF project"],
-    H.div [] [H.textarea [ H.onValueInput TextChanged ]],
-    H.div [] [H.button [ H.onClick $ \_ -> Evaluate] [ H.text "eval"] ],
-    H.div [] [H.text st.status]
+    H.div [ H.class_ $ H.ClassName "editor"]
+      [
+      H.textarea [ H.class_ $ H.ClassName "editorArea", H.onValueInput TextChanged ]
+      ],
+    H.div [ H.class_ $ H.ClassName "status" ]
+      [
+      H.button [ H.onClick $ \_ -> Evaluate] [ H.text "eval"],
+      H.span [ H.class_ $ H.ClassName "errors" ] [H.text st.status]
+      ]
   ]
 
 handleAction :: forall output m. MonadEffect m => RenderEngine -> EditorAction -> H.HalogenM EditorState EditorAction () output m Unit

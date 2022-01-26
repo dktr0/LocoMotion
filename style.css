@@ -12,7 +12,7 @@ body {
   z-index: -1;
 }
 
-.editor {
+.editorAndStatus {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -20,10 +20,6 @@ body {
   position: absolute;
   left: 0px;
   top: 0px;
-  font-family: monospace;
-  width: 100%;
-  color: white;
-  font-size: 1em;
 }
 
 .editor {
@@ -34,7 +30,7 @@ body {
 }
 
 .editorArea {
-  font-family: monospace;
+  font-family: Inconsolata,Consolas,monospace;
   background-color: transparent;
   border: none;
 	width: 100%;
@@ -55,7 +51,7 @@ body {
 }
 
 .errors {
-  float: left;
+  // float: left;
 }
 
 .fps {

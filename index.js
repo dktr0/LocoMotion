@@ -29456,6 +29456,7 @@ var PS = {};
   var Data_Maybe = $PS["Data.Maybe"];
   var Halogen_HTML_Core = $PS["Halogen.HTML.Core"];
   var element = Halogen_HTML_Core.element(Data_Maybe.Nothing.value);
+  var span = element("span");
   var textarea = function (es) {
       return element("textarea")(es)([  ]);
   };                 
@@ -29463,6 +29464,7 @@ var PS = {};
   var button = element("button");
   exports["button"] = button;
   exports["div"] = div;
+  exports["span"] = span;
   exports["textarea"] = textarea;
 })(PS);
 (function(exports) {
@@ -31343,9 +31345,9 @@ var PS = {};
       return Evaluate;
   })();
   var render = function (st) {
-      return Halogen_HTML_Elements.div([ Halogen_HTML_Properties.class_("editor") ])([ Halogen_HTML_Elements.div([  ])([ Halogen_HTML_Core.text("untitled NFRF project") ]), Halogen_HTML_Elements.div([  ])([ Halogen_HTML_Elements.textarea([ Halogen_HTML_Events.onValueInput(TextChanged.create) ]) ]), Halogen_HTML_Elements.div([  ])([ Halogen_HTML_Elements.button([ Halogen_HTML_Events.onClick(function (v) {
+      return Halogen_HTML_Elements.div([ Halogen_HTML_Properties.class_("editorAndStatus") ])([ Halogen_HTML_Elements.div([ Halogen_HTML_Properties.class_("editor") ])([ Halogen_HTML_Elements.textarea([ Halogen_HTML_Properties.class_("editorArea"), Halogen_HTML_Events.onValueInput(TextChanged.create) ]) ]), Halogen_HTML_Elements.div([ Halogen_HTML_Properties.class_("status") ])([ Halogen_HTML_Elements.button([ Halogen_HTML_Events.onClick(function (v) {
           return Evaluate.value;
-      }) ])([ Halogen_HTML_Core.text("eval") ]) ]), Halogen_HTML_Elements.div([  ])([ Halogen_HTML_Core.text(st.status) ]) ]);
+      }) ])([ Halogen_HTML_Core.text("eval") ]), Halogen_HTML_Elements.span([ Halogen_HTML_Properties.class_("errors") ])([ Halogen_HTML_Core.text(st.status) ]) ]) ]);
   };
   var initialState = function (v) {
       return {
@@ -31397,10 +31399,10 @@ var PS = {};
                               return $19;
                           });
                       };
-                      throw new Error("Failed pattern match at Main (line 43, column 5 - line 47, column 61): " + [ v.constructor.name ]);
+                      throw new Error("Failed pattern match at Main (line 48, column 5 - line 52, column 61): " + [ v.constructor.name ]);
                   });
               };
-              throw new Error("Failed pattern match at Main (line 39, column 22 - line 47, column 61): " + [ ea.constructor.name ]);
+              throw new Error("Failed pattern match at Main (line 44, column 22 - line 52, column 61): " + [ ea.constructor.name ]);
           };
       };
   };
