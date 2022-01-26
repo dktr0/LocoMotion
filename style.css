@@ -9,7 +9,7 @@ body {
 	left: 0px;
 	top: 0px;
 	pointer-events: none;
-  z-index: 1;
+  z-index: -1;
 }
 
 .editor {
@@ -20,6 +20,10 @@ body {
   position: absolute;
   left: 0px;
   top: 0px;
+  font-family: monospace;
+  width: 100%;
+  color: white;
+  font-size: 1em;
 }
 
 .editor {
