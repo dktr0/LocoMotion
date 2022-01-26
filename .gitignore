@@ -11,6 +11,4 @@ npm-debug.log
 /.purs*
 /.psa*
 .spago
-/staging/
-/index.js
-/three.js
+
