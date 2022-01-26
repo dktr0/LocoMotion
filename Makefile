@@ -1,14 +1,13 @@
 
 build:
-	spago bundle-app
-	-mkdir staging
-	mv index.js staging
-	cp index.html staging
-	cp style.css staging
+	cd src && spago bundle-app
+	cd src && cp -f index.js ../index.js
 
 serve:
-	cd staging; python -m SimpleHTTPServer 8000
+	python -m SimpleHTTPServer 8000
 
 clean:
-	rm -rf staging
 	rm -rf index.js
+
+three.min.js:
+	curl -L -o three.min.js https://raw.githubusercontent.com/mrdoob/three.js/dev/build/three.min.js

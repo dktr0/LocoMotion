@@ -1,3 +1,6 @@
+/src/output/
+/src/index.js
+npm-debug.log
 /bower_components/
 /node_modules/
 /.pulp-cache/
@@ -7,7 +10,7 @@
 /.psc*
 /.purs*
 /.psa*
-/.spago
+.spago
 /staging/
 /index.js
 /three.js

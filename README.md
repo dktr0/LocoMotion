@@ -1,3 +1,26 @@
+## Installing and testing development tools (purs, spago)
+
+On OS X 10.15.7 I first re-installed the (then) latest version of node.js (16.3.2) which included npm 8.1.2. Then I did:
+```
+npm update
+npm install -g purescript
+npm install -g spago
+purs --version
+spago --version
+```
+The last 2 lines there were to verify the installed purescript version (it was 0.14.5) and spago version (0.20.3).
+
+If you have purs and spago installed then you should be able to start a bare purescript repl with: ```spago repl```
+
+Inside the purs/spago REPL this is how to quit: ```:quit```
+
+And you can build and serve the project by changing into the project folder and doing (assuming you have python installed, which is used here just as a no-frills web server):
+```
+make build
+make serve
+````
+
+Then you can connect to the just built project by opening a browser and going to: http://127.0.0.1:8000
 
 ## Miscellaneous development workflow notes
 
