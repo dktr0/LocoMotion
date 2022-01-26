@@ -19,6 +19,55 @@ import Text.Parsing.Parser.Token (GenLanguageDef(..),LanguageDef,unGenLanguageDe
 import Text.Parsing.Parser.Combinators
 
 
+-- Program-s are semi-colon separated lists of Statement-s
+-- (will rename to Program when we refactor parser in next step)
+
+data Program' = List Statement
+
+-- Statement-s describe an Element in the scene
+-- or they change some other parameter of the rendering (eg. camera settings)
+
+data Statement =
+  Element Element |
+  CameraChange (Camera -> Camera)
+
+-- Element-s can be Dancer-s (which can be animated, have physics, etc)
+-- or Ethereal-s (which are displayed but do not have physics [maybe they might have animation, though?])
+
+data Element =
+  Dancer Dancer |
+  Ethereal Ethereal
+
+type Dancer = {
+  url :: String,
+  animation :: Int,
+  position :: Vec3
+  }
+
+-- and for now Ethereals are just polarGridHelpers...
+
+data Ethereal = PolarGridHelper {
+  radius :: Number, -- three.js default is 10, must be positive
+  radials :: Int, -- three.js default is 16, must be positive
+  circles :: Int, -- three.js default is 8, must be positive
+  divisions :: Int, -- three.js default is 64, must be 3 or greater
+  position :: Vec3
+  }
+
+type Camera = {
+  position :: Vec3,
+  rotation :: Vec3
+  }
+
+-- normally I wouldn't use x,y,z as the name of a record field
+-- but perhaps this is more okay with purescript? Let's see...
+
+type Vec3 = {
+  x :: Number,
+  y :: Number,
+  z :: Number
+  }
+
 data Program = Stationary | Fast | Slow
 
 defaultProgram :: Program
