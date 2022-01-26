@@ -1,7 +1,7 @@
 module Main where
 
 import Prelude
-import Data.Maybe
+import Data.Either
 import Data.Number
 import Effect
 import Effect.Class
@@ -41,10 +41,10 @@ handleAction re ea = case ea of
   Evaluate -> do
     st <- H.get
     case parseProgram st.text of
-      Just p -> do
+      Right p -> do
         H.liftEffect $ setProgram re p
         H.modify_ _ { status = "success!" }
-      Nothing -> H.modify_ _ { status = "unable to parse" }
+      Left err -> H.modify_ _ { status = "syntax: " <> err }
 
 component :: forall query input output m. MonadEffect m => RenderEngine -> H.Component query input output m
 component re =

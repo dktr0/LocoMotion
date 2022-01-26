@@ -13,6 +13,9 @@ https://github.com/purescript/spago#why-cant-spago-also-install-my-npm-dependenc
 A big document that summarizes differences between Haskell and PureScript
 https://github.com/purescript/documentation/blob/master/language/Differences-from-Haskell.md
 
+The documention (on Pursuit) for the Parsing package, which is very similar to Haskell's parsec library:
+https://pursuit.purescript.org/packages/purescript-parsing/8.1.0
+
 A great blog post about the use of the Aff monad for asynchronous & parallel programming:
 https://blog.drewolson.org/asynchronous-purescript
 

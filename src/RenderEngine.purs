@@ -50,7 +50,11 @@ setProgram re p = write p re.programRef
 runProgram :: RenderEngine -> Effect Unit
 runProgram re = do
   program <- read re.programRef
-  Object3D.rotateIncrement re.mesh program program 0.0
+  case program of
+    Stationary -> pure unit
+    Fast -> Object3D.rotateIncrement re.mesh 0.1 0.1 0.0
+    Slow -> Object3D.rotateIncrement re.mesh 0.003 0.003 0.0
+
 
 animate :: RenderEngine -> Effect Unit
 animate re = do
