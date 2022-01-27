@@ -16,7 +16,8 @@ import Halogen.VDom.Driver as H
 import Web.UIEvent.InputEvent
 
 import RenderEngine
-import Program
+import AST
+import Parser
 
 
 type EditorState = { text :: String, status :: String }

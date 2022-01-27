@@ -2,7 +2,8 @@ module RenderEngine
   (
   RenderEngine(..),
   launchRenderEngine,
-  setProgram
+  setProgram,
+  RenderState(..)
   ) where
 
 import Prelude
@@ -16,16 +17,26 @@ import Graphics.Three.Material as Material
 import Graphics.Three.Object3D as Object3D
 import Data.Foreign.EasyFFI (unsafeForeignProcedure)
 
-import Program
+import AST
 
 type RenderEngine =
   {
   scene :: Scene.Scene,
   camera :: Camera.PerspectiveCamera,
   renderer :: Renderer.Renderer,
-  mesh :: Object3D.Mesh,
-  programRef :: Ref Program
+  programRef :: Ref Program,
+  programState :: Ref RenderState
   }
+
+type RenderState =
+  {
+  dancers :: Array Object3D.Mesh,
+  ethereals :: Array Object3D.Mesh
+  }
+
+defaultRenderState :: RenderState
+defaultRenderState = { dancers:[], ethereals:[] }
+
 
 launchRenderEngine :: Effect RenderEngine
 launchRenderEngine = do
@@ -34,26 +45,16 @@ launchRenderEngine = do
   renderer <- Renderer.createWebGL { antialias: true }
   Renderer.setSize renderer 400.0 400.0
   Renderer.appendToDomByID renderer "canvas"
-  geometry <- Geometry.createBox 1.0 1.0 1.0
-  material <- Material.createMeshBasic { color: "red" }
-  mesh <- Object3D.createMesh geometry material
-  Scene.addObject scene mesh
   Object3D.setPosition camera 0.0 0.0 5.0
   programRef <- new defaultProgram
-  let re = { scene, camera, renderer, mesh, programRef }
+  programState <- new defaultRenderState
+  let re = { scene, camera, renderer, programRef, programState }
   requestAnimationFrame $ animate re
   pure re
 
+
 setProgram :: RenderEngine -> Program -> Effect Unit
 setProgram re p = write p re.programRef
-
-runProgram :: RenderEngine -> Effect Unit
-runProgram re = do
-  program <- read re.programRef
-  case program of
-    Stationary -> pure unit
-    Fast -> Object3D.rotateIncrement re.mesh 0.1 0.1 0.0
-    Slow -> Object3D.rotateIncrement re.mesh 0.003 0.003 0.0
 
 
 animate :: RenderEngine -> Effect Unit
@@ -64,3 +65,18 @@ animate re = do
 
 requestAnimationFrame :: Effect Unit -> Effect Unit
 requestAnimationFrame = unsafeForeignProcedure ["callback", ""] "window.requestAnimationFrame(callback)"
+
+
+runProgram :: RenderEngine -> Effect Unit
+runProgram re = do
+  program <- read re.programRef
+  pure unit
+
+
+addDancer :: RenderEngine -> Dancer -> Effect Object3D.Mesh
+addDancer re x = do
+  geometry <- Geometry.createBox 1.0 1.0 1.0
+  material <- Material.createMeshBasic { color: "red" }
+  mesh <- Object3D.createMesh geometry material
+  Scene.addObject re.scene mesh
+  pure mesh
