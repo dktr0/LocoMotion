@@ -30,13 +30,22 @@ type RenderEngine =
 
 type RenderState =
   {
-  dancers :: Array Object3D.Mesh,
-  ethereals :: Array Object3D.Mesh
+  dancerStates :: Array DancerState,
+  etherealStates :: Array EtherealState
   }
 
 defaultRenderState :: RenderState
 defaultRenderState = { dancers:[], ethereals:[] }
 
+type DancerState =
+  {
+  mesh :: Object3D.Mesh
+  }
+
+type EtherealState =
+  {
+  mesh :: Object3D.Mesh
+  }
 
 launchRenderEngine :: Effect RenderEngine
 launchRenderEngine = do
@@ -69,14 +78,41 @@ requestAnimationFrame = unsafeForeignProcedure ["callback", ""] "window.requestA
 
 runProgram :: RenderEngine -> Effect Unit
 runProgram re = do
-  program <- read re.programRef
-  pure unit
+  p <- read re.programRef
+  pState <- read re.programState
+  -- note: it is overkill to regenerate the lists of element states in every frame
+  -- later we'll refactor so this only happens in first frame after new program...
+  ds <- foldM (runDancers renderEngine pState.dancerStates) [] p
+  -- es <- foldM (runEthereals renderEngine pState.etherealStates) [] p
+  -- TODO: need a way of deleting dancers/ethereals when they are removed also...
+  write $ pState { dancerStates=dsNew {- , etherealStates=esNew -} }
 
 
-addDancer :: RenderEngine -> Dancer -> Effect Object3D.Mesh
-addDancer re x = do
+runDancers :: RenderEngine -> Array DancerState -> Array DancerState -> Statement -> Effect (Array DancerState)
+runDancers re dsPrev dsNew (Element (Dancer d)) = do
+  -- if this dancer is new (more dancers there than before), add/make a new DancerState
+  -- otherwise, just lookup the previously cached state
+  -- maybe' :: forall b a. (Unit -> b) -> (a -> b) -> Maybe a -> b
+  let prevDState = dsPrev !! length dsNew
+  dState' <- maybe' (Unit -> b) pure $ dsPrev !! length dsNew
+  dState <- if length dsNew >= length dsPrev then (addDancer re d) else (pure $ )
+  -- ...placeholder: later, here, properties of the DancerState can be accessed/changed...
+  pure $ snoc dsNew dState
+runDancers _ _ dsNew _ = pure dsNew
+
+
+addDancer :: RenderEngine -> Dancer -> Effect DancerState
+addDancer re _ = do
   geometry <- Geometry.createBox 1.0 1.0 1.0
   material <- Material.createMeshBasic { color: "red" }
   mesh <- Object3D.createMesh geometry material
   Scene.addObject re.scene mesh
-  pure mesh
+  pure { mesh }
+
+{-
+runEthereals :: RenderEngine -> Array EtherealState -> Array EtherealState-> Statement -> Effect (Array EtherealState)
+runEthereals re esPrev esNew (Element (Ethereal d)) = ???
+runEthereals _ _ esNew _ = pure esNew
+-}
+
+-- runCameraChanges :: RenderEngine -> Statement -> Effect Unit
