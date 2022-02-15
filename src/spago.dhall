@@ -12,10 +12,12 @@ to generate this file without the comments in this block.
 -}
 { name = "untitled-nfrf-project"
 , dependencies =
-  [ "console"
+  [ "arrays"
+  , "console"
   , "easy-ffi"
   , "effect"
   , "either"
+  , "foldable-traversable"
   , "halogen"
   , "identity"
   , "lists"

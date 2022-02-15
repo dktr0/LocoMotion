@@ -3,12 +3,17 @@ module RenderEngine
   RenderEngine(..),
   launchRenderEngine,
   setProgram,
-  RenderState(..)
+  RenderState(..),
+  DancerState,
+  EtherealState
   ) where
 
 import Prelude
 import Effect (Effect)
 import Effect.Ref (Ref, new, read, write)
+import Data.Foldable (foldM)
+import Data.Array ((!!),length,snoc)
+import Data.Maybe
 import Graphics.Three.Scene as Scene
 import Graphics.Three.Camera as Camera
 import Graphics.Three.Renderer as Renderer
@@ -25,13 +30,13 @@ type RenderEngine =
   camera :: Camera.PerspectiveCamera,
   renderer :: Renderer.Renderer,
   programRef :: Ref Program,
-  programState :: Ref RenderState
+  renderState :: Ref RenderState
   }
 
 type RenderState =
   {
-  dancerStates :: Array DancerState,
-  etherealStates :: Array EtherealState
+  dancers :: Array DancerState,
+  ethereals :: Array EtherealState
   }
 
 defaultRenderState :: RenderState
@@ -56,8 +61,8 @@ launchRenderEngine = do
   Renderer.appendToDomByID renderer "canvas"
   Object3D.setPosition camera 0.0 0.0 5.0
   programRef <- new defaultProgram
-  programState <- new defaultRenderState
-  let re = { scene, camera, renderer, programRef, programState }
+  renderState <- new defaultRenderState
+  let re = { scene, camera, renderer, programRef, renderState }
   requestAnimationFrame $ animate re
   pure re
 
@@ -79,27 +84,22 @@ requestAnimationFrame = unsafeForeignProcedure ["callback", ""] "window.requestA
 runProgram :: RenderEngine -> Effect Unit
 runProgram re = do
   p <- read re.programRef
-  pState <- read re.programState
+  rState <- read re.renderState
   -- note: it is overkill to regenerate the lists of element states in every frame
   -- later we'll refactor so this only happens in first frame after new program...
-  ds <- foldM (runDancers renderEngine pState.dancerStates) [] p
-  -- es <- foldM (runEthereals renderEngine pState.etherealStates) [] p
+  ds <- foldM (runDancers re rState.dancers) [] p
+  -- es <- foldM (runEthereals re rState.ethereals) [] p
   -- TODO: need a way of deleting dancers/ethereals when they are removed also...
-  write $ pState { dancerStates=dsNew {- , etherealStates=esNew -} }
+  write (rState { dancers=ds {- , ethereals=es -} }) re.renderState
 
 
 runDancers :: RenderEngine -> Array DancerState -> Array DancerState -> Statement -> Effect (Array DancerState)
 runDancers re dsPrev dsNew (Element (Dancer d)) = do
-  -- if this dancer is new (more dancers there than before), add/make a new DancerState
-  -- otherwise, just lookup the previously cached state
-  -- maybe' :: forall b a. (Unit -> b) -> (a -> b) -> Maybe a -> b
-  let prevDState = dsPrev !! length dsNew
-  dState' <- maybe' (Unit -> b) pure $ dsPrev !! length dsNew
-  dState <- if length dsNew >= length dsPrev then (addDancer re d) else (pure $ )
-  -- ...placeholder: later, here, properties of the DancerState can be accessed/changed...
-  pure $ snoc dsNew dState
+  x <- case dsPrev !! length dsNew of
+    Just prevDancer -> runDancer re d prevDancer
+    Nothing -> addDancer re d
+  pure $ snoc dsNew x
 runDancers _ _ dsNew _ = pure dsNew
-
 
 addDancer :: RenderEngine -> Dancer -> Effect DancerState
 addDancer re _ = do
@@ -108,6 +108,9 @@ addDancer re _ = do
   mesh <- Object3D.createMesh geometry material
   Scene.addObject re.scene mesh
   pure { mesh }
+
+runDancer :: RenderEngine -> Dancer -> DancerState -> Effect DancerState
+runDancer _ _ dState = pure dState -- placeholder
 
 {-
 runEthereals :: RenderEngine -> Array EtherealState -> Array EtherealState-> Statement -> Effect (Array EtherealState)
