@@ -20,6 +20,7 @@ to generate this file without the comments in this block.
   , "foldable-traversable"
   , "halogen"
   , "identity"
+  , "integers"
   , "lists"
   , "maybe"
   , "numbers"

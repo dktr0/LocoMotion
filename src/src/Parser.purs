@@ -7,6 +7,7 @@ import Data.List.NonEmpty
 import Data.Either
 import Data.Maybe (Maybe)
 import Data.Number (fromString)
+import Data.Int (toNumber)
 import Control.Bind
 import Text.Parsing.Parser
 import Text.Parsing.Parser.Pos
@@ -43,16 +44,63 @@ element = choice [
   ]
 
 dancer :: P Dancer
-dancer = reserved "dancer" $> defaultDancer
+dancer = choice [
+  dancerWithProperties,
+  reserved "dancer" $> defaultDancer
+  ]
+
+dancerWithProperties :: P Dancer
+dancerWithProperties = do
+  reserved "dancer"
+  f <- dancerPropertiesParser
+  pure $ f defaultDancer
+
+-- there has to be a more elegant way of getting these setters, though, right?
+-- setPositionX :: forall r. Number -> r -> r -- where r is a record that has a position field
+setPosX n r = r { pos = r.pos { x = n } }
+
+-- setPositionY :: forall r. Number -> r -> r -- where r is a record that has a position field
+setPosY n r = r { pos = r.pos { y = n } }
+
+-- setPositionZ :: forall r. Number -> r -> r -- where r is a record that has a position field
+setPosZ n r = r { pos = r.pos { z = n } }
+
+-- positionPropertyParser :: forall r. P (r -> r) -- where ar is a record that has a position field with x y z fields
+posPropertyParser = do
+  f <- choice [
+    reserved "x" $> setPosX,
+    reserved "y" $> setPosY,
+    reserved "z" $> setPosZ
+    ]
+  reservedOp "="
+  n <- number
+  pure $ f n
+
+dancerPropertyParser :: P (Dancer -> Dancer)
+dancerPropertyParser = posPropertyParser
+
+dancerPropertiesParser :: P (Dancer -> Dancer)
+dancerPropertiesParser = do
+  reservedOp "{"
+  fs <- commaSep dancerPropertyParser -- :: List (Dancer -> Dancer)
+  reservedOp "}"
+  pure $ foldl (>>>) identity fs
+
 
 ethereal :: P Ethereal
 ethereal = reserved "polarGridHelper" $> defaultEthereal
 
 
+number :: P Number
+number = choice [
+  try $ float, -- issue here with parsing negative floats: https://github.com/purescript-contrib/purescript-parsing/pull/142
+  toNumber <$> integer
+  ]
+
 tokenParser :: GenTokenParser String Identity
 tokenParser = makeTokenParser $ LanguageDef (unGenLanguageDef emptyDef) {
-  reservedNames = ["dancer","polarGridHelper"],
-  reservedOpNames = [";"]
+  reservedNames = ["dancer","polarGridHelper","x","y","z"],
+  reservedOpNames = [";","="]
   }
 
 angles :: forall a. P a -> P a

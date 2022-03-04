@@ -110,7 +110,9 @@ addDancer re _ = do
   pure { mesh }
 
 runDancer :: RenderEngine -> Dancer -> DancerState -> Effect DancerState
-runDancer _ _ dState = pure dState -- placeholder
+runDancer _ d dState = do
+  Object3D.setPosition dState.mesh d.pos.x d.pos.y d.pos.z
+  pure dState
 
 {-
 runEthereals :: RenderEngine -> Array EtherealState -> Array EtherealState-> Statement -> Effect (Array EtherealState)

@@ -44,11 +44,11 @@ data Element =
 type Dancer = {
   url :: String,
   animation :: Int,
-  position :: Vec3
+  pos :: Vec3
   }
 
 defaultDancer :: Dancer
-defaultDancer = { url: "", animation: 4, position: origin }
+defaultDancer = { url: "", animation: 4, pos: origin }
 
 -- and for now Ethereals are just polarGridHelpers...
 
@@ -57,7 +57,7 @@ data Ethereal = PolarGridHelper {
   radials :: Int, -- three.js default is 16, must be positive
   circles :: Int, -- three.js default is 8, must be positive
   divisions :: Int, -- three.js default is 64, must be 3 or greater
-  position :: Vec3
+  pos :: Vec3
   }
 
 defaultEthereal :: Ethereal
@@ -66,12 +66,12 @@ defaultEthereal = PolarGridHelper {
   radials: 16,
   circles: 8,
   divisions: 64,
-  position: origin
+  pos: origin
   }
 
 type Camera = {
-  position :: Vec3,
-  rotation :: Vec3
+  pos :: Vec3,
+  rot :: Vec3
   }
 
 -- normally I wouldn't use x,y,z as the name of a record field
