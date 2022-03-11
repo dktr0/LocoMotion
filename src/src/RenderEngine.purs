@@ -22,10 +22,12 @@ import Graphics.Three.Material as Material
 import Graphics.Three.Object3D as Object3D
 import Data.Foreign.EasyFFI (unsafeForeignProcedure)
 
+import ThreeJS
 import AST
 
 type RenderEngine =
   {
+  -- gltfLoader :: GLTFLoader,
   scene :: Scene.Scene,
   camera :: Camera.PerspectiveCamera,
   renderer :: Renderer.Renderer,
@@ -62,7 +64,8 @@ launchRenderEngine = do
   Object3D.setPosition camera 0.0 0.0 5.0
   programRef <- new defaultProgram
   renderState <- new defaultRenderState
-  let re = { scene, camera, renderer, programRef, renderState }
+  -- gltfLoader <- newGLTFLoader
+  let re = { {- gltfLoader, -} scene, camera, renderer, programRef, renderState }
   requestAnimationFrame $ animate re
   pure re
 
