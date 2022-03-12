@@ -13,4 +13,4 @@ import Data.Foreign.EasyFFI (unsafeForeignFunction,unsafeForeignProcedure)
 foreign import data GLTFLoader :: Type
 
 newGLTFLoader :: Effect GLTFLoader
-newGLTFLoader = unsafeForeignFunction [] "new GLTFLoader()"
+newGLTFLoader = unsafeForeignFunction [""] "new THREE.GLTFLoader"

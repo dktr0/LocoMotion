@@ -27,7 +27,7 @@ import AST
 
 type RenderEngine =
   {
-  -- gltfLoader :: GLTFLoader,
+  gltfLoader :: GLTFLoader,
   scene :: Scene.Scene,
   camera :: Camera.PerspectiveCamera,
   renderer :: Renderer.Renderer,
@@ -64,8 +64,8 @@ launchRenderEngine = do
   Object3D.setPosition camera 0.0 0.0 5.0
   programRef <- new defaultProgram
   renderState <- new defaultRenderState
-  -- gltfLoader <- newGLTFLoader
-  let re = { {- gltfLoader, -} scene, camera, renderer, programRef, renderState }
+  gltfLoader <- newGLTFLoader
+  let re = { gltfLoader, scene, camera, renderer, programRef, renderState }
   requestAnimationFrame $ animate re
   pure re
 
