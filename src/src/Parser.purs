@@ -76,8 +76,16 @@ posPropertyParser = do
   n <- number
   pure $ f n
 
+-- urlPropertyParser :: forall r. P (r -> r)
+urlPropertyParser = do
+  reserved "url"
+  reservedOp "="
+  x <- stringLiteral
+  pure $ \r -> r { url = x }
+
+
 dancerPropertyParser :: P (Dancer -> Dancer)
-dancerPropertyParser = posPropertyParser
+dancerPropertyParser = choice [ posPropertyParser, urlPropertyParser ]
 
 dancerPropertiesParser :: P (Dancer -> Dancer)
 dancerPropertiesParser = do
@@ -99,7 +107,7 @@ number = choice [
 
 tokenParser :: GenTokenParser String Identity
 tokenParser = makeTokenParser $ LanguageDef (unGenLanguageDef emptyDef) {
-  reservedNames = ["dancer","polarGridHelper","x","y","z"],
+  reservedNames = ["dancer","polarGridHelper","x","y","z","url"],
   reservedOpNames = [";","="]
   }
 

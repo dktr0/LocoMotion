@@ -5,11 +5,11 @@ module ThreeJS where
 import Prelude
 import Effect (Effect)
 import Graphics.Three.Scene as Scene
-import Graphics.Three.Camera as Camera
-import Graphics.Three.Renderer as Renderer
-import Graphics.Three.Geometry as Geometry
-import Graphics.Three.Material as Material
-import Graphics.Three.Object3D as Object3D
+-- import Graphics.Three.Camera as Camera
+-- import Graphics.Three.Renderer as Renderer
+-- import Graphics.Three.Geometry as Geometry
+-- import Graphics.Three.Material as Material
+-- import Graphics.Three.Object3D as Object3D
 
 -- Loading GLTF resources via GLTFLoader
 
@@ -22,3 +22,13 @@ type GLTF = {
   }
 
 foreign import loadGLTF :: String -> (GLTF -> Effect Unit) -> Effect Unit
+
+-- hacky, but... for now...
+foreign import addAnythingToScene :: forall a. Scene.Scene -> a -> Effect Unit
+
+-- hacky, but... for now...
+foreign import setPositionOfAnything :: forall a. a -> Number -> Number -> Number -> Effect Unit
+
+foreign import data HemisphereLight :: Type
+
+foreign import newHemisphereLight :: Int -> Int -> Number -> Effect HemisphereLight
