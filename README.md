@@ -30,6 +30,11 @@ https://jordanmartinez.github.io/purescript-jordans-reference-site/content/03-Bu
 This is important to note:
 https://github.com/purescript/spago#why-cant-spago-also-install-my-npm-dependencies
 
+A short note re: passing Effect a computations into Javascript FFI:
+https://github.com/purescript/documentation/blob/master/guides/FFI-Tips.md#why-doesnt-my-effect-work-when-passed-to-a-normal-js-function
+
+An introduction to Aff for asynchronous programming in PureScript:
+https://blog.drewolson.org/asynchronous-purescript
 
 ## Notes on things we are using
 

@@ -1,5 +1,7 @@
 module ThreeJS where
 
+-- This module contains extra PureScript bindings for ThreeJS things.
+
 import Prelude
 import Effect (Effect)
 import Graphics.Three.Scene as Scene
@@ -8,9 +10,15 @@ import Graphics.Three.Renderer as Renderer
 import Graphics.Three.Geometry as Geometry
 import Graphics.Three.Material as Material
 import Graphics.Three.Object3D as Object3D
-import Data.Foreign.EasyFFI (unsafeForeignFunction,unsafeForeignProcedure)
 
-foreign import data GLTFLoader :: Type
+-- Loading GLTF resources via GLTFLoader
 
-newGLTFLoader :: Effect GLTFLoader
-newGLTFLoader = unsafeForeignFunction [""] "new THREE.GLTFLoader"
+type GLTF = {
+  -- animations :: ?, -- in ThreeJS: Array<THREE.AnimationClip>
+  scene :: Scene.Scene -- in ThreeJS: THREE.Group
+  -- scenes :: ?, -- in ThreeJS: Array<THREE.Group>
+  -- cameras :: ?, -- in ThreeJS: Array<THREE.Camera>
+  -- asset :: ? -- in ThreeJS: Object
+  }
+
+foreign import loadGLTF :: String -> (GLTF -> Effect Unit) -> Effect Unit

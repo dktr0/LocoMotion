@@ -11,6 +11,7 @@ module RenderEngine
 import Prelude
 import Effect (Effect)
 import Effect.Ref (Ref, new, read, write)
+import Effect.Console (log)
 import Data.Foldable (foldM)
 import Data.Array ((!!),length,snoc)
 import Data.Maybe
@@ -27,7 +28,6 @@ import AST
 
 type RenderEngine =
   {
-  gltfLoader :: GLTFLoader,
   scene :: Scene.Scene,
   camera :: Camera.PerspectiveCamera,
   renderer :: Renderer.Renderer,
@@ -64,8 +64,8 @@ launchRenderEngine = do
   Object3D.setPosition camera 0.0 0.0 5.0
   programRef <- new defaultProgram
   renderState <- new defaultRenderState
-  gltfLoader <- newGLTFLoader
-  let re = { gltfLoader, scene, camera, renderer, programRef, renderState }
+  _ <- loadGLTF "model.glb" $ \_ -> log "model loaded!"
+  let re = { scene, camera, renderer, programRef, renderState }
   requestAnimationFrame $ animate re
   pure re
 
