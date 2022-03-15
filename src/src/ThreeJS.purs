@@ -32,3 +32,19 @@ foreign import setPositionOfAnything :: forall a. a -> Number -> Number -> Numbe
 foreign import data HemisphereLight :: Type
 
 foreign import newHemisphereLight :: Int -> Int -> Number -> Effect HemisphereLight
+
+foreign import data AmbientLight :: Type
+
+foreign import newAmbientLight :: Int -> Number -> Effect AmbientLight
+
+foreign import data DirectionalLight :: Type
+
+foreign import newDirectionalLight :: Int -> Number -> Effect DirectionalLight
+
+foreign import data PolarGridHelper :: Type
+
+foreign import newPolarGridHelper :: Number -> Int -> Int -> Int -> Effect PolarGridHelper
+
+foreign import windowInnerWidth :: Effect Number
+
+foreign import windowInnerHeight :: Effect Number

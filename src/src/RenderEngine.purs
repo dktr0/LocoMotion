@@ -3,6 +3,7 @@ module RenderEngine
   RenderEngine(..),
   launchRenderEngine,
   setProgram,
+  evaluate,
   RenderState(..)
   ) where
 
@@ -13,6 +14,7 @@ import Effect.Console (log)
 import Data.Foldable (foldM)
 import Data.Array ((!!),length,snoc)
 import Data.Maybe
+import Data.Either
 import Graphics.Three.Scene as Scene
 import Graphics.Three.Camera as Camera
 import Graphics.Three.Renderer as Renderer
@@ -24,6 +26,7 @@ import Data.Foreign.EasyFFI (unsafeForeignProcedure)
 
 import AST
 import DancerState
+import Parser
 
 type RenderEngine =
   {
@@ -45,14 +48,30 @@ defaultRenderState = { dancers:[] }
 launchRenderEngine :: Effect RenderEngine
 launchRenderEngine = do
   scene <- Scene.create
-  hemiLight <- Three.newHemisphereLight 0xffffff 0x444444 1.0
+
+  hemiLight <- Three.newHemisphereLight 0xffffff 0x444444 10.0
   Three.setPositionOfAnything hemiLight 0.0 20.0 0.0
   Three.addAnythingToScene scene hemiLight
-  camera <- Camera.createPerspective 75.0 (16.0/9.0) 0.1 100.0
+
+  Three.newAmbientLight 0xffffff 1.0 >>= Three.addAnythingToScene scene
+
+  dirLight <- Three.newDirectionalLight 0x887766 1.0
+  Three.setPositionOfAnything dirLight (-1.0) 1.0 1.0
+  Three.addAnythingToScene scene dirLight
+
+  pgh <- Three.newPolarGridHelper 10.0 8 8 8
+  Three.setPositionOfAnything pgh 0.0 0.0 0.0
+  Three.addAnythingToScene scene pgh
+
+  iWidth <- Three.windowInnerWidth
+  iHeight <- Three.windowInnerHeight
+  camera <- Camera.createPerspective 45.0 (iWidth/iHeight) 0.1 100.0
+  Three.setPositionOfAnything camera 0.0 2.0 10.0
+
   renderer <- Renderer.createWebGL { antialias: true }
-  Renderer.setSize renderer 400.0 400.0
+  Renderer.setSize renderer iWidth iHeight
   Renderer.appendToDomByID renderer "canvas"
-  Object3D.setPosition camera 0.0 0.0 5.0
+
   programRef <- new defaultProgram
   renderState <- new defaultRenderState
   let re = { scene, camera, renderer, programRef, renderState }
@@ -64,9 +83,21 @@ setProgram :: RenderEngine -> Program -> Effect Unit
 setProgram re p = write p re.programRef
 
 
+evaluate :: RenderEngine -> String -> Effect String
+evaluate re x = do
+  case parseProgram x of
+    Right p -> do
+      setProgram re p
+      pure "success!"
+    Left err -> pure $ "syntax: " <> err
+
 animate :: RenderEngine -> Effect Unit
 animate re = do
   runProgram re
+  iWidth <- Three.windowInnerWidth
+  iHeight <- Three.windowInnerHeight
+  Camera.setAspect re.camera (iWidth/iHeight)
+  Renderer.setSize re.renderer iWidth iHeight
   Renderer.render re.renderer re.scene re.camera
   requestAnimationFrame $ animate re
 

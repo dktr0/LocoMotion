@@ -9,3 +9,13 @@ exports.addAnythingToScene = scene => anything => () => scene.add(anything);
 exports.setPositionOfAnything = thing => x => y => z => () => thing.position.set(x,y,z);
 
 exports.newHemisphereLight = skyColor => groundColor => intensity => () => new THREE.HemisphereLight(skyColor,groundColor,intensity);
+
+exports.newAmbientLight = rgb => intensity => () => new THREE.AmbientLight(rgb,intensity);
+
+exports.newDirectionalLight = rgb => intensity => () => new THREE.DirectionalLight(rgb,intensity);
+
+exports.newPolarGridHelper = radius => radials => circles => divisions => () => new THREE.PolarGridHelper(radius,radials,circles,divisions)
+
+exports.windowInnerWidth = () => window.innerWidth;
+
+exports.windowInnerHeight = () => window.innerHeight;
