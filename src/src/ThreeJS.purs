@@ -32,6 +32,8 @@ foreign import addAnythingToScene :: forall a. Scene.Scene -> a -> Effect Unit
 -- hacky, but... for now...
 foreign import setPositionOfAnything :: forall a. a -> Number -> Number -> Number -> Effect Unit
 
+foreign import setRotationOfAnything :: forall a. a -> Number -> Number -> Number -> Effect Unit
+
 foreign import data HemisphereLight :: Type
 
 foreign import newHemisphereLight :: Int -> Int -> Number -> Effect HemisphereLight

@@ -8,6 +8,8 @@ exports.addAnythingToScene = scene => anything => () => scene.add(anything);
 
 exports.setPositionOfAnything = thing => x => y => z => () => thing.position.set(x,y,z);
 
+exports.setRotationOfAnything = thing => x => y => z => () => thing.rotation.set(x,y,z);
+
 exports.newHemisphereLight = skyColor => groundColor => intensity => () => new THREE.HemisphereLight(skyColor,groundColor,intensity);
 
 exports.newAmbientLight = rgb => intensity => () => new THREE.AmbientLight(rgb,intensity);

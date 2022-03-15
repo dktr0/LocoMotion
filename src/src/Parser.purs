@@ -56,21 +56,22 @@ dancerWithProperties = do
   pure $ f defaultDancer
 
 -- there has to be a more elegant way of getting these setters, though, right?
--- setPositionX :: forall r. Number -> r -> r -- where r is a record that has a position field
 setPosX n r = r { pos = r.pos { x = n } }
-
--- setPositionY :: forall r. Number -> r -> r -- where r is a record that has a position field
 setPosY n r = r { pos = r.pos { y = n } }
-
--- setPositionZ :: forall r. Number -> r -> r -- where r is a record that has a position field
 setPosZ n r = r { pos = r.pos { z = n } }
+setRotX n r = r { rot = r.rot { x = n } }
+setRotY n r = r { rot = r.rot { y = n } }
+setRotZ n r = r { rot = r.rot { z = n } }
 
--- positionPropertyParser :: forall r. P (r -> r) -- where ar is a record that has a position field with x y z fields
-posPropertyParser = do
+-- positionPropertyParser :: forall r. P (r -> r)
+posRotPropertyParser = do
   f <- choice [
     reserved "x" $> setPosX,
     reserved "y" $> setPosY,
-    reserved "z" $> setPosZ
+    reserved "z" $> setPosZ,
+    reserved "rx" $> setRotX,
+    reserved "ry" $> setRotY,
+    reserved "rz" $> setRotZ
     ]
   reservedOp "="
   n <- number
@@ -85,7 +86,7 @@ urlPropertyParser = do
 
 
 dancerPropertyParser :: P (Dancer -> Dancer)
-dancerPropertyParser = choice [ posPropertyParser, urlPropertyParser ]
+dancerPropertyParser = choice [ posRotPropertyParser, urlPropertyParser ]
 
 dancerPropertiesParser :: P (Dancer -> Dancer)
 dancerPropertiesParser = do

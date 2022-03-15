@@ -7,7 +7,6 @@ import Effect (Effect)
 import Effect.Ref (Ref, new, read, write)
 import Effect.Console (log)
 import Graphics.Three.Scene (Scene) as Three
-import Graphics.Three.Object3D (setPosition) as Three
 import ThreeJS as Three
 import AST (Dancer)
 
@@ -47,6 +46,7 @@ runDancer d dState = do
   case ms of
     Just s -> do
       Three.setPositionOfAnything s d.pos.x d.pos.y d.pos.z
+      Three.setRotationOfAnything s d.rot.x d.rot.y d.rot.z
       am0 <- read dState.animationMixer
       case am0 of
         Just am -> Three.updateAnimationMixer am 0.016666
