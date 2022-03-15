@@ -5,20 +5,23 @@ module ThreeJS where
 import Prelude
 import Effect (Effect)
 import Graphics.Three.Scene as Scene
--- import Graphics.Three.Camera as Camera
+import Graphics.Three.Camera as Camera
+import Graphics.Three.Object3D as Object3D
+
 -- import Graphics.Three.Renderer as Renderer
 -- import Graphics.Three.Geometry as Geometry
 -- import Graphics.Three.Material as Material
--- import Graphics.Three.Object3D as Object3D
 
 -- Loading GLTF resources via GLTFLoader
 
+foreign import data AnimationClip :: Type
+
 type GLTF = {
-  -- animations :: ?, -- in ThreeJS: Array<THREE.AnimationClip>
-  scene :: Scene.Scene -- in ThreeJS: THREE.Group
-  -- scenes :: ?, -- in ThreeJS: Array<THREE.Group>
-  -- cameras :: ?, -- in ThreeJS: Array<THREE.Camera>
-  -- asset :: ? -- in ThreeJS: Object
+  animations :: Array AnimationClip, -- in ThreeJS: Array<THREE.AnimationClip>
+  scene :: Scene.Scene, -- in ThreeJS: THREE.Group
+  scenes :: Array Scene.Scene, -- in ThreeJS: Array<THREE.Group>
+  -- cameras :: Array Camera.Camera,
+  asset :: Object3D.Mesh -- ? -- in ThreeJS: Object
   }
 
 foreign import loadGLTF :: String -> (GLTF -> Effect Unit) -> Effect Unit
@@ -48,3 +51,17 @@ foreign import newPolarGridHelper :: Number -> Int -> Int -> Int -> Effect Polar
 foreign import windowInnerWidth :: Effect Number
 
 foreign import windowInnerHeight :: Effect Number
+
+foreign import data AnimationMixer :: Type
+
+foreign import newAnimationMixer :: forall o. o -> Effect AnimationMixer
+
+foreign import updateAnimationMixer :: AnimationMixer -> Number -> Effect Unit
+
+foreign import data AnimationAction :: Type
+
+foreign import clipAction :: AnimationMixer -> AnimationClip -> Effect AnimationAction
+
+foreign import setEffectiveTimeScale :: AnimationAction -> Number -> Effect Unit
+
+foreign import play :: forall o. o -> Effect Unit

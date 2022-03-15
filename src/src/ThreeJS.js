@@ -19,3 +19,13 @@ exports.newPolarGridHelper = radius => radials => circles => divisions => () => 
 exports.windowInnerWidth = () => window.innerWidth;
 
 exports.windowInnerHeight = () => window.innerHeight;
+
+exports.newAnimationMixer = object3D => () => new THREE.AnimationMixer(object3D);
+
+exports.updateAnimationMixer = mixer => delta => () => mixer.update(delta);
+
+exports.clipAction = animationMixer => clip => () => animationMixer.clipAction(clip);
+
+exports.setEffectiveTimeScale = action => t => () => action.setEffectiveTimeScale(t);
+
+exports.play = thing => () => thing.play();
