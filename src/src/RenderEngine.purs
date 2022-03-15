@@ -49,7 +49,7 @@ launchRenderEngine :: Effect RenderEngine
 launchRenderEngine = do
   scene <- Scene.create
 
-  hemiLight <- Three.newHemisphereLight 0xffffff 0x444444 10.0
+  hemiLight <- Three.newHemisphereLight 0xffffff 0x444444 2.0
   Three.setPositionOfAnything hemiLight 0.0 20.0 0.0
   Three.addAnythingToScene scene hemiLight
 
@@ -66,7 +66,7 @@ launchRenderEngine = do
   iWidth <- Three.windowInnerWidth
   iHeight <- Three.windowInnerHeight
   camera <- Camera.createPerspective 45.0 (iWidth/iHeight) 0.1 100.0
-  Three.setPositionOfAnything camera 0.0 2.0 10.0
+  Three.setPositionOfAnything camera 0.0 1.0 5.0
 
   renderer <- Renderer.createWebGL { antialias: true }
   Renderer.setSize renderer iWidth iHeight

@@ -31652,7 +31652,7 @@ var PS = {};
   };
   var launchRenderEngine = function __do() {
       var scene = Graphics_Three_Scene.create();
-      var hemiLight = ThreeJS.newHemisphereLight(16777215)(4473924)(10.0)();
+      var hemiLight = ThreeJS.newHemisphereLight(16777215)(4473924)(2.0)();
       ThreeJS.setPositionOfAnything(hemiLight)(0.0)(20.0)(0.0)();
       ThreeJS.addAnythingToScene(scene)(hemiLight)();
       Control_Bind.bind(Effect.bindEffect)(ThreeJS.newAmbientLight(16777215)(1.0))(ThreeJS.addAnythingToScene(scene))();
@@ -31665,7 +31665,7 @@ var PS = {};
       var iWidth = ThreeJS.windowInnerWidth();
       var iHeight = ThreeJS.windowInnerHeight();
       var camera = Graphics_Three_Camera.createPerspective(45.0)(iWidth / iHeight)(0.1)(100.0)();
-      ThreeJS.setPositionOfAnything(camera)(0.0)(2.0)(10.0)();
+      ThreeJS.setPositionOfAnything(camera)(0.0)(1.0)(5.0)();
       var renderer = Graphics_Three_Renderer.createWebGL({
           antialias: true
       })();
