@@ -104,14 +104,7 @@ let upstream =
 in  upstream
   with purescript-three =
       {
-        dependencies = [
-          "foreign",
-          "web-dom",
-          "easy-ffi",
-          "math",
-          "refs",
-          "transformers"
-          ],
+        dependencies = ["foreign","web-dom","easy-ffi","math","refs","transformers"],
         repo = "https://github.com/anthonyquizon/purescript-three.git",
         version = "da0ccd095bae3c539232269e7efc6a63d532030d"
       }
@@ -120,5 +113,5 @@ in  upstream
     {
     dependencies = ["prelude","effect","purescript-three"],
     repo = "https://github.com/dktr0/purescript-threejs",
-    version = "1277501bd1324ba200822a26b55dbd117b0138ab"
+    version = "44c14891adc5fada3a1795f6056b7d95cbb5d4aa"
     } {- uncomment and modify this section to use a github repo for purescript-threejs -}
