@@ -44,11 +44,12 @@ data Element =
 type Dancer = {
   url :: String,
   animation :: Int,
-  pos :: Vec3
+  pos :: Vec3,
+  rot :: Vec3
   }
 
 defaultDancer :: Dancer
-defaultDancer = { url: "model.glb", animation: 4, pos: origin }
+defaultDancer = { url: "model.glb", animation: 4, pos: origin, rot: origin }
 
 -- and for now Ethereals are just polarGridHelpers...
 
