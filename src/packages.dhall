@@ -115,3 +115,10 @@ in  upstream
         repo = "https://github.com/anthonyquizon/purescript-three.git",
         version = "da0ccd095bae3c539232269e7efc6a63d532030d"
       }
+  {- with purescript-threejs = ../../purescript-threejs/spago.dhall as Location -}  {- uncomment and modify this line to use a local copy -}
+  with purescript-threejs =
+    {
+    dependencies = ["prelude","effect","purescript-three"],
+    repo = "https://github.com/dktr0/purescript-threejs",
+    version = "1277501bd1324ba200822a26b55dbd117b0138ab"
+    } {- uncomment and modify this section to use a github repo for purescript-threejs -}
