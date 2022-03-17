@@ -19,11 +19,20 @@ import RenderEngine
 import AST
 import Parser
 
+exampleProgram :: String
+exampleProgram = """-- Welcome to LocoMotion
+-- A live coding language for dance, choreography, motion, etc
+-- Type programs here and click the "Eval" button to make them go
+-- This is a rapidly emerging work in progress - check back often for updates
+-- Or get in touch on the Estuary discord server!
+-- The line below is a valid LocoMotion program (just click Eval!)
+dancer { ry=3.14 }; dancer { x = -2 }; dancer { x = 2, ry=1.57 }"""
+
 
 type EditorState = { text :: String, status :: String }
 
 initialState :: forall input. input -> EditorState
-initialState _ = { text: "", status: "" }
+initialState _ = { text: exampleProgram , status: "" }
 
 data EditorAction = TextChanged String | Evaluate
 
@@ -32,7 +41,10 @@ render st = H.div [ H.class_ $ H.ClassName "editorAndStatus" ]
   [
     H.div [ H.class_ $ H.ClassName "editor"]
       [
-      H.textarea [ H.class_ $ H.ClassName "editorArea", H.onValueInput TextChanged ]
+      H.textarea [
+        H.class_ $ H.ClassName "editorArea",
+        H.onValueInput TextChanged,
+        H.value st.text]
       ],
     H.div [ H.class_ $ H.ClassName "status" ]
       [

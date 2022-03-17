@@ -28,7 +28,9 @@ showParseError (ParseError e (Position p)) = show p.line <> ":" <> show p.column
 type P a = ParserT String Identity a
 
 program :: P Program
-program = sepBy statement (reservedOp ";")
+program = do
+  whiteSpace
+  sepBy statement (reservedOp ";")
 
 statement :: P Statement
 statement = choice
@@ -109,7 +111,11 @@ number = choice [
 tokenParser :: GenTokenParser String Identity
 tokenParser = makeTokenParser $ LanguageDef (unGenLanguageDef emptyDef) {
   reservedNames = ["dancer","polarGridHelper","x","y","z","url"],
-  reservedOpNames = [";","="]
+  reservedOpNames = [";","="],
+  commentStart = "{-",
+  commentEnd = "-}",
+  commentLine = "--",
+  nestedComments = true
   }
 
 angles :: forall a. P a -> P a
