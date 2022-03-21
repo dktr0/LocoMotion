@@ -26,8 +26,10 @@ exampleProgram = """-- Welcome to LocoMotion
 -- This is a rapidly emerging work in progress - check back often for updates
 -- Or get in touch on the Estuary discord server!
 -- The line below is a valid LocoMotion program (just click Eval!)
-dancer { ry=3.14 }; dancer { x = -2 }; dancer { x = 2, ry=1.57 }"""
-
+dancer { size=0.5, ry=3.14 };
+dancer { size=0.5, x = -2 };
+dancer { x = 2, ry=4.71, size=0.5 }
+"""
 
 type EditorState = { text :: String, status :: String }
 

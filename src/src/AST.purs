@@ -45,11 +45,12 @@ type Dancer = {
   url :: String,
   animation :: Int,
   pos :: Vec3,
-  rot :: Vec3
+  rot :: Vec3,
+  scale :: Vec3
   }
 
 defaultDancer :: Dancer
-defaultDancer = { url: "model.glb", animation: 4, pos: origin, rot: origin }
+defaultDancer = { url: "models/WomanInTheSea.glb", animation: 4, pos: origin, rot: origin, scale: defaultScale }
 
 -- and for now Ethereals are just polarGridHelpers...
 
@@ -86,3 +87,6 @@ type Vec3 = {
 
 origin :: Vec3
 origin = {x:0.0, y:0.0, z:0.0}
+
+defaultScale :: Vec3
+defaultScale = { x:1.0, y:1.0, z:1.0 }

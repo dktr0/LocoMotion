@@ -11,4 +11,4 @@ npm-debug.log
 /.purs*
 /.psa*
 .spago
-
+.psci_modules

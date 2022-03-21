@@ -64,16 +64,24 @@ setPosZ n r = r { pos = r.pos { z = n } }
 setRotX n r = r { rot = r.rot { x = n } }
 setRotY n r = r { rot = r.rot { y = n } }
 setRotZ n r = r { rot = r.rot { z = n } }
+setScaleX n r = r { scale = r.scale { x = n } }
+setScaleY n r = r { scale = r.scale { y = n } }
+setScaleZ n r = r { scale = r.scale { z = n } }
+setSize n r = r { scale = { x: r.scale.x*n, y: r.scale.y*n, z: r.scale.z*n } }
 
 -- positionPropertyParser :: forall r. P (r -> r)
-posRotPropertyParser = do
+posRotScaleParser = do
   f <- choice [
     reserved "x" $> setPosX,
     reserved "y" $> setPosY,
     reserved "z" $> setPosZ,
     reserved "rx" $> setRotX,
     reserved "ry" $> setRotY,
-    reserved "rz" $> setRotZ
+    reserved "rz" $> setRotZ,
+    reserved "sx" $> setScaleX,
+    reserved "sy" $> setScaleY,
+    reserved "sz" $> setScaleZ,
+    reserved "size" $> setSize
     ]
   reservedOp "="
   n <- number
@@ -88,7 +96,7 @@ urlPropertyParser = do
 
 
 dancerPropertyParser :: P (Dancer -> Dancer)
-dancerPropertyParser = choice [ posRotPropertyParser, urlPropertyParser ]
+dancerPropertyParser = choice [ posRotScaleParser, urlPropertyParser ]
 
 dancerPropertiesParser :: P (Dancer -> Dancer)
 dancerPropertiesParser = do
@@ -110,7 +118,7 @@ number = choice [
 
 tokenParser :: GenTokenParser String Identity
 tokenParser = makeTokenParser $ LanguageDef (unGenLanguageDef emptyDef) {
-  reservedNames = ["dancer","polarGridHelper","x","y","z","url"],
+  reservedNames = ["dancer","polarGridHelper","x","y","z","url","rx","ry","rz","sx","sy","sz","size"],
   reservedOpNames = [";","="],
   commentStart = "{-",
   commentEnd = "-}",

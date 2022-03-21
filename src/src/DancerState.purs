@@ -47,6 +47,7 @@ runDancer d dState = do
     Just s -> do
       Three.setPositionOfAnything s d.pos.x d.pos.y d.pos.z
       Three.setRotationOfAnything s d.rot.x d.rot.y d.rot.z
+      Three.setScaleOfAnything s d.scale.x d.scale.y d.scale.z
       am0 <- read dState.animationMixer
       case am0 of
         Just am -> Three.updateAnimationMixer am 0.016666

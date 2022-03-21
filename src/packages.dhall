@@ -113,5 +113,5 @@ in  upstream
     {
     dependencies = ["prelude","effect","purescript-three"],
     repo = "https://github.com/dktr0/purescript-threejs",
-    version = "44c14891adc5fada3a1795f6056b7d95cbb5d4aa"
+    version = "56e531d7acc3283f721f755021ff68b8502a4be6"
     } {- uncomment and modify this section to use a github repo for purescript-threejs -}
