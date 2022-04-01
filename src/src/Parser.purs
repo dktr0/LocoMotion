@@ -16,6 +16,7 @@ import Text.Parsing.Parser.Token (GenLanguageDef(..),LanguageDef,unGenLanguageDe
 import Text.Parsing.Parser.Combinators
 
 import AST
+import Variable
 
 parseProgram :: String -> Either String Program
 parseProgram x = case (runParser x program) of
@@ -67,7 +68,11 @@ setRotZ n r = r { rot = r.rot { z = n } }
 setScaleX n r = r { scale = r.scale { x = n } }
 setScaleY n r = r { scale = r.scale { y = n } }
 setScaleZ n r = r { scale = r.scale { z = n } }
-setSize n r = r { scale = { x: r.scale.x*n, y: r.scale.y*n, z: r.scale.z*n } }
+setSize n r = r { scale = {
+  x: Product r.scale.x n,
+  y: Product r.scale.y n,
+  z: Product r.scale.z n
+  }}
 
 -- positionPropertyParser :: forall r. P (r -> r)
 posRotScaleParser = do
@@ -84,8 +89,8 @@ posRotScaleParser = do
     reserved "size" $> setSize
     ]
   reservedOp "="
-  n <- number
-  pure $ f n
+  v <- variable
+  pure $ f v
 
 -- urlPropertyParser :: forall r. P (r -> r)
 urlPropertyParser = do
@@ -105,6 +110,33 @@ dancerPropertiesParser = do
   reservedOp "}"
   pure $ foldl (>>>) identity fs
 
+variableProduct :: P Variable
+variableProduct = do
+  x <- number
+  reservedOp "*"
+  y <- number
+  pure $ Product (Constant x) (Constant y)
+
+variableSum :: P Variable
+variableSum = do
+  x <- number
+  reservedOp "+"
+  y <- number
+  pure $ Sum (Constant x) (Constant y)
+
+variableOsc :: P Variable
+variableOsc = do
+  reserved "osc"
+  f <- number
+  pure $ Osc (Constant f)
+
+variable :: P Variable
+variable = choice [
+  try $ variableProduct,
+  try $ variableSum,
+  try $ Constant <$> number,
+  variableOsc
+  ]
 
 ethereal :: P Ethereal
 ethereal = reserved "polarGridHelper" $> defaultEthereal
@@ -118,8 +150,8 @@ number = choice [
 
 tokenParser :: GenTokenParser String Identity
 tokenParser = makeTokenParser $ LanguageDef (unGenLanguageDef emptyDef) {
-  reservedNames = ["dancer","polarGridHelper","x","y","z","url","rx","ry","rz","sx","sy","sz","size"],
-  reservedOpNames = [";","="],
+  reservedNames = ["dancer","polarGridHelper","x","y","z","url","rx","ry","rz","sx","sy","sz","size","osc"],
+  reservedOpNames = [";","=","*","+"],
   commentStart = "{-",
   commentEnd = "-}",
   commentLine = "--",

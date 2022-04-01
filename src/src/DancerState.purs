@@ -9,6 +9,7 @@ import Effect.Console (log)
 import Graphics.Three.Scene (Scene) as Three
 import ThreeJS as Three
 import AST (Dancer)
+import Variable
 
 type MaybeRef a = Ref (Maybe a)
 
@@ -45,9 +46,19 @@ runDancer d dState = do
   ms <- read dState.gltfScene
   case ms of
     Just s -> do
-      Three.setPositionOfAnything s d.pos.x d.pos.y d.pos.z
-      Three.setRotationOfAnything s d.rot.x d.rot.y d.rot.z
-      Three.setScaleOfAnything s d.scale.x d.scale.y d.scale.z
+      let t = 0.0 -- placeholder
+      let x'  = sampleVariable t d.pos.x
+      let y'  = sampleVariable t d.pos.y
+      let z'  = sampleVariable t d.pos.z
+      let rx'  = sampleVariable t d.rot.x
+      let ry'  = sampleVariable t d.rot.y
+      let rz'  = sampleVariable t d.rot.z
+      let sx'  = sampleVariable t d.scale.x
+      let sy'  = sampleVariable t d.scale.y
+      let sz'  = sampleVariable t d.scale.z
+      Three.setPositionOfAnything s x' y' z'
+      Three.setRotationOfAnything s rx' ry' rz'
+      Three.setScaleOfAnything s sx' sy' sz'
       am0 <- read dState.animationMixer
       case am0 of
         Just am -> Three.updateAnimationMixer am 0.016666

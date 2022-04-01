@@ -1,4 +1,3 @@
-
 { name = "LocoMotion"
 , dependencies =
   [ "arrays"
@@ -11,15 +10,16 @@
   , "identity"
   , "integers"
   , "lists"
+  , "math"
   , "maybe"
   , "numbers"
   , "parsing"
   , "prelude"
   , "psci-support"
   , "purescript-three"
+  , "purescript-threejs"
   , "refs"
   , "web-uievents"
-  , "purescript-threejs"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]

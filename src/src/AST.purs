@@ -20,6 +20,8 @@ import Data.Maybe (Maybe)
 import Data.Number (fromString)
 import Control.Bind
 
+import Variable
+
 -- Program-s are semi-colon separated lists of Statement-s
 
 type Program = List Statement
@@ -80,13 +82,13 @@ type Camera = {
 -- but perhaps this is more okay with purescript? Let's see...
 
 type Vec3 = {
-  x :: Number,
-  y :: Number,
-  z :: Number
+  x :: Variable,
+  y :: Variable,
+  z :: Variable
   }
 
 origin :: Vec3
-origin = {x:0.0, y:0.0, z:0.0}
+origin = { x: Constant 0.0, y: Constant 0.0, z: Constant 0.0 }
 
 defaultScale :: Vec3
-defaultScale = { x:1.0, y:1.0, z:1.0 }
+defaultScale = { x: Constant 1.0, y: Constant 1.0, z: Constant 1.0 }
