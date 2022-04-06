@@ -21,4 +21,4 @@ sampleVariable :: Number -> Variable -> Number
 sampleVariable _ (Constant x) = x
 sampleVariable t (Sum x y) = sampleVariable t x + sampleVariable t y
 sampleVariable t (Product x y) = sampleVariable t x * sampleVariable t y
-sampleVariable t (Osc f) = sin $ sampleVariable t f * 2.0 * pi
+sampleVariable t (Osc f) = sin $ sampleVariable t f * 2.0 * pi * t

@@ -1068,7 +1068,7 @@ var PS = {};
               return sampleVariable(v)(v1.value0) * sampleVariable(v)(v1.value1);
           };
           if (v1 instanceof Osc) {
-              return $$Math.sin(sampleVariable(v)(v1.value0) * 2.0 * $$Math.pi);
+              return $$Math.sin(sampleVariable(v)(v1.value0) * 2.0 * $$Math.pi * v);
           };
           throw new Error("Failed pattern match at Variable (line 20, column 1 - line 20, column 47): " + [ v.constructor.name, v1.constructor.name ]);
       };
@@ -4557,6 +4557,11 @@ var PS = {};
     return n.toString();
   };
 
+  exports.showNumberImpl = function (n) {
+    var str = n.toString();
+    return isNaN(str + ".0") ? str : str + ".0";
+  };
+
   exports.showCharImpl = function (c) {
     var code = c.charCodeAt(0);
     if (code < 0x20 || code === 0x7F) {
@@ -4617,6 +4622,9 @@ var PS = {};
   var showString = {
       show: $foreign.showStringImpl
   };
+  var showNumber = {
+      show: $foreign.showNumberImpl
+  };
   var showInt = {
       show: $foreign.showIntImpl
   };
@@ -4633,6 +4641,7 @@ var PS = {};
   };
   exports["show"] = show;
   exports["showInt"] = showInt;
+  exports["showNumber"] = showNumber;
   exports["showChar"] = showChar;
   exports["showString"] = showString;
   exports["showArray"] = showArray;
@@ -4734,39 +4743,42 @@ var PS = {};
   var Effect_Ref = $PS["Effect.Ref"];
   var ThreeJS = $PS["ThreeJS"];
   var Variable = $PS["Variable"];                
-  var runDancer = function (d) {
-      return function (dState) {
-          return function __do() {
-              var ms = Effect_Ref.read(dState.gltfScene)();
-              (function () {
-                  if (ms instanceof Data_Maybe.Just) {
-                      var x$prime = Variable.sampleVariable(0.0)(d.pos.x);
-                      var y$prime = Variable.sampleVariable(0.0)(d.pos.y);
-                      var z$prime = Variable.sampleVariable(0.0)(d.pos.z);
-                      var rx$prime = Variable.sampleVariable(0.0)(d.rot.x);
-                      var ry$prime = Variable.sampleVariable(0.0)(d.rot.y);
-                      var rz$prime = Variable.sampleVariable(0.0)(d.rot.z);
-                      var sx$prime = Variable.sampleVariable(0.0)(d.scale.x);
-                      var sy$prime = Variable.sampleVariable(0.0)(d.scale.y);
-                      var sz$prime = Variable.sampleVariable(0.0)(d.scale.z);
-                      ThreeJS.setPositionOfAnything(ms.value0)(x$prime)(y$prime)(z$prime)();
-                      ThreeJS.setRotationOfAnything(ms.value0)(rx$prime)(ry$prime)(rz$prime)();
-                      ThreeJS.setScaleOfAnything(ms.value0)(sx$prime)(sy$prime)(sz$prime)();
-                      var am0 = Effect_Ref.read(dState.animationMixer)();
-                      if (am0 instanceof Data_Maybe.Just) {
-                          return ThreeJS.updateAnimationMixer(am0.value0)(1.6666e-2)();
+  var runDancer = function (t) {
+      return function (d) {
+          return function (dState) {
+              return function __do() {
+                  var ms = Effect_Ref.read(dState.gltfScene)();
+                  (function () {
+                      if (ms instanceof Data_Maybe.Just) {
+                          var x$prime = Variable.sampleVariable(t)(d.pos.x);
+                          var y$prime = Variable.sampleVariable(t)(d.pos.y);
+                          var z$prime = Variable.sampleVariable(t)(d.pos.z);
+                          var rx$prime = Variable.sampleVariable(t)(d.rot.x);
+                          var ry$prime = Variable.sampleVariable(t)(d.rot.y);
+                          var rz$prime = Variable.sampleVariable(t)(d.rot.z);
+                          var sx$prime = Variable.sampleVariable(t)(d.scale.x);
+                          var sy$prime = Variable.sampleVariable(t)(d.scale.y);
+                          var sz$prime = Variable.sampleVariable(t)(d.scale.z);
+                          Effect_Console.log(Data_Show.show(Data_Show.showNumber)(t) + (" " + Data_Show.show(Data_Show.showNumber)(x$prime)))();
+                          ThreeJS.setPositionOfAnything(ms.value0)(x$prime)(y$prime)(z$prime)();
+                          ThreeJS.setRotationOfAnything(ms.value0)(rx$prime)(ry$prime)(rz$prime)();
+                          ThreeJS.setScaleOfAnything(ms.value0)(sx$prime)(sy$prime)(sz$prime)();
+                          var am0 = Effect_Ref.read(dState.animationMixer)();
+                          if (am0 instanceof Data_Maybe.Just) {
+                              return ThreeJS.updateAnimationMixer(am0.value0)(1.6666e-2)();
+                          };
+                          if (am0 instanceof Data_Maybe.Nothing) {
+                              return Data_Unit.unit;
+                          };
+                          throw new Error("Failed pattern match at DancerState (line 63, column 7 - line 65, column 29): " + [ am0.constructor.name ]);
                       };
-                      if (am0 instanceof Data_Maybe.Nothing) {
+                      if (ms instanceof Data_Maybe.Nothing) {
                           return Data_Unit.unit;
                       };
-                      throw new Error("Failed pattern match at DancerState (line 63, column 7 - line 65, column 29): " + [ am0.constructor.name ]);
-                  };
-                  if (ms instanceof Data_Maybe.Nothing) {
-                      return Data_Unit.unit;
-                  };
-                  throw new Error("Failed pattern match at DancerState (line 47, column 3 - line 66, column 25): " + [ ms.constructor.name ]);
-              })();
-              return dState;
+                      throw new Error("Failed pattern match at DancerState (line 47, column 3 - line 66, column 25): " + [ ms.constructor.name ]);
+                  })();
+                  return dState;
+              };
           };
       };
   };
@@ -26649,6 +26661,931 @@ var PS = {};
   exports["functorCoyoneda"] = functorCoyoneda;
 })(PS);
 (function(exports) {
+  "use strict";
+
+  var createDate = function (y, m, d) {
+    var date = new Date(Date.UTC(y, m, d));
+    if (y >= 0 && y < 100) {
+      date.setUTCFullYear(y);
+    }
+    return date;
+  };
+
+  exports.canonicalDateImpl = function (ctor, y, m, d) {
+    var date = createDate(y, m - 1, d);
+    return ctor(date.getUTCFullYear())(date.getUTCMonth() + 1)(date.getUTCDate());
+  };
+})(PS["Data.Date"] = PS["Data.Date"] || {});
+(function($PS) {
+  // Generated by purs version 0.14.4
+  "use strict";
+  $PS["Data.Date.Component"] = $PS["Data.Date.Component"] || {};
+  var exports = $PS["Data.Date.Component"];
+  var Data_Boolean = $PS["Data.Boolean"];
+  var Data_Enum = $PS["Data.Enum"];
+  var Data_Maybe = $PS["Data.Maybe"];
+  var Data_Ord = $PS["Data.Ord"];
+  var Data_Ordering = $PS["Data.Ordering"];
+  var January = (function () {
+      function January() {
+
+      };
+      January.value = new January();
+      return January;
+  })();
+  var February = (function () {
+      function February() {
+
+      };
+      February.value = new February();
+      return February;
+  })();
+  var March = (function () {
+      function March() {
+
+      };
+      March.value = new March();
+      return March;
+  })();
+  var April = (function () {
+      function April() {
+
+      };
+      April.value = new April();
+      return April;
+  })();
+  var May = (function () {
+      function May() {
+
+      };
+      May.value = new May();
+      return May;
+  })();
+  var June = (function () {
+      function June() {
+
+      };
+      June.value = new June();
+      return June;
+  })();
+  var July = (function () {
+      function July() {
+
+      };
+      July.value = new July();
+      return July;
+  })();
+  var August = (function () {
+      function August() {
+
+      };
+      August.value = new August();
+      return August;
+  })();
+  var September = (function () {
+      function September() {
+
+      };
+      September.value = new September();
+      return September;
+  })();
+  var October = (function () {
+      function October() {
+
+      };
+      October.value = new October();
+      return October;
+  })();
+  var November = (function () {
+      function November() {
+
+      };
+      November.value = new November();
+      return November;
+  })();
+  var December = (function () {
+      function December() {
+
+      };
+      December.value = new December();
+      return December;
+  })();
+  var ordYear = Data_Ord.ordInt;
+  var ordDay = Data_Ord.ordInt;
+  var eqMonth = {
+      eq: function (x) {
+          return function (y) {
+              if (x instanceof January && y instanceof January) {
+                  return true;
+              };
+              if (x instanceof February && y instanceof February) {
+                  return true;
+              };
+              if (x instanceof March && y instanceof March) {
+                  return true;
+              };
+              if (x instanceof April && y instanceof April) {
+                  return true;
+              };
+              if (x instanceof May && y instanceof May) {
+                  return true;
+              };
+              if (x instanceof June && y instanceof June) {
+                  return true;
+              };
+              if (x instanceof July && y instanceof July) {
+                  return true;
+              };
+              if (x instanceof August && y instanceof August) {
+                  return true;
+              };
+              if (x instanceof September && y instanceof September) {
+                  return true;
+              };
+              if (x instanceof October && y instanceof October) {
+                  return true;
+              };
+              if (x instanceof November && y instanceof November) {
+                  return true;
+              };
+              if (x instanceof December && y instanceof December) {
+                  return true;
+              };
+              return false;
+          };
+      }
+  };
+  var ordMonth = {
+      compare: function (x) {
+          return function (y) {
+              if (x instanceof January && y instanceof January) {
+                  return Data_Ordering.EQ.value;
+              };
+              if (x instanceof January) {
+                  return Data_Ordering.LT.value;
+              };
+              if (y instanceof January) {
+                  return Data_Ordering.GT.value;
+              };
+              if (x instanceof February && y instanceof February) {
+                  return Data_Ordering.EQ.value;
+              };
+              if (x instanceof February) {
+                  return Data_Ordering.LT.value;
+              };
+              if (y instanceof February) {
+                  return Data_Ordering.GT.value;
+              };
+              if (x instanceof March && y instanceof March) {
+                  return Data_Ordering.EQ.value;
+              };
+              if (x instanceof March) {
+                  return Data_Ordering.LT.value;
+              };
+              if (y instanceof March) {
+                  return Data_Ordering.GT.value;
+              };
+              if (x instanceof April && y instanceof April) {
+                  return Data_Ordering.EQ.value;
+              };
+              if (x instanceof April) {
+                  return Data_Ordering.LT.value;
+              };
+              if (y instanceof April) {
+                  return Data_Ordering.GT.value;
+              };
+              if (x instanceof May && y instanceof May) {
+                  return Data_Ordering.EQ.value;
+              };
+              if (x instanceof May) {
+                  return Data_Ordering.LT.value;
+              };
+              if (y instanceof May) {
+                  return Data_Ordering.GT.value;
+              };
+              if (x instanceof June && y instanceof June) {
+                  return Data_Ordering.EQ.value;
+              };
+              if (x instanceof June) {
+                  return Data_Ordering.LT.value;
+              };
+              if (y instanceof June) {
+                  return Data_Ordering.GT.value;
+              };
+              if (x instanceof July && y instanceof July) {
+                  return Data_Ordering.EQ.value;
+              };
+              if (x instanceof July) {
+                  return Data_Ordering.LT.value;
+              };
+              if (y instanceof July) {
+                  return Data_Ordering.GT.value;
+              };
+              if (x instanceof August && y instanceof August) {
+                  return Data_Ordering.EQ.value;
+              };
+              if (x instanceof August) {
+                  return Data_Ordering.LT.value;
+              };
+              if (y instanceof August) {
+                  return Data_Ordering.GT.value;
+              };
+              if (x instanceof September && y instanceof September) {
+                  return Data_Ordering.EQ.value;
+              };
+              if (x instanceof September) {
+                  return Data_Ordering.LT.value;
+              };
+              if (y instanceof September) {
+                  return Data_Ordering.GT.value;
+              };
+              if (x instanceof October && y instanceof October) {
+                  return Data_Ordering.EQ.value;
+              };
+              if (x instanceof October) {
+                  return Data_Ordering.LT.value;
+              };
+              if (y instanceof October) {
+                  return Data_Ordering.GT.value;
+              };
+              if (x instanceof November && y instanceof November) {
+                  return Data_Ordering.EQ.value;
+              };
+              if (x instanceof November) {
+                  return Data_Ordering.LT.value;
+              };
+              if (y instanceof November) {
+                  return Data_Ordering.GT.value;
+              };
+              if (x instanceof December && y instanceof December) {
+                  return Data_Ordering.EQ.value;
+              };
+              throw new Error("Failed pattern match at Data.Date.Component (line 61, column 1 - line 61, column 38): " + [ x.constructor.name, y.constructor.name ]);
+          };
+      },
+      Eq0: function () {
+          return eqMonth;
+      }
+  };                        
+  var boundedYear = {
+      bottom: -271820 | 0,
+      top: 275759,
+      Ord0: function () {
+          return ordYear;
+      }
+  };
+  var boundedMonth = {
+      bottom: January.value,
+      top: December.value,
+      Ord0: function () {
+          return ordMonth;
+      }
+  };
+  var boundedEnumYear = {
+      cardinality: 547580,
+      toEnum: function (n) {
+          if (n >= (-271820 | 0) && n <= 275759) {
+              return new Data_Maybe.Just(n);
+          };
+          if (Data_Boolean.otherwise) {
+              return Data_Maybe.Nothing.value;
+          };
+          throw new Error("Failed pattern match at Data.Date.Component (line 35, column 1 - line 40, column 24): " + [ n.constructor.name ]);
+      },
+      fromEnum: function (v) {
+          return v;
+      },
+      Bounded0: function () {
+          return boundedYear;
+      },
+      Enum1: function () {
+          return enumYear;
+      }
+  };
+  var enumYear = {
+      succ: (function () {
+          var $46 = Data_Enum.toEnum(boundedEnumYear);
+          var $47 = Data_Enum.fromEnum(boundedEnumYear);
+          return function ($48) {
+              return $46((function (v) {
+                  return v + 1 | 0;
+              })($47($48)));
+          };
+      })(),
+      pred: (function () {
+          var $49 = Data_Enum.toEnum(boundedEnumYear);
+          var $50 = Data_Enum.fromEnum(boundedEnumYear);
+          return function ($51) {
+              return $49((function (v) {
+                  return v - 1 | 0;
+              })($50($51)));
+          };
+      })(),
+      Ord0: function () {
+          return ordYear;
+      }
+  };
+  var boundedEnumMonth = {
+      cardinality: 12,
+      toEnum: function (v) {
+          if (v === 1) {
+              return new Data_Maybe.Just(January.value);
+          };
+          if (v === 2) {
+              return new Data_Maybe.Just(February.value);
+          };
+          if (v === 3) {
+              return new Data_Maybe.Just(March.value);
+          };
+          if (v === 4) {
+              return new Data_Maybe.Just(April.value);
+          };
+          if (v === 5) {
+              return new Data_Maybe.Just(May.value);
+          };
+          if (v === 6) {
+              return new Data_Maybe.Just(June.value);
+          };
+          if (v === 7) {
+              return new Data_Maybe.Just(July.value);
+          };
+          if (v === 8) {
+              return new Data_Maybe.Just(August.value);
+          };
+          if (v === 9) {
+              return new Data_Maybe.Just(September.value);
+          };
+          if (v === 10) {
+              return new Data_Maybe.Just(October.value);
+          };
+          if (v === 11) {
+              return new Data_Maybe.Just(November.value);
+          };
+          if (v === 12) {
+              return new Data_Maybe.Just(December.value);
+          };
+          return Data_Maybe.Nothing.value;
+      },
+      fromEnum: function (v) {
+          if (v instanceof January) {
+              return 1;
+          };
+          if (v instanceof February) {
+              return 2;
+          };
+          if (v instanceof March) {
+              return 3;
+          };
+          if (v instanceof April) {
+              return 4;
+          };
+          if (v instanceof May) {
+              return 5;
+          };
+          if (v instanceof June) {
+              return 6;
+          };
+          if (v instanceof July) {
+              return 7;
+          };
+          if (v instanceof August) {
+              return 8;
+          };
+          if (v instanceof September) {
+              return 9;
+          };
+          if (v instanceof October) {
+              return 10;
+          };
+          if (v instanceof November) {
+              return 11;
+          };
+          if (v instanceof December) {
+              return 12;
+          };
+          throw new Error("Failed pattern match at Data.Date.Component (line 87, column 14 - line 99, column 19): " + [ v.constructor.name ]);
+      },
+      Bounded0: function () {
+          return boundedMonth;
+      },
+      Enum1: function () {
+          return enumMonth;
+      }
+  };
+  var enumMonth = {
+      succ: (function () {
+          var $58 = Data_Enum.toEnum(boundedEnumMonth);
+          var $59 = Data_Enum.fromEnum(boundedEnumMonth);
+          return function ($60) {
+              return $58((function (v) {
+                  return v + 1 | 0;
+              })($59($60)));
+          };
+      })(),
+      pred: (function () {
+          var $61 = Data_Enum.toEnum(boundedEnumMonth);
+          var $62 = Data_Enum.fromEnum(boundedEnumMonth);
+          return function ($63) {
+              return $61((function (v) {
+                  return v - 1 | 0;
+              })($62($63)));
+          };
+      })(),
+      Ord0: function () {
+          return ordMonth;
+      }
+  };
+  var boundedDay = {
+      bottom: 1,
+      top: 31,
+      Ord0: function () {
+          return ordDay;
+      }
+  };
+  var boundedEnumDay = {
+      cardinality: 31,
+      toEnum: function (n) {
+          if (n >= 1 && n <= 31) {
+              return new Data_Maybe.Just(n);
+          };
+          if (Data_Boolean.otherwise) {
+              return Data_Maybe.Nothing.value;
+          };
+          throw new Error("Failed pattern match at Data.Date.Component (line 133, column 1 - line 138, column 23): " + [ n.constructor.name ]);
+      },
+      fromEnum: function (v) {
+          return v;
+      },
+      Bounded0: function () {
+          return boundedDay;
+      },
+      Enum1: function () {
+          return enumDay;
+      }
+  };
+  var enumDay = {
+      succ: (function () {
+          var $64 = Data_Enum.toEnum(boundedEnumDay);
+          var $65 = Data_Enum.fromEnum(boundedEnumDay);
+          return function ($66) {
+              return $64((function (v) {
+                  return v + 1 | 0;
+              })($65($66)));
+          };
+      })(),
+      pred: (function () {
+          var $67 = Data_Enum.toEnum(boundedEnumDay);
+          var $68 = Data_Enum.fromEnum(boundedEnumDay);
+          return function ($69) {
+              return $67((function (v) {
+                  return v - 1 | 0;
+              })($68($69)));
+          };
+      })(),
+      Ord0: function () {
+          return ordDay;
+      }
+  };
+  exports["boundedEnumYear"] = boundedEnumYear;
+  exports["boundedEnumMonth"] = boundedEnumMonth;
+  exports["boundedEnumDay"] = boundedEnumDay;
+})(PS);
+(function($PS) {
+  // Generated by purs version 0.14.4
+  "use strict";
+  $PS["Data.Date"] = $PS["Data.Date"] || {};
+  var exports = $PS["Data.Date"];
+  var $foreign = $PS["Data.Date"];
+  var Data_Date_Component = $PS["Data.Date.Component"];
+  var Data_Enum = $PS["Data.Enum"];
+  var Data_Maybe = $PS["Data.Maybe"];                                
+  var $$Date = (function () {
+      function $$Date(value0, value1, value2) {
+          this.value0 = value0;
+          this.value1 = value1;
+          this.value2 = value2;
+      };
+      $$Date.create = function (value0) {
+          return function (value1) {
+              return function (value2) {
+                  return new $$Date(value0, value1, value2);
+              };
+          };
+      };
+      return $$Date;
+  })();
+  var year = function (v) {
+      return v.value0;
+  };
+  var month = function (v) {
+      return v.value1;
+  };
+  var day = function (v) {
+      return v.value2;
+  };
+  var canonicalDate = function (y) {
+      return function (m) {
+          return function (d) {
+              var mkDate = function (y$prime) {
+                  return function (m$prime) {
+                      return function (d$prime) {
+                          return new $$Date(y$prime, Data_Maybe.fromJust()(Data_Enum.toEnum(Data_Date_Component.boundedEnumMonth)(m$prime)), d$prime);
+                      };
+                  };
+              };
+              return $foreign.canonicalDateImpl(mkDate, y, Data_Enum.fromEnum(Data_Date_Component.boundedEnumMonth)(m), d);
+          };
+      };
+  };
+  exports["canonicalDate"] = canonicalDate;
+  exports["year"] = year;
+  exports["month"] = month;
+  exports["day"] = day;
+})(PS);
+(function(exports) {
+  "use strict";
+
+  var createUTC = function (y, mo, d, h, m, s, ms) {
+    var date = new Date(Date.UTC(y, mo, d, h, m, s, ms));
+    if (y >= 0 && y < 100) {
+      date.setUTCFullYear(y);
+    }
+    return date.getTime();
+  };
+
+  exports.calcDiff = function (rec1, rec2) {
+    var msUTC1 = createUTC(rec1.year, rec1.month - 1, rec1.day, rec1.hour, rec1.minute, rec1.second, rec1.millisecond);
+    var msUTC2 = createUTC(rec2.year, rec2.month - 1, rec2.day, rec2.hour, rec2.minute, rec2.second, rec2.millisecond);
+    return msUTC1 - msUTC2;
+  };
+})(PS["Data.DateTime"] = PS["Data.DateTime"] || {});
+(function($PS) {
+  // Generated by purs version 0.14.4
+  "use strict";
+  $PS["Data.Time"] = $PS["Data.Time"] || {};
+  var exports = $PS["Data.Time"];          
+  var Time = (function () {
+      function Time(value0, value1, value2, value3) {
+          this.value0 = value0;
+          this.value1 = value1;
+          this.value2 = value2;
+          this.value3 = value3;
+      };
+      Time.create = function (value0) {
+          return function (value1) {
+              return function (value2) {
+                  return function (value3) {
+                      return new Time(value0, value1, value2, value3);
+                  };
+              };
+          };
+      };
+      return Time;
+  })();
+  var second = function (v) {
+      return v.value2;
+  };
+  var minute = function (v) {
+      return v.value1;
+  };
+  var millisecond = function (v) {
+      return v.value3;
+  };
+  var hour = function (v) {
+      return v.value0;
+  };
+  exports["Time"] = Time;
+  exports["hour"] = hour;
+  exports["minute"] = minute;
+  exports["second"] = second;
+  exports["millisecond"] = millisecond;
+})(PS);
+(function($PS) {
+  // Generated by purs version 0.14.4
+  "use strict";
+  $PS["Data.Time.Component"] = $PS["Data.Time.Component"] || {};
+  var exports = $PS["Data.Time.Component"];
+  var Data_Boolean = $PS["Data.Boolean"];
+  var Data_Enum = $PS["Data.Enum"];
+  var Data_Maybe = $PS["Data.Maybe"];
+  var Data_Ord = $PS["Data.Ord"];
+  var ordSecond = Data_Ord.ordInt;
+  var ordMinute = Data_Ord.ordInt;
+  var ordMillisecond = Data_Ord.ordInt;
+  var ordHour = Data_Ord.ordInt;
+  var boundedSecond = {
+      bottom: 0,
+      top: 59,
+      Ord0: function () {
+          return ordSecond;
+      }
+  };
+  var boundedMinute = {
+      bottom: 0,
+      top: 59,
+      Ord0: function () {
+          return ordMinute;
+      }
+  };
+  var boundedMillisecond = {
+      bottom: 0,
+      top: 999,
+      Ord0: function () {
+          return ordMillisecond;
+      }
+  };
+  var boundedHour = {
+      bottom: 0,
+      top: 23,
+      Ord0: function () {
+          return ordHour;
+      }
+  };
+  var boundedEnumSecond = {
+      cardinality: 60,
+      toEnum: function (n) {
+          if (n >= 0 && n <= 59) {
+              return new Data_Maybe.Just(n);
+          };
+          if (Data_Boolean.otherwise) {
+              return Data_Maybe.Nothing.value;
+          };
+          throw new Error("Failed pattern match at Data.Time.Component (line 90, column 1 - line 95, column 26): " + [ n.constructor.name ]);
+      },
+      fromEnum: function (v) {
+          return v;
+      },
+      Bounded0: function () {
+          return boundedSecond;
+      },
+      Enum1: function () {
+          return enumSecond;
+      }
+  };
+  var enumSecond = {
+      succ: (function () {
+          var $28 = Data_Enum.toEnum(boundedEnumSecond);
+          var $29 = Data_Enum.fromEnum(boundedEnumSecond);
+          return function ($30) {
+              return $28((function (v) {
+                  return v + 1 | 0;
+              })($29($30)));
+          };
+      })(),
+      pred: (function () {
+          var $31 = Data_Enum.toEnum(boundedEnumSecond);
+          var $32 = Data_Enum.fromEnum(boundedEnumSecond);
+          return function ($33) {
+              return $31((function (v) {
+                  return v - 1 | 0;
+              })($32($33)));
+          };
+      })(),
+      Ord0: function () {
+          return ordSecond;
+      }
+  };
+  var boundedEnumMinute = {
+      cardinality: 60,
+      toEnum: function (n) {
+          if (n >= 0 && n <= 59) {
+              return new Data_Maybe.Just(n);
+          };
+          if (Data_Boolean.otherwise) {
+              return Data_Maybe.Nothing.value;
+          };
+          throw new Error("Failed pattern match at Data.Time.Component (line 61, column 1 - line 66, column 26): " + [ n.constructor.name ]);
+      },
+      fromEnum: function (v) {
+          return v;
+      },
+      Bounded0: function () {
+          return boundedMinute;
+      },
+      Enum1: function () {
+          return enumMinute;
+      }
+  };
+  var enumMinute = {
+      succ: (function () {
+          var $34 = Data_Enum.toEnum(boundedEnumMinute);
+          var $35 = Data_Enum.fromEnum(boundedEnumMinute);
+          return function ($36) {
+              return $34((function (v) {
+                  return v + 1 | 0;
+              })($35($36)));
+          };
+      })(),
+      pred: (function () {
+          var $37 = Data_Enum.toEnum(boundedEnumMinute);
+          var $38 = Data_Enum.fromEnum(boundedEnumMinute);
+          return function ($39) {
+              return $37((function (v) {
+                  return v - 1 | 0;
+              })($38($39)));
+          };
+      })(),
+      Ord0: function () {
+          return ordMinute;
+      }
+  };
+  var boundedEnumMillisecond = {
+      cardinality: 1000,
+      toEnum: function (n) {
+          if (n >= 0 && n <= 999) {
+              return new Data_Maybe.Just(n);
+          };
+          if (Data_Boolean.otherwise) {
+              return Data_Maybe.Nothing.value;
+          };
+          throw new Error("Failed pattern match at Data.Time.Component (line 120, column 1 - line 125, column 31): " + [ n.constructor.name ]);
+      },
+      fromEnum: function (v) {
+          return v;
+      },
+      Bounded0: function () {
+          return boundedMillisecond;
+      },
+      Enum1: function () {
+          return enumMillisecond;
+      }
+  };
+  var enumMillisecond = {
+      succ: (function () {
+          var $40 = Data_Enum.toEnum(boundedEnumMillisecond);
+          var $41 = Data_Enum.fromEnum(boundedEnumMillisecond);
+          return function ($42) {
+              return $40((function (v) {
+                  return v + 1 | 0;
+              })($41($42)));
+          };
+      })(),
+      pred: (function () {
+          var $43 = Data_Enum.toEnum(boundedEnumMillisecond);
+          var $44 = Data_Enum.fromEnum(boundedEnumMillisecond);
+          return function ($45) {
+              return $43((function (v) {
+                  return v - 1 | 0;
+              })($44($45)));
+          };
+      })(),
+      Ord0: function () {
+          return ordMillisecond;
+      }
+  };
+  var boundedEnumHour = {
+      cardinality: 24,
+      toEnum: function (n) {
+          if (n >= 0 && n <= 23) {
+              return new Data_Maybe.Just(n);
+          };
+          if (Data_Boolean.otherwise) {
+              return Data_Maybe.Nothing.value;
+          };
+          throw new Error("Failed pattern match at Data.Time.Component (line 32, column 1 - line 37, column 24): " + [ n.constructor.name ]);
+      },
+      fromEnum: function (v) {
+          return v;
+      },
+      Bounded0: function () {
+          return boundedHour;
+      },
+      Enum1: function () {
+          return enumHour;
+      }
+  };
+  var enumHour = {
+      succ: (function () {
+          var $46 = Data_Enum.toEnum(boundedEnumHour);
+          var $47 = Data_Enum.fromEnum(boundedEnumHour);
+          return function ($48) {
+              return $46((function (v) {
+                  return v + 1 | 0;
+              })($47($48)));
+          };
+      })(),
+      pred: (function () {
+          var $49 = Data_Enum.toEnum(boundedEnumHour);
+          var $50 = Data_Enum.fromEnum(boundedEnumHour);
+          return function ($51) {
+              return $49((function (v) {
+                  return v - 1 | 0;
+              })($50($51)));
+          };
+      })(),
+      Ord0: function () {
+          return ordHour;
+      }
+  };
+  exports["boundedEnumHour"] = boundedEnumHour;
+  exports["boundedEnumMinute"] = boundedEnumMinute;
+  exports["boundedEnumSecond"] = boundedEnumSecond;
+  exports["boundedEnumMillisecond"] = boundedEnumMillisecond;
+})(PS);
+(function($PS) {
+  // Generated by purs version 0.14.4
+  "use strict";
+  $PS["Data.Time.Duration"] = $PS["Data.Time.Duration"] || {};
+  var exports = $PS["Data.Time.Duration"];
+  var Control_Category = $PS["Control.Category"];
+  var toDuration = function (dict) {
+      return dict.toDuration;
+  };
+  var durationMilliseconds = {
+      fromDuration: Control_Category.identity(Control_Category.categoryFn),
+      toDuration: Control_Category.identity(Control_Category.categoryFn)
+  };
+  exports["toDuration"] = toDuration;
+  exports["durationMilliseconds"] = durationMilliseconds;
+})(PS);
+(function($PS) {
+  // Generated by purs version 0.14.4
+  "use strict";
+  $PS["Data.DateTime"] = $PS["Data.DateTime"] || {};
+  var exports = $PS["Data.DateTime"];
+  var $foreign = $PS["Data.DateTime"];
+  var Data_Date = $PS["Data.Date"];
+  var Data_Date_Component = $PS["Data.Date.Component"];
+  var Data_Enum = $PS["Data.Enum"];
+  var Data_Time = $PS["Data.Time"];
+  var Data_Time_Component = $PS["Data.Time.Component"];
+  var Data_Time_Duration = $PS["Data.Time.Duration"];                
+  var DateTime = (function () {
+      function DateTime(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      DateTime.create = function (value0) {
+          return function (value1) {
+              return new DateTime(value0, value1);
+          };
+      };
+      return DateTime;
+  })();
+  var toRecord = function (v) {
+      return {
+          year: Data_Enum.fromEnum(Data_Date_Component.boundedEnumYear)(Data_Date.year(v.value0)),
+          month: Data_Enum.fromEnum(Data_Date_Component.boundedEnumMonth)(Data_Date.month(v.value0)),
+          day: Data_Enum.fromEnum(Data_Date_Component.boundedEnumDay)(Data_Date.day(v.value0)),
+          hour: Data_Enum.fromEnum(Data_Time_Component.boundedEnumHour)(Data_Time.hour(v.value1)),
+          minute: Data_Enum.fromEnum(Data_Time_Component.boundedEnumMinute)(Data_Time.minute(v.value1)),
+          second: Data_Enum.fromEnum(Data_Time_Component.boundedEnumSecond)(Data_Time.second(v.value1)),
+          millisecond: Data_Enum.fromEnum(Data_Time_Component.boundedEnumMillisecond)(Data_Time.millisecond(v.value1))
+      };
+  };
+  var diff = function (dictDuration) {
+      return function (dt1) {
+          return function (dt2) {
+              return Data_Time_Duration.toDuration(dictDuration)($foreign.calcDiff(toRecord(dt1), toRecord(dt2)));
+          };
+      };
+  };
+  exports["DateTime"] = DateTime;
+  exports["diff"] = diff;
+})(PS);
+(function(exports) {
+  "use strict";
+
+  exports.toDateTimeImpl = function (ctor) {
+    return function (instant) {
+      var dt = new Date(instant);
+      return ctor (dt.getUTCFullYear())(dt.getUTCMonth() + 1)(dt.getUTCDate())(dt.getUTCHours())(dt.getUTCMinutes())(dt.getUTCSeconds())(dt.getUTCMilliseconds());
+    };
+  };
+})(PS["Data.DateTime.Instant"] = PS["Data.DateTime.Instant"] || {});
+(function($PS) {
+  // Generated by purs version 0.14.4
+  "use strict";
+  $PS["Data.DateTime.Instant"] = $PS["Data.DateTime.Instant"] || {};
+  var exports = $PS["Data.DateTime.Instant"];
+  var $foreign = $PS["Data.DateTime.Instant"];
+  var Data_Date = $PS["Data.Date"];
+  var Data_Date_Component = $PS["Data.Date.Component"];
+  var Data_DateTime = $PS["Data.DateTime"];
+  var Data_Enum = $PS["Data.Enum"];
+  var Data_Maybe = $PS["Data.Maybe"];
+  var Data_Time = $PS["Data.Time"];
+  var toDateTime = (function () {
+      var mkDateTime = function (y) {
+          return function (mo) {
+              return function (d) {
+                  return function (h) {
+                      return function (mi) {
+                          return function (s) {
+                              return function (ms) {
+                                  return new Data_DateTime.DateTime(Data_Date.canonicalDate(y)(Data_Maybe.fromJust()(Data_Enum.toEnum(Data_Date_Component.boundedEnumMonth)(mo)))(d), new Data_Time.Time(h, mi, s, ms));
+                              };
+                          };
+                      };
+                  };
+              };
+          };
+      };
+      return $foreign.toDateTimeImpl(mkDateTime);
+  })();
+  exports["toDateTime"] = toDateTime;
+})(PS);
+(function(exports) {
   /* global exports */
   "use strict";
 
@@ -27555,6 +28492,25 @@ var PS = {};
   exports["throw"] = $$throw;
   exports["error"] = $foreign.error;
   exports["throwException"] = $foreign.throwException;
+})(PS);
+(function(exports) {
+  "use strict";
+
+  exports.now = function () {
+    return Date.now();
+  };
+})(PS["Effect.Now"] = PS["Effect.Now"] || {});
+(function($PS) {
+  // Generated by purs version 0.14.4
+  "use strict";
+  $PS["Effect.Now"] = $PS["Effect.Now"] || {};
+  var exports = $PS["Effect.Now"];
+  var $foreign = $PS["Effect.Now"];
+  var Data_DateTime_Instant = $PS["Data.DateTime.Instant"];
+  var Data_Functor = $PS["Data.Functor"];
+  var Effect = $PS["Effect"];
+  var nowDateTime = Data_Functor.map(Effect.functorEffect)(Data_DateTime_Instant.toDateTime)($foreign.now);
+  exports["nowDateTime"] = nowDateTime;
 })(PS);
 (function(exports) {
   "use strict";
@@ -31857,11 +32813,15 @@ var PS = {};
   var Control_Bind = $PS["Control.Bind"];
   var DancerState = $PS["DancerState"];
   var Data_Array = $PS["Data.Array"];
+  var Data_DateTime = $PS["Data.DateTime"];
   var Data_Foldable = $PS["Data.Foldable"];
   var Data_Foreign_EasyFFI = $PS["Data.Foreign.EasyFFI"];
   var Data_List_Types = $PS["Data.List.Types"];
   var Data_Maybe = $PS["Data.Maybe"];
+  var Data_Newtype = $PS["Data.Newtype"];
+  var Data_Time_Duration = $PS["Data.Time.Duration"];
   var Effect = $PS["Effect"];
+  var Effect_Now = $PS["Effect.Now"];
   var Effect_Ref = $PS["Effect.Ref"];
   var Graphics_Three_Camera = $PS["Graphics.Three.Camera"];
   var Graphics_Three_Renderer = $PS["Graphics.Three.Renderer"];
@@ -31874,36 +32834,40 @@ var PS = {};
   };
   var runDancers = function (v) {
       return function (v1) {
-          return function (dsNew) {
-              return function (v2) {
-                  if (v2 instanceof AST.Element && v2.value0 instanceof AST.Dancer) {
-                      return function __do() {
-                          var x = (function () {
-                              var v3 = Data_Array.index(v1)(Data_Array.length(dsNew));
-                              if (v3 instanceof Data_Maybe.Just) {
-                                  return DancerState.runDancer(v2.value0.value0)(v3.value0)();
-                              };
-                              if (v3 instanceof Data_Maybe.Nothing) {
-                                  return DancerState.addDancer(v.scene)(v2.value0.value0)();
-                              };
-                              throw new Error("Failed pattern match at RenderEngine (line 121, column 8 - line 123, column 36): " + [ v3.constructor.name ]);
-                          })();
-                          return Data_Array.snoc(dsNew)(x);
+          return function (v2) {
+              return function (dsNew) {
+                  return function (v3) {
+                      if (v3 instanceof AST.Element && v3.value0 instanceof AST.Dancer) {
+                          return function __do() {
+                              var x = (function () {
+                                  var v4 = Data_Array.index(v2)(Data_Array.length(dsNew));
+                                  if (v4 instanceof Data_Maybe.Just) {
+                                      return DancerState.runDancer(v1)(v3.value0.value0)(v4.value0)();
+                                  };
+                                  if (v4 instanceof Data_Maybe.Nothing) {
+                                      return DancerState.addDancer(v.scene)(v3.value0.value0)();
+                                  };
+                                  throw new Error("Failed pattern match at RenderEngine (line 129, column 8 - line 131, column 36): " + [ v4.constructor.name ]);
+                              })();
+                              return Data_Array.snoc(dsNew)(x);
+                          };
                       };
+                      return Control_Applicative.pure(Effect.applicativeEffect)(dsNew);
                   };
-                  return Control_Applicative.pure(Effect.applicativeEffect)(dsNew);
               };
           };
       };
   };
   var runProgram = function (re) {
-      return function __do() {
-          var p = Effect_Ref.read(re.programRef)();
-          var rState = Effect_Ref.read(re.renderState)();
-          var ds = Data_Foldable.foldM(Data_List_Types.foldableList)(Effect.monadEffect)(runDancers(re)(rState.dancers))([  ])(p)();
-          return Effect_Ref.write({
-              dancers: ds
-          })(re.renderState)();
+      return function (tElapsed) {
+          return function __do() {
+              var p = Effect_Ref.read(re.programRef)();
+              var rState = Effect_Ref.read(re.renderState)();
+              var ds = Data_Foldable.foldM(Data_List_Types.foldableList)(Effect.monadEffect)(runDancers(re)(tElapsed)(rState.dancers))([  ])(p)();
+              return Effect_Ref.write({
+                  dancers: ds
+              })(re.renderState)();
+          };
       };
   };
   var requestAnimationFrame = Data_Foreign_EasyFFI.unsafeForeignProcedure([ "callback", "" ])("window.requestAnimationFrame(callback)");
@@ -31912,7 +32876,9 @@ var PS = {};
   };
   var animate = function (re) {
       return function __do() {
-          runProgram(re)();
+          var tNow = Effect_Now.nowDateTime();
+          var tDiff = Data_DateTime.diff(Data_Time_Duration.durationMilliseconds)(tNow)(re.launchTime);
+          runProgram(re)(Data_Newtype.unwrap()(tDiff) / 1000.0)();
           var iWidth = ThreeJS.windowInnerWidth();
           var iHeight = ThreeJS.windowInnerHeight();
           Graphics_Three_Camera.setAspect(re.camera)(iWidth / iHeight)();
@@ -31922,6 +32888,7 @@ var PS = {};
       };
   };
   var launchRenderEngine = function __do() {
+      var launchTime = Effect_Now.nowDateTime();
       var scene = Graphics_Three_Scene.create();
       var hemiLight = ThreeJS.newHemisphereLight(16777215)(4473924)(2.0)();
       ThreeJS.setPositionOfAnything(hemiLight)(0.0)(20.0)(0.0)();
@@ -31945,6 +32912,7 @@ var PS = {};
       var programRef = Effect_Ref["new"](AST.defaultProgram)();
       var renderState = Effect_Ref["new"](defaultRenderState)();
       var re = {
+          launchTime: launchTime,
           scene: scene,
           camera: camera,
           renderer: renderer,
@@ -32051,7 +33019,7 @@ var PS = {};
           };
       };
   };
-  var exampleProgram = "-- Welcome to LocoMotion\x0a-- A live coding language for dance, choreography, motion, etc\x0a-- Type programs here and click the \"Eval\" button to make them go\x0a-- This is a rapidly emerging work in progress - check back often for updates\x0a-- Or get in touch on the Estuary discord server!\x0a-- The line below is a valid LocoMotion program (just click Eval!)\x0adancer { size=0.5, ry=3.14 };\x0adancer { url=\"models/WoodFigure.glb\", size=0.5, x = -2 };\x0adancer { url=\"models/StoneFigure.glb\", x = 2, ry=4.71, size=0.25 }\x0a";
+  var exampleProgram = "-- Welcome to LocoMotion\x0a-- A live coding language for dance, choreography, motion, etc\x0a-- Type programs here and click the \"Eval\" button to make them go\x0a-- This is a rapidly emerging work in progress - check back often for updates\x0a-- Or get in touch on the Estuary discord server!\x0a-- The line below is a valid LocoMotion program (just click Eval!)\x0adancer { size=0.5, ry=3.14, x = osc 0.1 };\x0adancer { url=\"models/WoodFigure.glb\", size=0.5, x = -2 };\x0adancer { url=\"models/StoneFigure.glb\", x = 2, ry=4.71, size=0.25 }\x0a";
   var initialState = function (v) {
       return {
           text: exampleProgram,

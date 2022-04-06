@@ -23,6 +23,10 @@ import Graphics.Three.Material as Material
 import Graphics.Three.Object3D as Object3D
 import ThreeJS as Three
 import Data.Foreign.EasyFFI (unsafeForeignProcedure)
+import Data.DateTime
+import Data.Time.Duration
+import Effect.Now (nowDateTime)
+import Data.Newtype (unwrap)
 
 import AST
 import DancerState
@@ -30,6 +34,7 @@ import Parser
 
 type RenderEngine =
   {
+  launchTime :: DateTime,
   scene :: Scene.Scene,
   camera :: Camera.PerspectiveCamera,
   renderer :: Renderer.Renderer,
@@ -47,6 +52,7 @@ defaultRenderState = { dancers:[] }
 
 launchRenderEngine :: Effect RenderEngine
 launchRenderEngine = do
+  launchTime <- nowDateTime
   scene <- Scene.create
 
   hemiLight <- Three.newHemisphereLight 0xffffff 0x444444 2.0
@@ -74,7 +80,7 @@ launchRenderEngine = do
 
   programRef <- new defaultProgram
   renderState <- new defaultRenderState
-  let re = { scene, camera, renderer, programRef, renderState }
+  let re = { launchTime, scene, camera, renderer, programRef, renderState }
   requestAnimationFrame $ animate re
   pure re
 
@@ -93,7 +99,9 @@ evaluate re x = do
 
 animate :: RenderEngine -> Effect Unit
 animate re = do
-  runProgram re
+  tNow <- nowDateTime
+  let tDiff = diff tNow re.launchTime :: Milliseconds
+  runProgram re (unwrap tDiff / 1000.0)
   iWidth <- Three.windowInnerWidth
   iHeight <- Three.windowInnerHeight
   Camera.setAspect re.camera (iWidth/iHeight)
@@ -105,21 +113,21 @@ requestAnimationFrame :: Effect Unit -> Effect Unit
 requestAnimationFrame = unsafeForeignProcedure ["callback", ""] "window.requestAnimationFrame(callback)"
 
 
-runProgram :: RenderEngine -> Effect Unit
-runProgram re = do
+runProgram :: RenderEngine -> Number -> Effect Unit
+runProgram re tElapsed = do
   p <- read re.programRef
   rState <- read re.renderState
   -- note: it is overkill to regenerate the lists of element states in every frame
   -- later we'll refactor so this only happens in first frame after new program...
-  ds <- foldM (runDancers re rState.dancers) [] p
+  ds <- foldM (runDancers re tElapsed rState.dancers) [] p
   -- TODO: need a way of deleting dancers/ethereals when they are removed also...
   write (rState { dancers=ds {- , ethereals=es -} }) re.renderState
 
 
-runDancers :: RenderEngine -> Array DancerState -> Array DancerState -> Statement -> Effect (Array DancerState)
-runDancers re dsPrev dsNew (Element (Dancer d)) = do
+runDancers :: RenderEngine -> Number -> Array DancerState -> Array DancerState -> Statement -> Effect (Array DancerState)
+runDancers re tElapsed dsPrev dsNew (Element (Dancer d)) = do
   x <- case dsPrev !! length dsNew of
-    Just prevDancer -> runDancer d prevDancer
+    Just prevDancer -> runDancer tElapsed d prevDancer
     Nothing -> addDancer re.scene d
   pure $ snoc dsNew x
-runDancers _ _ dsNew _ = pure dsNew
+runDancers _ _ _ dsNew _ = pure dsNew

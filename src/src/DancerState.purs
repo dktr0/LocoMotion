@@ -41,12 +41,11 @@ addDancer theScene d = do
       Nothing -> pure unit
   pure { gltfScene, animations, animationMixer }
 
-runDancer :: Dancer -> DancerState -> Effect DancerState
-runDancer d dState = do
+runDancer :: Number -> Dancer -> DancerState -> Effect DancerState
+runDancer t d dState = do
   ms <- read dState.gltfScene
   case ms of
     Just s -> do
-      let t = 0.0 -- placeholder
       let x'  = sampleVariable t d.pos.x
       let y'  = sampleVariable t d.pos.y
       let z'  = sampleVariable t d.pos.z
@@ -56,6 +55,7 @@ runDancer d dState = do
       let sx'  = sampleVariable t d.scale.x
       let sy'  = sampleVariable t d.scale.y
       let sz'  = sampleVariable t d.scale.z
+      log $ show t <> " " <> show x'
       Three.setPositionOfAnything s x' y' z'
       Three.setRotationOfAnything s rx' ry' rz'
       Three.setScaleOfAnything s sx' sy' sz'

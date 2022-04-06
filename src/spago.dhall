@@ -2,6 +2,7 @@
 , dependencies =
   [ "arrays"
   , "console"
+  , "datetime"
   , "easy-ffi"
   , "effect"
   , "either"
@@ -12,6 +13,8 @@
   , "lists"
   , "math"
   , "maybe"
+  , "newtype"
+  , "now"
   , "numbers"
   , "parsing"
   , "prelude"
