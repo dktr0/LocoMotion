@@ -27,8 +27,8 @@ exampleProgram = """-- Welcome to LocoMotion
 -- Or get in touch on the Estuary discord server!
 -- The line below is a valid LocoMotion program (just click Eval!)
 dancer { size=0.5, ry=3.14 };
-dancer { size=0.5, x = -2 };
-dancer { x = 2, ry=4.71, size=0.5 }
+dancer { url="models/WoodFigure.glb", size=0.5, x = -2 };
+dancer { url="models/StoneFigure.glb", x = 2, ry=4.71, size=0.25 }
 """
 
 type EditorState = { text :: String, status :: String }

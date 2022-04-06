@@ -32051,7 +32051,7 @@ var PS = {};
           };
       };
   };
-  var exampleProgram = "-- Welcome to LocoMotion\x0a-- A live coding language for dance, choreography, motion, etc\x0a-- Type programs here and click the \"Eval\" button to make them go\x0a-- This is a rapidly emerging work in progress - check back often for updates\x0a-- Or get in touch on the Estuary discord server!\x0a-- The line below is a valid LocoMotion program (just click Eval!)\x0adancer { size=0.5, ry=3.14 };\x0adancer { size=0.5, x = -2 };\x0adancer { x = 2, ry=4.71, size=0.5 }\x0a";
+  var exampleProgram = "-- Welcome to LocoMotion\x0a-- A live coding language for dance, choreography, motion, etc\x0a-- Type programs here and click the \"Eval\" button to make them go\x0a-- This is a rapidly emerging work in progress - check back often for updates\x0a-- Or get in touch on the Estuary discord server!\x0a-- The line below is a valid LocoMotion program (just click Eval!)\x0adancer { size=0.5, ry=3.14 };\x0adancer { url=\"models/WoodFigure.glb\", size=0.5, x = -2 };\x0adancer { url=\"models/StoneFigure.glb\", x = 2, ry=4.71, size=0.25 }\x0a";
   var initialState = function (v) {
       return {
           text: exampleProgram,
