@@ -55,7 +55,7 @@ runDancer t d dState = do
       let sx'  = sampleVariable t d.scale.x
       let sy'  = sampleVariable t d.scale.y
       let sz'  = sampleVariable t d.scale.z
-      log $ show t <> " " <> show x'
+      -- log $ show t <> " " <> show x'
       Three.setPositionOfAnything s x' y' z'
       Three.setRotationOfAnything s rx' ry' rz'
       Three.setScaleOfAnything s sx' sy' sz'

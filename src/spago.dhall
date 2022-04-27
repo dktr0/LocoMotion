@@ -7,7 +7,6 @@
   , "effect"
   , "either"
   , "foldable-traversable"
-  , "halogen"
   , "identity"
   , "integers"
   , "lists"
@@ -22,7 +21,6 @@
   , "purescript-three"
   , "purescript-threejs"
   , "refs"
-  , "web-uievents"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]
