@@ -3,7 +3,6 @@
   [ "arrays"
   , "console"
   , "datetime"
-  , "easy-ffi"
   , "effect"
   , "either"
   , "foldable-traversable"
@@ -21,6 +20,7 @@
   , "purescript-three"
   , "purescript-threejs"
   , "refs"
+  , "web-html"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]

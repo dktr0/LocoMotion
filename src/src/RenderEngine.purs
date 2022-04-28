@@ -22,7 +22,8 @@ import Graphics.Three.Geometry as Geometry
 import Graphics.Three.Material as Material
 import Graphics.Three.Object3D as Object3D
 import ThreeJS as Three
-import Data.Foreign.EasyFFI (unsafeForeignProcedure)
+import Web.HTML as HTML
+import Web.HTML.Window as HTML
 import Data.DateTime
 import Data.Time.Duration
 import Effect.Now (nowDateTime)
@@ -81,7 +82,7 @@ launchRenderEngine = do
   programRef <- new defaultProgram
   renderState <- new defaultRenderState
   let re = { launchTime, scene, camera, renderer, programRef, renderState }
-  requestAnimationFrame $ animate re
+  requestAnimationFrame' $ animate re
   pure re
 
 
@@ -107,10 +108,14 @@ animate re = do
   Camera.setAspect re.camera (iWidth/iHeight)
   Renderer.setSize re.renderer iWidth iHeight
   Renderer.render re.renderer re.scene re.camera
-  requestAnimationFrame $ animate re
+  requestAnimationFrame' $ animate re
 
-requestAnimationFrame :: Effect Unit -> Effect Unit
-requestAnimationFrame = unsafeForeignProcedure ["callback", ""] "window.requestAnimationFrame(callback)"
+
+requestAnimationFrame' :: Effect Unit -> Effect Unit
+requestAnimationFrame' x = do
+  w <- HTML.window
+  _ <- HTML.requestAnimationFrame x w
+  pure unit
 
 
 runProgram :: RenderEngine -> Number -> Effect Unit
