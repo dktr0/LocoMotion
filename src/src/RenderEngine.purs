@@ -4,6 +4,7 @@ module RenderEngine
   launchRenderEngine,
   setProgram,
   evaluate,
+  animate,
   RenderState(..)
   ) where
 
@@ -82,7 +83,6 @@ launchRenderEngine cvs = do
   programRef <- new defaultProgram
   renderState <- new defaultRenderState
   let re = { launchTime, scene, camera, renderer, programRef, renderState }
-  requestAnimationFrame' $ animate re
   pure re
 
 
@@ -108,14 +108,6 @@ animate re = do
   Camera.setAspect re.camera (iWidth/iHeight)
   Renderer.setSize re.renderer iWidth iHeight
   Renderer.render re.renderer re.scene re.camera
-  requestAnimationFrame' $ animate re
-
-
-requestAnimationFrame' :: Effect Unit -> Effect Unit
-requestAnimationFrame' x = do
-  w <- HTML.window
-  _ <- HTML.requestAnimationFrame x w
-  pure unit
 
 
 runProgram :: RenderEngine -> Number -> Effect Unit

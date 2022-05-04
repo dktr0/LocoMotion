@@ -15,11 +15,16 @@
   function launch() {
     var cvs = document.getElementById('canvas');
     _locomotion = PS.Main.launch(cvs)();
+    window.requestAnimationFrame(animate);
   }
   function doEval() {
     var t = document.getElementById("editorArea").value;
     var r = PS.Main.evaluateLocomotion(_locomotion)(t)();
     document.getElementById('errors').textContent = r;
+  }
+  function animate() {
+    window.requestAnimationFrame(animate);
+    PS.Main.animateLocomotion(_locomotion)();
   }
   </script>
 

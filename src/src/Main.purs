@@ -25,6 +25,10 @@ evaluateLocomotion re x = do
   evaluate re x
 
 
+animateLocomotion :: RenderEngine -> Effect Unit
+animateLocomotion re = animate re
+
+
 -- we imagine that this PureScript module will also be
 -- a module from the standpoint of a JavaScript application as well.
 -- main is provided so that spago can bundle an app, and it will
