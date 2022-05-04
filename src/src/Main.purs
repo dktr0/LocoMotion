@@ -6,16 +6,17 @@ import Data.Number
 import Effect
 import Effect.Class
 import Effect.Console (log)
+import Web.HTML.HTMLCanvasElement as HTML
 
 import RenderEngine
 import AST
 import Parser
 
 
-launch :: Effect RenderEngine
-launch = do
+launch :: HTML.HTMLCanvasElement -> Effect RenderEngine
+launch cvs = do
   log "LocoMotion: launch"
-  launchRenderEngine
+  launchRenderEngine cvs
 
 
 evaluateLocomotion :: RenderEngine -> String -> Effect String

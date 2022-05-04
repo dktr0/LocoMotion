@@ -24,6 +24,7 @@ import Graphics.Three.Object3D as Object3D
 import ThreeJS as Three
 import Web.HTML as HTML
 import Web.HTML.Window as HTML
+import Web.HTML.HTMLCanvasElement as HTML
 import Data.DateTime
 import Data.Time.Duration
 import Effect.Now (nowDateTime)
@@ -51,8 +52,8 @@ type RenderState =
 defaultRenderState :: RenderState
 defaultRenderState = { dancers:[] }
 
-launchRenderEngine :: Effect RenderEngine
-launchRenderEngine = do
+launchRenderEngine :: HTML.HTMLCanvasElement -> Effect RenderEngine
+launchRenderEngine cvs = do
   launchTime <- nowDateTime
   scene <- Scene.create
 
@@ -75,9 +76,8 @@ launchRenderEngine = do
   camera <- Camera.createPerspective 45.0 (iWidth/iHeight) 0.1 100.0
   Three.setPositionOfAnything camera 0.0 1.0 5.0
 
-  renderer <- Renderer.createWebGL { antialias: true }
+  renderer <- Renderer.createWebGL { antialias: true, canvas: cvs }
   Renderer.setSize renderer iWidth iHeight
-  Renderer.appendToDomByID renderer "canvas"
 
   programRef <- new defaultProgram
   renderState <- new defaultRenderState

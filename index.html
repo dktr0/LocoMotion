@@ -13,7 +13,8 @@
   <script src="index.js"></script> <!-- compiled PureScript bundle -->
   <script>
   function launch() {
-    _locomotion = PS.Main.launch();
+    var cvs = document.getElementById('canvas');
+    _locomotion = PS.Main.launch(cvs)();
   }
   function doEval() {
     var t = document.getElementById("editorArea").value;
@@ -22,7 +23,7 @@
   }
   </script>
 
-  <div id="canvas"></div>
+  <div id="canvasDiv"><canvas id="canvas"></canvas></div>
   <div class="editorAndStatus">
     <div class="editor">
       <textarea class="editorArea" id="editorArea">-- Welcome to LocoMotion
