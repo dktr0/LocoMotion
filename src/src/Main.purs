@@ -3,6 +3,7 @@ module Main where
 import Prelude
 import Data.Either
 import Data.Number
+import Data.Maybe
 import Effect
 import Effect.Class
 import Effect.Console (log)
@@ -19,10 +20,13 @@ launch cvs = do
   launchRenderEngine cvs
 
 
-evaluateLocomotion :: RenderEngine -> String -> Effect String
+evaluateLocomotion :: RenderEngine -> String -> Effect { success :: Boolean, error :: String }
 evaluateLocomotion re x = do
   log "LocoMotion: evaluate"
-  evaluate re x
+  y <- evaluate re x
+  case y of
+    Just error -> pure $ { success: false, error }
+    Nothing -> pure $ { success: true, error: "" }
 
 
 animateLocomotion :: RenderEngine -> Effect Unit

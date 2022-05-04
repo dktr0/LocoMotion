@@ -26501,13 +26501,13 @@ var PS = {};
           if (v instanceof Data_Either.Right) {
               return function __do() {
                   setProgram(re)(v.value0)();
-                  return "success!";
+                  return Data_Maybe.Nothing.value;
               };
           };
           if (v instanceof Data_Either.Left) {
-              return Control_Applicative.pure(Effect.applicativeEffect)("syntax: " + v.value0);
+              return Control_Applicative.pure(Effect.applicativeEffect)(new Data_Maybe.Just(v.value0));
           };
-          throw new Error("Failed pattern match at RenderEngine (line 95, column 3 - line 99, column 41): " + [ v.constructor.name ]);
+          throw new Error("Failed pattern match at RenderEngine (line 95, column 3 - line 99, column 32): " + [ v.constructor.name ]);
       };
   };
   var defaultRenderState = {
@@ -26571,6 +26571,7 @@ var PS = {};
   $PS["Main"] = $PS["Main"] || {};
   var exports = $PS["Main"];
   var Control_Applicative = $PS["Control.Applicative"];
+  var Data_Maybe = $PS["Data.Maybe"];
   var Data_Unit = $PS["Data.Unit"];
   var Effect = $PS["Effect"];
   var Effect_Console = $PS["Effect.Console"];
@@ -26586,7 +26587,20 @@ var PS = {};
       return function (x) {
           return function __do() {
               Effect_Console.log("LocoMotion: evaluate")();
-              return RenderEngine.evaluate(re)(x)();
+              var y = RenderEngine.evaluate(re)(x)();
+              if (y instanceof Data_Maybe.Just) {
+                  return {
+                      success: false,
+                      error: y.value0
+                  };
+              };
+              if (y instanceof Data_Maybe.Nothing) {
+                  return {
+                      success: true,
+                      error: ""
+                  };
+              };
+              throw new Error("Failed pattern match at Main (line 27, column 3 - line 29, column 51): " + [ y.constructor.name ]);
           };
       };
   };

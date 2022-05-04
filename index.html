@@ -20,7 +20,7 @@
   function doEval() {
     var t = document.getElementById("editorArea").value;
     var r = PS.Main.evaluateLocomotion(_locomotion)(t)();
-    document.getElementById('errors').textContent = r;
+    document.getElementById('errors').textContent = r.error;
   }
   function animate() {
     window.requestAnimationFrame(animate);

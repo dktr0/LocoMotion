@@ -90,13 +90,13 @@ setProgram :: RenderEngine -> Program -> Effect Unit
 setProgram re p = write p re.programRef
 
 
-evaluate :: RenderEngine -> String -> Effect String
+evaluate :: RenderEngine -> String -> Effect (Maybe String)
 evaluate re x = do
   case parseProgram x of
     Right p -> do
       setProgram re p
-      pure "success!"
-    Left err -> pure $ "syntax: " <> err
+      pure Nothing
+    Left err -> pure $ Just err
 
 animate :: RenderEngine -> Effect Unit
 animate re = do
