@@ -6,25 +6,26 @@
  <link href="style.css" rel="stylesheet" type="text/css"/>
 </head>
 
-<body onLoad="launch()">
+<body onLoad="doLaunch()">
 
   <script src="three.min.js"></script> <!-- THREEJS library -->
   <script src="GLTFLoader.js"></script> <!-- also from THREEJS -->
-  <script src="index.js"></script> <!-- compiled PureScript bundle -->
+  <script src="locoMotion.js"></script> --> <!-- compiled PureScript bundle -->
   <script>
-  function launch() {
+  function doLaunch() {
     var cvs = document.getElementById('canvas');
-    _locomotion = PS.Main.launch(cvs)();
+    console.log("index.html 17");
+    _locomotion = locoMotion.launch(cvs);
     window.requestAnimationFrame(animate);
   }
   function doEval() {
     var t = document.getElementById("editorArea").value;
-    var r = PS.Main.evaluateLocomotion(_locomotion)(t)();
+    var r = locoMotion.evaluateLocomotion(_locomotion,t);
     document.getElementById('errors').textContent = r.error;
   }
   function animate() {
     window.requestAnimationFrame(animate);
-    PS.Main.animateLocomotion(_locomotion)();
+    locoMotion.animateLocomotion(_locomotion);
   }
   </script>
 

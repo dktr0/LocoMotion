@@ -1,0 +1,27 @@
+{
+  "name": "LocoMotion",
+  "version": "0.0.1",
+  "description": "LocoMotion",
+  "private": true,
+  "dependencies": {
+    "esbuild": "^0.14.38"
+  },
+  "devDependencies": {
+    "webpack": "^5.72.0",
+    "webpack-cli": "^4.9.2"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dktr0/LocoMotion.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dktr0/LocoMotion/issues"
+  },
+  "homepage": "https://github.com/dktr0/LocoMotion#readme"
+}
