@@ -20,6 +20,7 @@
   , "purescript-three"
   , "purescript-threejs"
   , "refs"
+  , "strings"
   , "web-html"
   ]
 , packages = ./packages.dhall

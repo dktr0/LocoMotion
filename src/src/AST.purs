@@ -52,7 +52,7 @@ type Dancer = {
   }
 
 defaultDancer :: Dancer
-defaultDancer = { url: "models/WomanInTheSea.glb", animation: 4, pos: origin, rot: origin, scale: defaultScale }
+defaultDancer = { url: "WomanInTheSea.glb", animation: 4, pos: origin, rot: origin, scale: defaultScale }
 
 -- and for now Ethereals are just polarGridHelpers...
 

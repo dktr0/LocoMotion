@@ -10,6 +10,7 @@ import Graphics.Three.Scene (Scene) as Three
 import ThreeJS as Three
 import AST (Dancer)
 import Variable
+import URL
 
 type MaybeRef a = Ref (Maybe a)
 
@@ -25,7 +26,8 @@ addDancer theScene d = do
   gltfScene <- new Nothing
   animations <- new Nothing
   animationMixer <- new Nothing
-  Three.loadGLTF d.url $ \gltf -> do
+  let url' = resolveURL d.url
+  Three.loadGLTF url' $ \gltf -> do
     log $ "model loaded with " <> show (length gltf.animations) <> " animations"
     Three.addAnythingToScene theScene gltf.scene
     write (Just gltf.scene) gltfScene
