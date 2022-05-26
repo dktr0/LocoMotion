@@ -13,6 +13,12 @@ data Variable =
   Product Variable Variable |
   Osc Variable
 
+instance Show Variable where
+  show (Constant x) = "Constant " <> show x
+  show (Sum x y) = "Sum (" <> show x <> ") (" <> show y <> ")"
+  show (Product x y) = "Product (" <> show x <> ") (" <> show y <> ")"
+  show (Osc x) = "Osc (" <> show x <> ")"
+
 -- for now, the only information provided on a per-frame
 -- basis is the position in cycles in a current metric grid.
 -- (so the oscillations of Osc are relative to tempo rather than in Hz.)

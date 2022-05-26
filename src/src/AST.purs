@@ -36,12 +36,20 @@ data Statement =
   Element Element |
   CameraChange (Camera -> Camera)
 
+instance Show Statement where
+  show (Element x) = show x
+  show (CameraChange _) = "CameraChange _"
+
 -- Element-s can be Dancer-s (which can be animated, have physics, etc)
 -- or Ethereal-s (which are displayed but do not have physics [maybe they might have animation, though?])
 
 data Element =
   Dancer Dancer |
   Ethereal Ethereal
+
+instance Show Element where
+  show (Dancer x) = show x
+  show (Ethereal x) = "um an ethereal."
 
 type Dancer = {
   url :: String,
