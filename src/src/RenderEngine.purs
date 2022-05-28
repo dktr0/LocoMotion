@@ -16,12 +16,6 @@ import Data.Foldable (foldM)
 import Data.Array ((!!),length,snoc)
 import Data.Maybe
 import Data.Either
-import Graphics.Three.Scene as Scene
-import Graphics.Three.Camera as Camera
-import Graphics.Three.Renderer as Renderer
-import Graphics.Three.Geometry as Geometry
-import Graphics.Three.Material as Material
-import Graphics.Three.Object3D as Object3D
 import ThreeJS as Three
 import Web.HTML as HTML
 import Web.HTML.Window as HTML
@@ -38,9 +32,9 @@ import Parser
 type RenderEngine =
   {
   launchTime :: DateTime,
-  scene :: Scene.Scene,
-  camera :: Camera.PerspectiveCamera,
-  renderer :: Renderer.Renderer,
+  scene :: Three.Scene,
+  camera :: Three.PerspectiveCamera,
+  renderer :: Three.Renderer,
   programRef :: Ref Program,
   renderState :: Ref RenderState
   }
@@ -55,31 +49,35 @@ defaultRenderState = { dancers:[] }
 
 launchRenderEngine :: HTML.HTMLCanvasElement -> Effect RenderEngine
 launchRenderEngine cvs = do
+  log "LocoMotion: launchRenderEngine"
   launchTime <- nowDateTime
-  scene <- Scene.create
+  scene <- Three.newScene
 
+  log "LocoMotion: adding default lights..."
   hemiLight <- Three.newHemisphereLight 0xffffff 0x444444 2.0
   Three.setPositionOfAnything hemiLight 0.0 20.0 0.0
   Three.addAnythingToScene scene hemiLight
-
   Three.newAmbientLight 0xffffff 1.0 >>= Three.addAnythingToScene scene
-
   dirLight <- Three.newDirectionalLight 0x887766 1.0
   Three.setPositionOfAnything dirLight (-1.0) 1.0 1.0
   Three.addAnythingToScene scene dirLight
 
+  log "LocoMotion: adding default floor..."
   pgh <- Three.newPolarGridHelper 10.0 8 8 8
   Three.setPositionOfAnything pgh 0.0 0.0 0.0
   Three.addAnythingToScene scene pgh
 
+  log "LocoMotion: making camera..."
   iWidth <- Three.windowInnerWidth
   iHeight <- Three.windowInnerHeight
-  camera <- Camera.createPerspective 45.0 (iWidth/iHeight) 0.1 100.0
+  camera <- Three.newPerspectiveCamera 45.0 (iWidth/iHeight) 0.1 100.0
   Three.setPositionOfAnything camera 0.0 1.0 5.0
 
-  renderer <- Renderer.createWebGL { antialias: true, canvas: cvs }
-  Renderer.setSize renderer iWidth iHeight
+  log "LocoMotion: making renderer"
+  renderer <- Three.newWebGLRenderer { antialias: true, canvas: cvs }
+  Three.setSize renderer iWidth iHeight false
 
+  log "LocoMotion: making engine Record"
   programRef <- new defaultProgram
   renderState <- new defaultRenderState
   let re = { launchTime, scene, camera, renderer, programRef, renderState }
@@ -105,9 +103,9 @@ animate re = do
   runProgram re (unwrap tDiff / 1000.0)
   iWidth <- Three.windowInnerWidth
   iHeight <- Three.windowInnerHeight
-  Camera.setAspect re.camera (iWidth/iHeight)
-  Renderer.setSize re.renderer iWidth iHeight
-  Renderer.render re.renderer re.scene re.camera
+  Three.setAspect re.camera (iWidth/iHeight)
+  Three.setSize re.renderer iWidth iHeight false
+  Three.render re.renderer re.scene re.camera
 
 
 runProgram :: RenderEngine -> Number -> Effect Unit

@@ -1,6 +1,7 @@
 const path = require('path');
 
 module.exports = {
+  mode: 'production',
   entry: './src/webpack-module.js',
   output: {
     filename: 'locoMotion.js',

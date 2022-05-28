@@ -6,7 +6,6 @@ import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Effect.Ref (Ref, new, read, write)
 import Effect.Console (log)
-import Graphics.Three.Scene (Scene) as Three
 import ThreeJS as Three
 import AST (Dancer)
 import Variable
@@ -39,7 +38,7 @@ addDancer theScene d = do
         log "playing default (first) animation"
         defaultAction <- Three.clipAction animMixer a
         Three.setEffectiveTimeScale defaultAction 1.0
-        Three.play defaultAction
+        Three.playAnything defaultAction
       Nothing -> pure unit
   pure { gltfScene, animations, animationMixer }
 

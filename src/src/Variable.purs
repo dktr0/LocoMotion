@@ -1,7 +1,7 @@
 module Variable where
 
 import Prelude
-import Math
+import Data.Number
 
 -- for now, a Variable is something that, at runtime
 -- can be sampled on a per-animation-frame basis to
