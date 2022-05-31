@@ -9,11 +9,10 @@ import Data.Maybe (Maybe)
 import Data.Number (fromString)
 import Data.Int (toNumber)
 import Control.Bind
-import Text.Parsing.Parser
-import Text.Parsing.Parser.Pos
-import Text.Parsing.Parser.Language (emptyDef)
-import Text.Parsing.Parser.Token (GenLanguageDef(..),LanguageDef,unGenLanguageDef,TokenParser,GenTokenParser,makeTokenParser)
-import Text.Parsing.Parser.Combinators
+import Parsing
+import Parsing.Language (emptyDef)
+import Parsing.Token (GenLanguageDef(..),LanguageDef,unGenLanguageDef,TokenParser,GenTokenParser,makeTokenParser)
+import Parsing.Combinators
 
 import AST
 import Variable

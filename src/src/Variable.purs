@@ -1,7 +1,9 @@
 module Variable where
 
 import Prelude
-import Math
+import Data.Tempo
+import Data.Rational
+import Data.Number
 
 -- for now, a Variable is something that, at runtime
 -- can be sampled on a per-animation-frame basis to
@@ -17,8 +19,8 @@ data Variable =
 -- basis is the position in cycles in a current metric grid.
 -- (so the oscillations of Osc are relative to tempo rather than in Hz.)
 
-sampleVariable :: Number -> Variable -> Number
+sampleVariable :: Rational -> Variable -> Number
 sampleVariable _ (Constant x) = x
-sampleVariable t (Sum x y) = sampleVariable t x + sampleVariable t y
-sampleVariable t (Product x y) = sampleVariable t x * sampleVariable t y
-sampleVariable t (Osc f) = sin $ sampleVariable t f * 2.0 * pi * t
+sampleVariable nCycles (Sum x y) = sampleVariable nCycles x + sampleVariable nCycles y
+sampleVariable nCycles (Product x y) = sampleVariable nCycles x * sampleVariable nCycles y
+sampleVariable nCycles (Osc f) = sin $ sampleVariable nCycles f * 2.0 * pi * toNumber nCycles

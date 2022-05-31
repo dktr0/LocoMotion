@@ -6,8 +6,9 @@ import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Effect.Ref (Ref, new, read, write)
 import Effect.Console (log)
-import Graphics.Three.Scene (Scene) as Three
 import ThreeJS as Three
+import Data.Rational
+
 import AST (Dancer)
 import Variable
 import URL
@@ -39,24 +40,24 @@ addDancer theScene d = do
         log "playing default (first) animation"
         defaultAction <- Three.clipAction animMixer a
         Three.setEffectiveTimeScale defaultAction 1.0
-        Three.play defaultAction
+        Three.playAnything defaultAction
       Nothing -> pure unit
   pure { gltfScene, animations, animationMixer }
 
-runDancer :: Number -> Dancer -> DancerState -> Effect DancerState
-runDancer t d dState = do
+runDancer :: Rational -> Dancer -> DancerState -> Effect DancerState
+runDancer nCycles d dState = do
   ms <- read dState.gltfScene
   case ms of
     Just s -> do
-      let x'  = sampleVariable t d.pos.x
-      let y'  = sampleVariable t d.pos.y
-      let z'  = sampleVariable t d.pos.z
-      let rx'  = sampleVariable t d.rot.x
-      let ry'  = sampleVariable t d.rot.y
-      let rz'  = sampleVariable t d.rot.z
-      let sx'  = sampleVariable t d.scale.x
-      let sy'  = sampleVariable t d.scale.y
-      let sz'  = sampleVariable t d.scale.z
+      let x'  = sampleVariable nCycles d.pos.x
+      let y'  = sampleVariable nCycles d.pos.y
+      let z'  = sampleVariable nCycles d.pos.z
+      let rx'  = sampleVariable nCycles d.rot.x
+      let ry'  = sampleVariable nCycles d.rot.y
+      let rz'  = sampleVariable nCycles d.rot.z
+      let sx'  = sampleVariable nCycles d.scale.x
+      let sy'  = sampleVariable nCycles d.scale.y
+      let sz'  = sampleVariable nCycles d.scale.z
       -- log $ show t <> " " <> show x'
       Three.setPositionOfAnything s x' y' z'
       Three.setRotationOfAnything s rx' ry' rz'
