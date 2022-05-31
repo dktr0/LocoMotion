@@ -14,6 +14,7 @@
   <script type="module">
   // note: we're currently having trouble using the webpacked version via ES6 modules -->
   // but we can use the direct output of spago bundle-module OKAY vis ES6... -->
+  // and we can use the webpacked version as a direct script import.. -->
   import * as LocoMotion from "./src/index.js";
   window.doLaunch = function () {
     var cvs = document.getElementById('canvas');
@@ -25,7 +26,6 @@
     LocoMotion.animateLocomotion(window.lm)(); // TODO: would be nice to have OO notation here...
   }
   window.doEval = function () {
-    console.log("doEval");
     var t = document.getElementById("editorArea").value;
     var r = LocoMotion.evaluateLocomotion(window.lm)(t)(); // TODO: would be nice to have OO notation here...
     document.getElementById('errors').textContent = r.error;

@@ -52,31 +52,35 @@ defaultRenderState = { dancers:[] }
 
 launchRenderEngine :: HTML.HTMLCanvasElement -> Effect RenderEngine
 launchRenderEngine cvs = do
+  log "LocoMotion: launchRenderEngine"
   launchTime <- nowDateTime
   scene <- Three.newScene
 
+  log "LocoMotion: adding default lights..."
   hemiLight <- Three.newHemisphereLight 0xffffff 0x444444 2.0
   Three.setPositionOfAnything hemiLight 0.0 20.0 0.0
   Three.addAnythingToScene scene hemiLight
-
   Three.newAmbientLight 0xffffff 1.0 >>= Three.addAnythingToScene scene
-
   dirLight <- Three.newDirectionalLight 0x887766 1.0
   Three.setPositionOfAnything dirLight (-1.0) 1.0 1.0
   Three.addAnythingToScene scene dirLight
 
+  log "LocoMotion: adding default floor..."
   pgh <- Three.newPolarGridHelper 10.0 8 8 8
   Three.setPositionOfAnything pgh 0.0 0.0 0.0
   Three.addAnythingToScene scene pgh
 
+  log "LocoMotion: making camera..."
   iWidth <- Three.windowInnerWidth
   iHeight <- Three.windowInnerHeight
   camera <- Three.newPerspectiveCamera 45.0 (iWidth/iHeight) 0.1 100.0
   Three.setPositionOfAnything camera 0.0 1.0 5.0
 
+  log "LocoMotion: making renderer"
   renderer <- Three.newWebGLRenderer { antialias: true, canvas: cvs }
   Three.setSize renderer iWidth iHeight false
 
+  log "LocoMotion: making engine Record"
   programRef <- new defaultProgram
   renderState <- new defaultRenderState
   tempo <- newTempo (1 % 2) >>= new
@@ -118,7 +122,7 @@ runProgram re = do
   ds <- foldM (runDancers re nCycles rState.dancers) [] p
   -- TODO: need a way of deleting dancers/ethereals when they are removed also...
   write (rState { dancers=ds }) re.renderState
-  
+
 
 runDancers :: RenderEngine -> Rational -> Array DancerState -> Array DancerState -> Statement -> Effect (Array DancerState)
 runDancers re nCycles dsPrev dsNew (Element (Dancer d)) = do
