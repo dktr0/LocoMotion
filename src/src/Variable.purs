@@ -25,8 +25,8 @@ instance Show Variable where
 -- basis is the position in cycles in a current metric grid.
 -- (so the oscillations of Osc are relative to tempo rather than in Hz.)
 
-sampleVariable :: Rational -> Variable -> Number
+sampleVariable :: Number -> Variable -> Number
 sampleVariable _ (Constant x) = x
 sampleVariable nCycles (Sum x y) = sampleVariable nCycles x + sampleVariable nCycles y
 sampleVariable nCycles (Product x y) = sampleVariable nCycles x * sampleVariable nCycles y
-sampleVariable nCycles (Osc f) = sin $ sampleVariable nCycles f * 2.0 * pi * toNumber nCycles
+sampleVariable nCycles (Osc f) = sin $ sampleVariable nCycles f * 2.0 * pi * nCycles

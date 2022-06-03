@@ -8,6 +8,7 @@ import Effect.Ref (Ref, new, read, write)
 import Effect.Console (log)
 import ThreeJS as Three
 import Data.Rational
+import Data.Ratio
 
 import AST (Dancer)
 import Variable
@@ -44,7 +45,7 @@ addDancer theScene d = do
       Nothing -> pure unit
   pure { gltfScene, animations, animationMixer }
 
-runDancer :: Rational -> Dancer -> DancerState -> Effect DancerState
+runDancer :: Number -> Dancer -> DancerState -> Effect DancerState
 runDancer nCycles d dState = do
   ms <- read dState.gltfScene
   case ms of

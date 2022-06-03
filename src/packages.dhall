@@ -23,5 +23,5 @@ in  upstream
       , "rationals"
       ]
     , repo = "https://github.com/dktr0/purescript-tempi"
-    , version = "6f044031523ef7796f19d022152e87f4a0a2decd"
+    , version = "7d31a28e9de4014c4927844aed861254417f29e5"
     }

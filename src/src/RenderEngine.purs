@@ -117,7 +117,7 @@ runProgram re = do
   rState <- read re.renderState
   t <- read re.tempo
   now <- nowDateTime
-  let nCycles = timeToCount t now
+  let nCycles = timeToCountNumber t now
   -- note: it is overkill to regenerate the lists of element states in every frame
   -- later we'll refactor so this only happens in first frame after new program...
   ds <- foldM (runDancers re nCycles rState.dancers) [] p
@@ -125,7 +125,7 @@ runProgram re = do
   write (rState { dancers=ds }) re.renderState
 
 
-runDancers :: RenderEngine -> Rational -> Array DancerState -> Array DancerState -> Statement -> Effect (Array DancerState)
+runDancers :: RenderEngine -> Number -> Array DancerState -> Array DancerState -> Statement -> Effect (Array DancerState)
 runDancers re nCycles dsPrev dsNew (Element (Dancer d)) = do
   x <- case dsPrev !! length dsNew of
     Just prevDancer -> runDancer nCycles d prevDancer
