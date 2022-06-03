@@ -11,29 +11,29 @@ import Web.HTML.HTMLCanvasElement as HTML
 import Data.Tempo
 import Effect.Ref (write)
 
-import RenderEngine
+import RenderEngine as RE
 import AST
 import Parser
 
 
-launch :: HTML.HTMLCanvasElement -> Effect RenderEngine
+launch :: HTML.HTMLCanvasElement -> Effect RE.RenderEngine
 launch cvs = do
   log "LocoMotion: launch"
-  launchRenderEngine cvs
+  RE.launchRenderEngine cvs
 
 
-evaluateLocomotion :: RenderEngine -> String -> Effect { success :: Boolean, error :: String }
-evaluateLocomotion re x = do
+evaluate :: RE.RenderEngine -> String -> Effect { success :: Boolean, error :: String }
+evaluate re x = do
   log "LocoMotion: evaluate"
-  y <- evaluate re x
+  y <- RE.evaluate re x
   case y of
     Just error -> pure $ { success: false, error }
     Nothing -> pure $ { success: true, error: "" }
 
 
-animateLocomotion :: RenderEngine -> Effect Unit
-animateLocomotion re = animate re
+animate :: RE.RenderEngine -> Effect Unit
+animate re = RE.animate re
 
 
-setTempo :: RenderEngine -> Tempo -> Effect Unit
-setTempo re t = write t re.tempo
+setTempo :: RE.RenderEngine -> ForeignTempo -> Effect Unit
+setTempo re t = write (fromForeignTempo t) re.tempo

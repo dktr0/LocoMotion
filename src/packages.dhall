@@ -9,7 +9,19 @@ in  upstream
     , version = "44e33bc16138ddf0492d4939ed5b993751b298c5"
     }
   with purescript-tempi =
-    { dependencies = [ "console", "datetime", "effect", "now", "prelude", "psci-support", "rationals"]
+    { dependencies =
+      [ "console"
+      , "datetime"
+      , "effect"
+      , "integers"
+      , "maybe"
+      , "newtype"
+      , "now"
+      , "partial"
+      , "prelude"
+      , "psci-support"
+      , "rationals"
+      ]
     , repo = "https://github.com/dktr0/purescript-tempi"
-    , version = "7021e7e7c3e55fd1be7558f7853ee213b1960bf0"
+    , version = "6f044031523ef7796f19d022152e87f4a0a2decd"
     }

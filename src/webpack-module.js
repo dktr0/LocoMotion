@@ -1,21 +1,17 @@
 import * as L from './index.js';
 
-export function launch(canvas) {
-  return L.launch(canvas)();
+export function LocoMotion(canvas) {
+  this.lm = L.launch(canvas)();
 }
 
-export function evaluateLocomotion(lm,txt) {
-  return L.evaluateLocomotion(lm)(txt)();
+LocoMotion.prototype.evaluate = function(txt) {
+  return L.evaluate(this.lm)(txt)();
 }
 
-export function animateLocomotion(lm) {
-  return L.animateLocomotion(lm)();
+LocoMotion.prototype.animate = function() {
+  return L.animate(this.lm)();
 }
 
-export function setTempo(tempo) {
-  return L.setTempo(tempo)();
-}
-
-export function test() {
-  console.log("test");
+LocoMotion.prototype.setTempo = function(foreignTempo) {
+  return L.setTempo(this.lm)(foreignTempo)();
 }

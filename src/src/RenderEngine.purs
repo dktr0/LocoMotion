@@ -84,6 +84,7 @@ launchRenderEngine cvs = do
   programRef <- new defaultProgram
   renderState <- new defaultRenderState
   tempo <- newTempo (1 % 2) >>= new
+  log "LocoMotion: launch finished."
   let re = { launchTime, scene, camera, renderer, programRef, renderState, tempo }
   pure re
 

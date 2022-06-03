@@ -2,9 +2,9 @@
 build:
 	cd src && spago bundle-module
 	npx webpack
-	
+
 serve:
-	python -m SimpleHTTPServer 8000
+	npx http-server -c-1
 
 clean:
 	rm -rf index.js

@@ -10,24 +10,24 @@
 
   <script src="three.min.js"></script> <!-- THREEJS library -->
   <script src="GLTFLoader.js"></script> <!-- also from THREEJS -->
-  <!-- <script src="./locoMotion.js"></script> -->
+  <script src="./locoMotion.js"></script>
   <script type="module">
   // note: we're currently having trouble using the webpacked version via ES6 modules -->
   // but we can use the direct output of spago bundle-module OKAY vis ES6... -->
   // and we can use the webpacked version as a direct script import.. -->
-  import * as LocoMotion from "./src/index.js";
+  // import * as LocoMotion from "./locoMotion.js";
   window.doLaunch = function () {
     var cvs = document.getElementById('canvas');
-    window.lm = LocoMotion.launch(cvs)();
+    window.lm = new LocoMotion.LocoMotion(cvs);
     window.requestAnimationFrame(animate);
   }
   function animate() {
     window.requestAnimationFrame(animate);
-    LocoMotion.animateLocomotion(window.lm)(); // TODO: would be nice to have OO notation here...
+    window.lm.animate();
   }
   window.doEval = function () {
     var t = document.getElementById("editorArea").value;
-    var r = LocoMotion.evaluateLocomotion(window.lm)(t)(); // TODO: would be nice to have OO notation here...
+    var r = window.lm.evaluate(t);
     document.getElementById('errors').textContent = r.error;
   }
   </script>
@@ -40,7 +40,7 @@
 -- Type programs here and click the "Eval" button to make them go
 -- This is a rapidly emerging work in progress - check back often for updates
 -- Or get in touch on the Estuary discord server!
--- The line below is a valid LocoMotion program (just click Eval!)
+-- The lines below are a valid LocoMotion program (just click Eval!)
 dancer { size=0.5, ry=3.14, x = osc 0.1 };
 dancer { url="WoodFigure.glb", size=0.5, x = -2 };
 dancer { url="StoneFigure.glb", x = 2, ry=4.71, size=0.25 }
