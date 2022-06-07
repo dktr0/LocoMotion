@@ -29,7 +29,7 @@ addDancer theScene d = do
   animations <- new Nothing
   animationMixer <- new Nothing
   let url' = resolveURL d.url
-  Three.loadGLTF url' $ \gltf -> do
+  _ <- Three.loadGLTF_DRACO "https://dktr0.github.io/LocoMotion/threejs/" url' $ \gltf -> do
     log $ "model loaded with " <> show (length gltf.animations) <> " animations"
     Three.addAnythingToScene theScene gltf.scene
     write (Just gltf.scene) gltfScene
@@ -44,6 +44,7 @@ addDancer theScene d = do
         Three.playAnything defaultAction
       Nothing -> pure unit
   pure { gltfScene, animations, animationMixer }
+
 
 runDancer :: Number -> Dancer -> DancerState -> Effect DancerState
 runDancer nCycles d dState = do
