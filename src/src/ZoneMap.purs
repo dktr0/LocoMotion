@@ -27,3 +27,8 @@ delete :: forall a. Zone -> ZoneMap a -> Effect Unit
 delete z m = do
   m'<- Ref.read m
   Ref.write (Map.delete z m') m
+
+count :: forall a. ZoneMap a -> Effect Int
+count m = do
+  m' <- Ref.read m
+  pure $ Map.size m'

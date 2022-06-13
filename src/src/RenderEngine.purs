@@ -130,11 +130,14 @@ animateZone re z = do
 
 postAnimate :: RenderEngine -> Effect Unit
 postAnimate re = do
-  iWidth <- Three.windowInnerWidth
-  iHeight <- Three.windowInnerHeight
-  Three.setAspect re.camera (iWidth/iHeight)
-  Three.setSize re.renderer iWidth iHeight false
-  Three.render re.renderer re.scene re.camera
+  -- how many programs are there?
+  n <- ZoneMap.count re.zoneStates
+  when (n > 0) $ do
+    iWidth <- Three.windowInnerWidth
+    iHeight <- Three.windowInnerHeight
+    Three.setAspect re.camera (iWidth/iHeight)
+    Three.setSize re.renderer iWidth iHeight false
+    Three.render re.renderer re.scene re.camera
 
 
 runProgram :: RenderEngine -> Program -> ZoneState -> Effect ZoneState
