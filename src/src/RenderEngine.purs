@@ -72,9 +72,9 @@ launch cvs = do
   Three.setPositionOfAnything dirLight (-1.0) 1.0 1.0
   Three.addAnythingToScene scene dirLight
 
-  pgh <- Three.newPolarGridHelper 10.0 8 8 8
+  {- pgh <- Three.newPolarGridHelper 10.0 8 8 8
   Three.setPositionOfAnything pgh 0.0 0.0 0.0
-  Three.addAnythingToScene scene pgh
+  Three.addAnythingToScene scene pgh -}
 
   iWidth <- Three.windowInnerWidth
   iHeight <- Three.windowInnerHeight
@@ -103,6 +103,7 @@ evaluate re z x = do
 clearZone :: RenderEngine -> Int -> Effect Unit
 clearZone re z = do
   ZoneMap.delete z re.programs
+
   ZoneMap.delete z re.zoneStates
   log "LocoMotion WARNING: clearZone is not properly implemented yet (needs to delete assets!)"
 
