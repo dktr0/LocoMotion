@@ -13,6 +13,7 @@
   , "newtype"
   , "now"
   , "numbers"
+  , "ordered-collections"
   , "parsing"
   , "prelude"
   , "psci-support"
@@ -21,6 +22,7 @@
   , "rationals"
   , "refs"
   , "strings"
+  , "tuples"
   , "web-html"
   ]
 , packages = ./packages.dhall

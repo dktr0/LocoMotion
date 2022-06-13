@@ -1,4 +1,9 @@
-module DancerState where
+module DancerState (
+  DancerState(..),
+  MaybeRef(..),
+  runDancerWithState
+  )
+  where
 
 import Prelude
 import Data.Array
@@ -23,31 +28,12 @@ type DancerState =
   animationMixer :: MaybeRef Three.AnimationMixer
   }
 
-addDancer :: Three.Scene -> Dancer -> Effect DancerState
-addDancer theScene d = do
-  gltfScene <- new Nothing
-  animations <- new Nothing
-  animationMixer <- new Nothing
-  let url' = resolveURL d.url
-  _ <- Three.loadGLTF_DRACO "https://dktr0.github.io/LocoMotion/threejs/" url' $ \gltf -> do
-    log $ "model loaded with " <> show (length gltf.animations) <> " animations"
-    Three.addAnythingToScene theScene gltf.scene
-    write (Just gltf.scene) gltfScene
-    write (Just gltf.animations) animations
-    animMixer <- Three.newAnimationMixer gltf.scene
-    write (Just animMixer) animationMixer
-    case gltf.animations!!0 of
-      Just a -> do
-        log "playing default (first) animation"
-        defaultAction <- Three.clipAction animMixer a
-        Three.setEffectiveTimeScale defaultAction 1.0
-        Three.playAnything defaultAction
-      Nothing -> pure unit
-  pure { gltfScene, animations, animationMixer }
 
-
-runDancer :: Number -> Dancer -> DancerState -> Effect DancerState
-runDancer nCycles d dState = do
+runDancerWithState :: Three.Scene -> Number -> Dancer -> Maybe DancerState -> Effect DancerState
+runDancerWithState theScene nCycles d maybeDancerState = do
+  dState <- case maybeDancerState of
+    Nothing -> addDancer theScene d
+    Just x -> pure x
   ms <- read dState.gltfScene
   case ms of
     Just s -> do
@@ -70,3 +56,26 @@ runDancer nCycles d dState = do
         Nothing -> pure unit
     Nothing -> pure unit
   pure dState
+
+
+addDancer :: Three.Scene -> Dancer -> Effect DancerState
+addDancer theScene d = do
+  gltfScene <- new Nothing
+  animations <- new Nothing
+  animationMixer <- new Nothing
+  let url' = resolveURL d.url
+  _ <- Three.loadGLTF_DRACO "https://dktr0.github.io/LocoMotion/threejs/" url' $ \gltf -> do
+    log $ "model loaded with " <> show (length gltf.animations) <> " animations"
+    Three.addAnythingToScene theScene gltf.scene
+    write (Just gltf.scene) gltfScene
+    write (Just gltf.animations) animations
+    animMixer <- Three.newAnimationMixer gltf.scene
+    write (Just animMixer) animationMixer
+    case gltf.animations!!0 of
+      Just a -> do
+        log "playing default (first) animation"
+        defaultAction <- Three.clipAction animMixer a
+        Three.setEffectiveTimeScale defaultAction 1.0
+        Three.playAnything defaultAction
+      Nothing -> pure unit
+  pure { gltfScene, animations, animationMixer }

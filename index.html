@@ -20,15 +20,18 @@
   window.doLaunch = function () {
     var cvs = document.getElementById('canvas');
     window.lm = new LocoMotion.LocoMotion(cvs);
+    window.lm.evaluate(0,"");
     window.requestAnimationFrame(animate);
   }
   function animate() {
     window.requestAnimationFrame(animate);
-    window.lm.animate();
+    window.lm.preAnimate();
+    window.lm.animateZone(0);
+    window.lm.postAnimate();
   }
   window.doEval = function () {
     var t = document.getElementById("editorArea").value;
-    var r = window.lm.evaluate(t);
+    var r = window.lm.evaluate(0,t);
     document.getElementById('errors').textContent = r.error;
   }
   </script>
