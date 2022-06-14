@@ -4,6 +4,7 @@ import Prelude
 import Data.Identity
 import Data.List
 import Data.List.NonEmpty
+import Data.Map
 import Data.Either
 import Data.Maybe (Maybe)
 import Data.Number (fromString)
@@ -30,7 +31,8 @@ type P a = ParserT String Identity a
 program :: P Program
 program = do
   whiteSpace
-  sepBy statement (reservedOp ";")
+  xs <- sepBy statement (reservedOp ";")
+  pure $ fromFoldableWithIndex xs
 
 statement :: P Statement
 statement = choice

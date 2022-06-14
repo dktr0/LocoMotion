@@ -30,7 +30,8 @@ import Data.Newtype (unwrap)
 import Data.Tempo
 import Data.Rational
 import Data.Tuple
-import Data.FunctorWithIndex (mapWithIndex)
+import Data.FoldableWithIndex (foldWithIndexM)
+import Data.Traversable (traverse_)
 
 import AST
 import DancerState
@@ -131,7 +132,6 @@ animateZone re z = do
 
 postAnimate :: RenderEngine -> Effect Unit
 postAnimate re = do
-  -- how many programs are there?
   n <- ZoneMap.count re.zoneStates
   when (n > 0) $ do
     iWidth <- Three.windowInnerWidth
@@ -146,13 +146,22 @@ runProgram re prog zoneState = do
   t <- read re.tempo
   now <- nowDateTime
   let nCycles = timeToCountNumber t now
-  let prog' = mapWithIndex Tuple prog
-  foldM (runStatement re nCycles) zoneState prog'
+  zoneState' <- foldWithIndexM (runStatement re nCycles) zoneState prog
+  removeDeletedElements re prog zoneState'
 
 
-runStatement :: RenderEngine -> Number -> ZoneState -> Tuple Int Statement -> Effect ZoneState
-runStatement re nCycles zoneState (Tuple stmtIndex (Element e)) = runElement re nCycles stmtIndex e zoneState
-runStatement _ _ zoneState _ = pure zoneState
+removeDeletedElements :: RenderEngine -> Program -> ZoneState -> Effect ZoneState
+removeDeletedElements re prog zoneState = removeDeletedDancers re prog zoneState
+
+removeDeletedDancers :: RenderEngine -> Program -> ZoneState -> Effect ZoneState
+removeDeletedDancers re prog zoneState = do
+  traverse_ (removeDancer re.scene) $ difference zoneState.dancers prog -- remove dancers that are in zoneState but not program
+  pure $ zoneState { dancers = intersection zoneState.dancers prog } -- leave dancers that in both zoneState AND program
+
+
+runStatement :: RenderEngine -> Number -> Int -> ZoneState -> Statement -> Effect ZoneState
+runStatement re nCycles stmtIndex zoneState (Element e) = runElement re nCycles stmtIndex e zoneState
+runStatement _ _ _ zoneState _ = pure zoneState
 
 
 runElement :: RenderEngine -> Number -> Int -> Element -> ZoneState -> Effect ZoneState

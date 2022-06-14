@@ -14,6 +14,7 @@ module AST (
 import Prelude
 import Data.Identity
 import Data.List
+import Data.Map
 import Data.List.NonEmpty
 import Data.Either
 import Data.Maybe (Maybe)
@@ -22,12 +23,12 @@ import Control.Bind
 
 import Variable
 
--- Program-s are semi-colon separated lists of Statement-s
+-- Program-s consist of some number of semi-colon separated lists of Statement-s
 
-type Program = List Statement
+type Program = Map Int Statement
 
 defaultProgram :: Program
-defaultProgram = Nil
+defaultProgram = empty
 
 -- Statement-s describe an Element in the scene
 -- or they change some other parameter of the rendering (eg. camera settings)

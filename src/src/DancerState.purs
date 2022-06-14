@@ -1,7 +1,8 @@
 module DancerState (
   DancerState(..),
   MaybeRef(..),
-  runDancerWithState
+  runDancerWithState,
+  removeDancer
   )
   where
 
@@ -23,7 +24,7 @@ type MaybeRef a = Ref (Maybe a)
 
 type DancerState =
   {
-  gltfScene :: MaybeRef Three.Scene,
+  theDancer :: MaybeRef Three.Scene,
   animations :: MaybeRef (Array Three.AnimationClip),
   animationMixer :: MaybeRef Three.AnimationMixer
   }
@@ -34,7 +35,7 @@ runDancerWithState theScene nCycles d maybeDancerState = do
   dState <- case maybeDancerState of
     Nothing -> addDancer theScene d
     Just x -> pure x
-  ms <- read dState.gltfScene
+  ms <- read dState.theDancer
   case ms of
     Just s -> do
       let x'  = sampleVariable nCycles d.pos.x
@@ -60,22 +61,29 @@ runDancerWithState theScene nCycles d maybeDancerState = do
 
 addDancer :: Three.Scene -> Dancer -> Effect DancerState
 addDancer theScene d = do
-  gltfScene <- new Nothing
+  theDancer <- new Nothing
   animations <- new Nothing
   animationMixer <- new Nothing
   let url' = resolveURL d.url
   _ <- Three.loadGLTF_DRACO "https://dktr0.github.io/LocoMotion/threejs/" url' $ \gltf -> do
     log $ "model loaded with " <> show (length gltf.animations) <> " animations"
-    Three.addAnythingToScene theScene gltf.scene
-    write (Just gltf.scene) gltfScene
+    Three.addAnything theScene gltf.scene
+    write (Just gltf.scene) theDancer
     write (Just gltf.animations) animations
     animMixer <- Three.newAnimationMixer gltf.scene
     write (Just animMixer) animationMixer
     case gltf.animations!!0 of
       Just a -> do
-        log "playing default (first) animation"
         defaultAction <- Three.clipAction animMixer a
         Three.setEffectiveTimeScale defaultAction 1.0
         Three.playAnything defaultAction
       Nothing -> pure unit
-  pure { gltfScene, animations, animationMixer }
+  pure { theDancer, animations, animationMixer }
+
+
+removeDancer :: Three.Scene -> DancerState -> Effect Unit
+removeDancer sc d = do
+  x <- read d.theDancer
+  case x of
+    Just y -> Three.removeObject3D sc y
+    Nothing -> pure unit
