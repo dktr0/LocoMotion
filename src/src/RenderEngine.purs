@@ -43,13 +43,13 @@ import ZoneMap as ZoneMap
 
 type RenderEngine =
   {
-  launchTime :: DateTime,
   scene :: Three.Scene,
   camera :: Three.PerspectiveCamera,
   renderer :: Three.Renderer,
   programs :: ZoneMap Program,
   zoneStates :: ZoneMap ZoneState,
-  tempo :: Ref Tempo
+  tempo :: Ref Tempo,
+  prevTNow :: Ref DateTime
   }
 
 type IntMap a = Map.Map Int a
@@ -64,7 +64,6 @@ defaultZoneState = { dancers: Map.empty }
 launch :: HTML.HTMLCanvasElement -> Effect RenderEngine
 launch cvs = do
   log "LocoMotion: launch"
-  launchTime <- nowDateTime
   scene <- Three.newScene
 
   hemiLight <- Three.newHemisphereLight 0xffffff 0x444444 2.0
@@ -90,7 +89,9 @@ launch cvs = do
   programs <- ZoneMap.new
   zoneStates <- ZoneMap.new
   tempo <- newTempo (1 % 2) >>= new
-  let re = { launchTime, scene, camera, renderer, programs, zoneStates, tempo }
+  tNow <- nowDateTime
+  prevTNow <- new tNow
+  let re = { scene, camera, renderer, programs, zoneStates, tempo, prevTNow }
   pure re
 
 
@@ -145,10 +146,13 @@ postAnimate re = do
 
 runProgram :: RenderEngine -> Program -> ZoneState -> Effect ZoneState
 runProgram re prog zoneState = do
-  t <- read re.tempo
-  now <- nowDateTime
-  let nCycles = timeToCountNumber t now
-  zoneState' <- foldWithIndexM (runStatement re nCycles) zoneState prog
+  tNow <- nowDateTime
+  tPrev <- read re.prevTNow
+  tempo <- read re.tempo
+  let nCycles = timeToCountNumber tempo tNow
+  let delta = unwrap (diff tNow tPrev :: Seconds)
+  write tNow re.prevTNow
+  zoneState' <- foldWithIndexM (runStatement re nCycles delta) zoneState prog
   removeDeletedElements re prog zoneState'
 
 
@@ -161,26 +165,26 @@ removeDeletedDancers re prog zoneState = do
   pure $ zoneState { dancers = Map.intersection zoneState.dancers prog } -- leave dancers that in both zoneState AND program
 
 
-runStatement :: RenderEngine -> Number -> Int -> ZoneState -> Statement -> Effect ZoneState
-runStatement re nCycles stmtIndex zoneState (Dancer d) = runDancer re nCycles stmtIndex d zoneState
-runStatement re nCycles _ zoneState (Camera cs) = runCameras re nCycles cs *> pure zoneState
-runStatement _ _ _ zoneState _ = pure zoneState
+runStatement :: RenderEngine -> Number -> Number -> Int -> ZoneState -> Statement -> Effect ZoneState
+runStatement re nCycles delta stmtIndex zoneState (Dancer d) = runDancer re nCycles delta stmtIndex d zoneState
+runStatement re nCycles delta _ zoneState (Camera cs) = runCameras re nCycles delta cs *> pure zoneState
+runStatement _ _ _ _ zoneState _ = pure zoneState
 
 
-runDancer :: RenderEngine -> Number -> Int -> Dancer -> ZoneState -> Effect ZoneState
-runDancer re nCycles stmtIndex d zoneState = do
+runDancer :: RenderEngine -> Number -> Number -> Int -> Dancer -> ZoneState -> Effect ZoneState
+runDancer re nCycles delta stmtIndex d zoneState = do
   let prevDancerState = Map.lookup stmtIndex zoneState.dancers
-  ds <- runDancerWithState re.scene nCycles d prevDancerState
+  ds <- runDancerWithState re.scene nCycles delta d prevDancerState
   pure $ zoneState { dancers = Map.insert stmtIndex ds zoneState.dancers }
 
 
-runCameras :: RenderEngine -> Number -> List.List Camera -> Effect Unit
-runCameras re nCycles cs = traverse_ (runCamera re nCycles) cs
+runCameras :: RenderEngine -> Number -> Number -> List.List Camera -> Effect Unit
+runCameras re nCycles delta cs = traverse_ (runCamera re nCycles delta) cs
 
-runCamera :: RenderEngine -> Number -> Camera  -> Effect Unit
-runCamera re nCycles (CameraX v) = Three.setPositionX re.camera $ sampleVariable nCycles v
-runCamera re nCycles (CameraY v) = Three.setPositionY re.camera $ sampleVariable nCycles v
-runCamera re nCycles (CameraZ v) = Three.setPositionZ re.camera $ sampleVariable nCycles v
-runCamera re nCycles (CameraRotX v) = Three.setRotationX re.camera $ sampleVariable nCycles v
-runCamera re nCycles (CameraRotY v) = Three.setRotationY re.camera $ sampleVariable nCycles v
-runCamera re nCycles (CameraRotZ v) = Three.setRotationZ re.camera $ sampleVariable nCycles v
+runCamera :: RenderEngine -> Number -> Number -> Camera  -> Effect Unit
+runCamera re nCycles delta (CameraX v) = Three.setPositionX re.camera $ sampleVariable nCycles v
+runCamera re nCycles delta (CameraY v) = Three.setPositionY re.camera $ sampleVariable nCycles v
+runCamera re nCycles delta (CameraZ v) = Three.setPositionZ re.camera $ sampleVariable nCycles v
+runCamera re nCycles delta (CameraRotX v) = Three.setRotationX re.camera $ sampleVariable nCycles v
+runCamera re nCycles delta (CameraRotY v) = Three.setRotationY re.camera $ sampleVariable nCycles v
+runCamera re nCycles delta (CameraRotZ v) = Three.setRotationZ re.camera $ sampleVariable nCycles v

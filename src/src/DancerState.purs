@@ -47,8 +47,8 @@ newDancerState x = do
   pure { url, theDancer, animations, animationMixer, clipActions, prevAnimationIndex, prevAnimationAction }
 
 
-runDancerWithState :: Three.Scene -> Number -> Dancer -> Maybe DancerState -> Effect DancerState
-runDancerWithState theScene nCycles d maybeDancerState = do
+runDancerWithState :: Three.Scene -> Number -> Number -> Dancer -> Maybe DancerState -> Effect DancerState
+runDancerWithState theScene nCycles delta d maybeDancerState = do
   dState <- case maybeDancerState of
     Nothing -> addDancer theScene d
     Just x -> do
