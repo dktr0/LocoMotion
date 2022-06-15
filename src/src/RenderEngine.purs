@@ -37,6 +37,7 @@ import Data.Traversable (traverse_)
 import AST
 import DancerState
 import Parser
+import Variable
 import ZoneMap (Zone,ZoneMap)
 import ZoneMap as ZoneMap
 
@@ -177,11 +178,9 @@ runCameras :: RenderEngine -> Number -> List.List Camera -> Effect Unit
 runCameras re nCycles cs = traverse_ (runCamera re nCycles) cs
 
 runCamera :: RenderEngine -> Number -> Camera  -> Effect Unit
-runCamera re nCycles (CameraX v) = pure unit -- placeholder: working here
-runCamera re nCycles (CameraY v) = pure unit -- placeholder: working here
-runCamera re nCycles (CameraZ v) = pure unit -- placeholder: working here
-runCamera re nCycles (CameraRotX v) = pure unit -- placeholder: working here
-runCamera re nCycles (CameraRotY v) = pure unit -- placeholder: working here
-runCamera re nCycles (CameraRotZ v) = pure unit -- placeholder: working here
-
-{- let v'  = sampleVariable nCycles v -}
+runCamera re nCycles (CameraX v) = Three.setPositionX re.camera $ sampleVariable nCycles v
+runCamera re nCycles (CameraY v) = Three.setPositionY re.camera $ sampleVariable nCycles v
+runCamera re nCycles (CameraZ v) = Three.setPositionZ re.camera $ sampleVariable nCycles v
+runCamera re nCycles (CameraRotX v) = Three.setRotationX re.camera $ sampleVariable nCycles v
+runCamera re nCycles (CameraRotY v) = Three.setRotationY re.camera $ sampleVariable nCycles v
+runCamera re nCycles (CameraRotZ v) = Three.setRotationZ re.camera $ sampleVariable nCycles v
