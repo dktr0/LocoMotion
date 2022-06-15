@@ -47,14 +47,15 @@ newDancerState x = do
   pure { url, theDancer, animations, animationMixer, clipActions, prevAnimationIndex, prevAnimationAction }
 
 
-runDancerWithState :: Three.Scene -> Number -> Number -> Dancer -> Maybe DancerState -> Effect DancerState
-runDancerWithState theScene nCycles delta d maybeDancerState = do
+runDancerWithState :: Three.Scene -> Number -> Number -> Number -> Dancer -> Maybe DancerState -> Effect DancerState
+runDancerWithState theScene cycleDur nCycles delta d maybeDancerState = do
   dState <- case maybeDancerState of
     Nothing -> addDancer theScene d
     Just x -> do
       updateModelIfNecessary theScene d x
       pure x
   playAnimation dState d.animation
+  updateAnimationDuration dState (d.dur * cycleDur)
   ms <- read dState.theDancer
   case ms of
     Just s -> do
@@ -155,4 +156,13 @@ playAnimation dState n = do
             write (Just newAction) dState.prevAnimationAction
           Nothing -> log "strange error in LocoMotion - DancerState.purs"
       write n dState.prevAnimationIndex
+    Nothing -> pure unit
+
+
+updateAnimationDuration :: DancerState -> Number -> Effect Unit
+updateAnimationDuration dState dur = do
+  x <- read dState.prevAnimationAction
+  case x of
+    Just action -> do
+      Three.setDuration action dur
     Nothing -> pure unit

@@ -60,7 +60,7 @@ dancerPropertiesParser = do
   pure $ foldl (>>>) identity fs
 
 dancerPropertyParser :: P (Dancer -> Dancer)
-dancerPropertyParser = choice [ posRotScaleParser, urlPropertyParser, animationPropertyParser ]
+dancerPropertyParser = choice [ posRotScaleParser, urlPropertyParser, animationPropertyParser, durPropertyParser ]
 
 -- positionPropertyParser :: forall r. P (r -> r)
 posRotScaleParser = do
@@ -99,6 +99,12 @@ setSize n r = r { scale = {
 -- urlPropertyParser :: forall r. P (r -> r)
 urlPropertyParser = do
   reserved "url"
+  reservedOp "="
+  x <- stringLiteral
+  pure $ \r -> r { url = x }
+
+durPropertyParser = do
+  reserved "dur"
   reservedOp "="
   x <- stringLiteral
   pure $ \r -> r { url = x }

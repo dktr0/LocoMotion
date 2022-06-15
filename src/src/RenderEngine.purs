@@ -149,10 +149,11 @@ runProgram re prog zoneState = do
   tNow <- nowDateTime
   tPrev <- read re.prevTNow
   tempo <- read re.tempo
+  let cycleDur = 1.0 / toNumber tempo.freq
   let nCycles = timeToCountNumber tempo tNow
   let delta = unwrap (diff tNow tPrev :: Seconds)
   write tNow re.prevTNow
-  zoneState' <- foldWithIndexM (runStatement re nCycles delta) zoneState prog
+  zoneState' <- foldWithIndexM (runStatement re cycleDur nCycles delta) zoneState prog
   removeDeletedElements re prog zoneState'
 
 
@@ -165,26 +166,26 @@ removeDeletedDancers re prog zoneState = do
   pure $ zoneState { dancers = Map.intersection zoneState.dancers prog } -- leave dancers that in both zoneState AND program
 
 
-runStatement :: RenderEngine -> Number -> Number -> Int -> ZoneState -> Statement -> Effect ZoneState
-runStatement re nCycles delta stmtIndex zoneState (Dancer d) = runDancer re nCycles delta stmtIndex d zoneState
-runStatement re nCycles delta _ zoneState (Camera cs) = runCameras re nCycles delta cs *> pure zoneState
-runStatement _ _ _ _ zoneState _ = pure zoneState
+runStatement :: RenderEngine -> Number -> Number -> Number -> Int -> ZoneState -> Statement -> Effect ZoneState
+runStatement re cycleDur nCycles delta stmtIndex zoneState (Dancer d) = runDancer re cycleDur nCycles delta stmtIndex d zoneState
+runStatement re cycleDur nCycles delta _ zoneState (Camera cs) = runCameras re cycleDur nCycles delta cs *> pure zoneState
+runStatement _ _ _ _ _ zoneState _ = pure zoneState
 
 
-runDancer :: RenderEngine -> Number -> Number -> Int -> Dancer -> ZoneState -> Effect ZoneState
-runDancer re nCycles delta stmtIndex d zoneState = do
+runDancer :: RenderEngine -> Number -> Number -> Number -> Int -> Dancer -> ZoneState -> Effect ZoneState
+runDancer re cycleDur nCycles delta stmtIndex d zoneState = do
   let prevDancerState = Map.lookup stmtIndex zoneState.dancers
-  ds <- runDancerWithState re.scene nCycles delta d prevDancerState
+  ds <- runDancerWithState re.scene cycleDur nCycles delta d prevDancerState
   pure $ zoneState { dancers = Map.insert stmtIndex ds zoneState.dancers }
 
 
-runCameras :: RenderEngine -> Number -> Number -> List.List Camera -> Effect Unit
-runCameras re nCycles delta cs = traverse_ (runCamera re nCycles delta) cs
+runCameras :: RenderEngine -> Number -> Number -> Number -> List.List Camera -> Effect Unit
+runCameras re cycleDur nCycles delta cs = traverse_ (runCamera re cycleDur nCycles delta) cs
 
-runCamera :: RenderEngine -> Number -> Number -> Camera  -> Effect Unit
-runCamera re nCycles delta (CameraX v) = Three.setPositionX re.camera $ sampleVariable nCycles v
-runCamera re nCycles delta (CameraY v) = Three.setPositionY re.camera $ sampleVariable nCycles v
-runCamera re nCycles delta (CameraZ v) = Three.setPositionZ re.camera $ sampleVariable nCycles v
-runCamera re nCycles delta (CameraRotX v) = Three.setRotationX re.camera $ sampleVariable nCycles v
-runCamera re nCycles delta (CameraRotY v) = Three.setRotationY re.camera $ sampleVariable nCycles v
-runCamera re nCycles delta (CameraRotZ v) = Three.setRotationZ re.camera $ sampleVariable nCycles v
+runCamera :: RenderEngine -> Number -> Number -> Number -> Camera  -> Effect Unit
+runCamera re cycleDur nCycles delta (CameraX v) = Three.setPositionX re.camera $ sampleVariable nCycles v
+runCamera re cycleDur nCycles delta (CameraY v) = Three.setPositionY re.camera $ sampleVariable nCycles v
+runCamera re cycleDur nCycles delta (CameraZ v) = Three.setPositionZ re.camera $ sampleVariable nCycles v
+runCamera re cycleDur nCycles delta (CameraRotX v) = Three.setRotationX re.camera $ sampleVariable nCycles v
+runCamera re cycleDur nCycles delta (CameraRotY v) = Three.setRotationY re.camera $ sampleVariable nCycles v
+runCamera re cycleDur nCycles delta (CameraRotZ v) = Three.setRotationZ re.camera $ sampleVariable nCycles v
