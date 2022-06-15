@@ -73,7 +73,7 @@ runDancerWithState theScene nCycles delta d maybeDancerState = do
       Three.setScaleOfAnything s sx' sy' sz'
       am0 <- read dState.animationMixer
       case am0 of
-        Just am -> Three.updateAnimationMixer am 0.016666
+        Just am -> Three.updateAnimationMixer am delta
         Nothing -> pure unit
     Nothing -> pure unit
   pure dState
