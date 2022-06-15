@@ -16,9 +16,10 @@ import Effect (Effect)
 import Effect.Ref (Ref, new, read, write)
 import Effect.Console (log)
 import Data.Foldable (foldM)
-import Data.Map
+import Data.Map as Map
 import Data.Maybe
 import Data.Either
+import Data.List as List
 import ThreeJS as Three
 import Web.HTML as HTML
 import Web.HTML.Window as HTML
@@ -50,14 +51,14 @@ type RenderEngine =
   tempo :: Ref Tempo
   }
 
-type IntMap a = Map Int a
+type IntMap a = Map.Map Int a
 
 type ZoneState = {
   dancers :: IntMap DancerState
   }
 
 defaultZoneState :: ZoneState
-defaultZoneState = { dancers: empty }
+defaultZoneState = { dancers: Map.empty }
 
 launch :: HTML.HTMLCanvasElement -> Effect RenderEngine
 launch cvs = do
@@ -155,22 +156,32 @@ removeDeletedElements re prog zoneState = removeDeletedDancers re prog zoneState
 
 removeDeletedDancers :: RenderEngine -> Program -> ZoneState -> Effect ZoneState
 removeDeletedDancers re prog zoneState = do
-  traverse_ (removeDancer re.scene) $ difference zoneState.dancers prog -- remove dancers that are in zoneState but not program
-  pure $ zoneState { dancers = intersection zoneState.dancers prog } -- leave dancers that in both zoneState AND program
+  traverse_ (removeDancer re.scene) $ Map.difference zoneState.dancers prog -- remove dancers that are in zoneState but not program
+  pure $ zoneState { dancers = Map.intersection zoneState.dancers prog } -- leave dancers that in both zoneState AND program
 
 
 runStatement :: RenderEngine -> Number -> Int -> ZoneState -> Statement -> Effect ZoneState
-runStatement re nCycles stmtIndex zoneState (Element e) = runElement re nCycles stmtIndex e zoneState
+runStatement re nCycles stmtIndex zoneState (Dancer d) = runDancer re nCycles stmtIndex d zoneState
+runStatement re nCycles _ zoneState (Camera cs) = runCameras re nCycles cs *> pure zoneState
 runStatement _ _ _ zoneState _ = pure zoneState
-
-
-runElement :: RenderEngine -> Number -> Int -> Element -> ZoneState -> Effect ZoneState
-runElement re nCycles stmtIndex (Dancer d) zoneState = runDancer re nCycles stmtIndex d zoneState
-runElement _ _ _ _ zoneState = pure zoneState
 
 
 runDancer :: RenderEngine -> Number -> Int -> Dancer -> ZoneState -> Effect ZoneState
 runDancer re nCycles stmtIndex d zoneState = do
-  let prevDancerState = lookup stmtIndex zoneState.dancers
+  let prevDancerState = Map.lookup stmtIndex zoneState.dancers
   ds <- runDancerWithState re.scene nCycles d prevDancerState
-  pure $ zoneState { dancers = insert stmtIndex ds zoneState.dancers }
+  pure $ zoneState { dancers = Map.insert stmtIndex ds zoneState.dancers }
+
+
+runCameras :: RenderEngine -> Number -> List.List Camera -> Effect Unit
+runCameras re nCycles cs = traverse_ (runCamera re nCycles) cs
+
+runCamera :: RenderEngine -> Number -> Camera  -> Effect Unit
+runCamera re nCycles (CameraX v) = pure unit -- placeholder: working here
+runCamera re nCycles (CameraY v) = pure unit -- placeholder: working here
+runCamera re nCycles (CameraZ v) = pure unit -- placeholder: working here
+runCamera re nCycles (CameraRotX v) = pure unit -- placeholder: working here
+runCamera re nCycles (CameraRotY v) = pure unit -- placeholder: working here
+runCamera re nCycles (CameraRotZ v) = pure unit -- placeholder: working here
+
+{- let v'  = sampleVariable nCycles v -}

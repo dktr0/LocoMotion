@@ -2,7 +2,6 @@ module AST (
   Program(..),
   defaultProgram,
   Statement(..),
-  Element(..),
   Dancer(..),
   defaultDancer,
   Ethereal(..),
@@ -30,27 +29,16 @@ type Program = Map Int Statement
 defaultProgram :: Program
 defaultProgram = empty
 
--- Statement-s describe an Element in the scene
+-- Statement-s describe an Element in the scene (eg. a Dancer)
 -- or they change some other parameter of the rendering (eg. camera settings)
 
 data Statement =
-  Element Element |
-  CameraChange (Camera -> Camera)
+  Dancer Dancer |
+  Camera (List Camera)
 
 instance Show Statement where
-  show (Element x) = show x
-  show (CameraChange _) = "CameraChange _"
-
--- Element-s can be Dancer-s (which can be animated, have physics, etc)
--- or Ethereal-s (which are displayed but do not have physics [maybe they might have animation, though?])
-
-data Element =
-  Dancer Dancer |
-  Ethereal Ethereal
-
-instance Show Element where
   show (Dancer x) = show x
-  show (Ethereal x) = "um an ethereal."
+  show (Camera x) = show x
 
 type Dancer = {
   url :: String,
@@ -61,7 +49,7 @@ type Dancer = {
   }
 
 defaultDancer :: Dancer
-defaultDancer = { url: "WomanInTheSea.glb", animation: 4, pos: origin, rot: origin, scale: defaultScale }
+defaultDancer = { url: "raccoon.glb", animation: 4, pos: origin, rot: origin, scale: defaultScale }
 
 -- and for now Ethereals are just polarGridHelpers...
 
@@ -82,13 +70,21 @@ defaultEthereal = PolarGridHelper {
   pos: origin
   }
 
-type Camera = {
-  pos :: Vec3,
-  rot :: Vec3
-  }
+data Camera =
+  CameraX Variable |
+  CameraY Variable |
+  CameraZ Variable |
+  CameraRotX Variable |
+  CameraRotY Variable |
+  CameraRotZ Variable
 
--- normally I wouldn't use x,y,z as the name of a record field
--- but perhaps this is more okay with purescript? Let's see...
+instance Show Camera where
+  show (CameraX v) = "CameraX " <> show v
+  show (CameraY v) = "CameraY " <> show v
+  show (CameraZ v) = "CameraZ " <> show v
+  show (CameraRotX v) = "CameraRotX " <> show v
+  show (CameraRotY v) = "CameraRotY " <> show v
+  show (CameraRotZ v) = "CameraRotZ " <> show v
 
 type Vec3 = {
   x :: Variable,

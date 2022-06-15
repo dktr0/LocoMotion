@@ -35,16 +35,9 @@ program = do
   pure $ fromFoldableWithIndex xs
 
 statement :: P Statement
-statement = choice
-  [
-  (Element <$> element) {- <|>
-  (CameraChange <$> cameraChange) -}
-  ]
-
-element :: P Element
-element = choice [
-  (Dancer <$> dancer),
-  (Ethereal <$> ethereal)
+statement = choice [
+  (Dancer <$> dancer) <|>
+  (Camera <$> camera)
   ]
 
 dancer :: P Dancer
@@ -59,21 +52,15 @@ dancerWithProperties = do
   f <- dancerPropertiesParser
   pure $ f defaultDancer
 
--- there has to be a more elegant way of getting these setters, though, right?
-setPosX n r = r { pos = r.pos { x = n } }
-setPosY n r = r { pos = r.pos { y = n } }
-setPosZ n r = r { pos = r.pos { z = n } }
-setRotX n r = r { rot = r.rot { x = n } }
-setRotY n r = r { rot = r.rot { y = n } }
-setRotZ n r = r { rot = r.rot { z = n } }
-setScaleX n r = r { scale = r.scale { x = n } }
-setScaleY n r = r { scale = r.scale { y = n } }
-setScaleZ n r = r { scale = r.scale { z = n } }
-setSize n r = r { scale = {
-  x: Product r.scale.x n,
-  y: Product r.scale.y n,
-  z: Product r.scale.z n
-  }}
+dancerPropertiesParser :: P (Dancer -> Dancer)
+dancerPropertiesParser = do
+  reservedOp "{"
+  fs <- commaSep dancerPropertyParser -- :: List (Dancer -> Dancer)
+  reservedOp "}"
+  pure $ foldl (>>>) identity fs
+
+dancerPropertyParser :: P (Dancer -> Dancer)
+dancerPropertyParser = choice [ posRotScaleParser, urlPropertyParser ]
 
 -- positionPropertyParser :: forall r. P (r -> r)
 posRotScaleParser = do
@@ -93,6 +80,22 @@ posRotScaleParser = do
   v <- variable
   pure $ f v
 
+-- there has to be a more elegant way of getting these setters, though, right?
+setPosX n r = r { pos = r.pos { x = n } }
+setPosY n r = r { pos = r.pos { y = n } }
+setPosZ n r = r { pos = r.pos { z = n } }
+setRotX n r = r { rot = r.rot { x = n } }
+setRotY n r = r { rot = r.rot { y = n } }
+setRotZ n r = r { rot = r.rot { z = n } }
+setScaleX n r = r { scale = r.scale { x = n } }
+setScaleY n r = r { scale = r.scale { y = n } }
+setScaleZ n r = r { scale = r.scale { z = n } }
+setSize n r = r { scale = {
+  x: Product r.scale.x n,
+  y: Product r.scale.y n,
+  z: Product r.scale.z n
+  }}
+
 -- urlPropertyParser :: forall r. P (r -> r)
 urlPropertyParser = do
   reserved "url"
@@ -101,15 +104,24 @@ urlPropertyParser = do
   pure $ \r -> r { url = x }
 
 
-dancerPropertyParser :: P (Dancer -> Dancer)
-dancerPropertyParser = choice [ posRotScaleParser, urlPropertyParser ]
-
-dancerPropertiesParser :: P (Dancer -> Dancer)
-dancerPropertiesParser = do
+camera :: P (List Camera)
+camera = do
+  reserved "camera"
   reservedOp "{"
-  fs <- commaSep dancerPropertyParser -- :: List (Dancer -> Dancer)
+  fs <- commaSep cameraPropertyParser
   reservedOp "}"
-  pure $ foldl (>>>) identity fs
+  pure $ fs
+
+cameraPropertyParser :: P Camera
+cameraPropertyParser = choice [
+  reserved "x" *> reservedOp "=" *> (CameraX <$> variable),
+  reserved "y" *> reservedOp "=" *> (CameraY <$> variable),
+  reserved "z" *> reservedOp "=" *> (CameraZ <$> variable),
+  reserved "rx" *> reservedOp "=" *> (CameraRotX <$> variable),
+  reserved "ry" *> reservedOp "=" *> (CameraRotY <$> variable),
+  reserved "rz" *> reservedOp "=" *> (CameraRotZ <$> variable)
+  ]
+
 
 variableProduct :: P Variable
 variableProduct = do
@@ -151,7 +163,7 @@ number = choice [
 
 tokenParser :: GenTokenParser String Identity
 tokenParser = makeTokenParser $ LanguageDef (unGenLanguageDef emptyDef) {
-  reservedNames = ["dancer","polarGridHelper","x","y","z","url","rx","ry","rz","sx","sy","sz","size","osc"],
+  reservedNames = ["dancer","camera","polarGridHelper","x","y","z","url","rx","ry","rz","sx","sy","sz","size","osc"],
   reservedOpNames = [";","=","*","+"],
   commentStart = "{-",
   commentEnd = "-}",
