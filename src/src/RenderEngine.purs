@@ -34,10 +34,11 @@ import Data.Tuple
 import Data.FoldableWithIndex (foldWithIndexM)
 import Data.Traversable (traverse_)
 
-import AST
-import DancerState
-import Parser
 import Variable
+import AST
+import Parser
+import DancerState
+import FloorState
 import ZoneMap (Zone,ZoneMap)
 import ZoneMap as ZoneMap
 
@@ -55,11 +56,12 @@ type RenderEngine =
 type IntMap a = Map.Map Int a
 
 type ZoneState = {
-  dancers :: IntMap DancerState
+  dancers :: IntMap DancerState,
+  floors :: IntMap FloorState
   }
 
 defaultZoneState :: ZoneState
-defaultZoneState = { dancers: Map.empty }
+defaultZoneState = { dancers: Map.empty, floors: Map.empty }
 
 launch :: HTML.HTMLCanvasElement -> Effect RenderEngine
 launch cvs = do
@@ -158,16 +160,25 @@ runProgram re prog zoneState = do
 
 
 removeDeletedElements :: RenderEngine -> Program -> ZoneState -> Effect ZoneState
-removeDeletedElements re prog zoneState = removeDeletedDancers re prog zoneState
+removeDeletedElements re prog zoneState = do
+  a <- removeDeletedDancers re prog zoneState
+  removeDeletedFloors re prog a
 
 removeDeletedDancers :: RenderEngine -> Program -> ZoneState -> Effect ZoneState
 removeDeletedDancers re prog zoneState = do
   traverse_ (removeDancer re.scene) $ Map.difference zoneState.dancers prog -- remove dancers that are in zoneState but not program
   pure $ zoneState { dancers = Map.intersection zoneState.dancers prog } -- leave dancers that in both zoneState AND program
 
+removeDeletedFloors :: RenderEngine -> Program -> ZoneState -> Effect ZoneState
+removeDeletedFloors re prog zoneState = do
+  -- TODO: this removal mechanism is now broken since prog contains both dancers and floors (both here and in above function)
+  traverse_ removeFloorState $ Map.difference zoneState.floors prog -- remove dancers that are in zoneState but not program
+  pure $ zoneState { floors = Map.intersection zoneState.floors prog } -- leave floors that in both zoneState AND program
+
 
 runStatement :: RenderEngine -> Number -> Number -> Number -> Int -> ZoneState -> Statement -> Effect ZoneState
 runStatement re cycleDur nCycles delta stmtIndex zoneState (Dancer d) = runDancer re cycleDur nCycles delta stmtIndex d zoneState
+runStatement re cycleDur nCycles delta stmtIndex zoneState (Floor f) = runFloor re cycleDur nCycles delta stmtIndex f zoneState
 runStatement re cycleDur nCycles delta _ zoneState (Camera cs) = runCameras re cycleDur nCycles delta cs *> pure zoneState
 runStatement _ _ _ _ _ zoneState _ = pure zoneState
 
@@ -177,6 +188,19 @@ runDancer re cycleDur nCycles delta stmtIndex d zoneState = do
   let prevDancerState = Map.lookup stmtIndex zoneState.dancers
   ds <- runDancerWithState re.scene cycleDur nCycles delta d prevDancerState
   pure $ zoneState { dancers = Map.insert stmtIndex ds zoneState.dancers }
+
+
+runFloor :: RenderEngine -> Number -> Number -> Number -> Int -> Floor -> ZoneState -> Effect ZoneState
+runFloor re cycleDur nCycles delta stmtIndex f zoneState = do
+  let prevFloorState = Map.lookup stmtIndex zoneState.floors
+  fState <- case prevFloorState of
+    Just fState -> do
+      runFloorState f fState
+      pure fState
+    Nothing -> do
+      fState <- newFloorState re.scene f
+      pure fState
+  pure $ zoneState { floors = Map.insert stmtIndex fState zoneState.floors }
 
 
 runCameras :: RenderEngine -> Number -> Number -> Number -> List.List Camera -> Effect Unit

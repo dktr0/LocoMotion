@@ -37,6 +37,7 @@ program = do
 statement :: P Statement
 statement = choice [
   (Dancer <$> dancer) <|>
+  (Floor <$> floor) <|>
   (Camera <$> camera)
   ]
 
@@ -115,6 +116,49 @@ animationPropertyParser = do
   x <- integer
   pure $ \r -> r { animation = x }
 
+floor :: P Floor
+floor = choice [
+  floorWithProperties,
+  reserved "floor" $> defaultFloor
+  ]
+
+floorWithProperties :: P Floor
+floorWithProperties = do
+  reserved "floor"
+  f <- floorPropertiesParser
+  pure $ f defaultFloor
+
+floorPropertiesParser :: P (Floor -> Floor)
+floorPropertiesParser = do
+  reservedOp "{"
+  fs <- commaSep floorPropertyParser -- :: List (Floor -> Floor)
+  reservedOp "}"
+  pure $ foldl (>>>) identity fs
+
+floorPropertyParser :: P (Floor -> Floor)
+floorPropertyParser = choice [
+  colourParser,
+  shadowsParser
+  ]
+
+colourParser = do
+  ((try $ reserved "colour") <|> reserved "color")
+  reservedOp "="
+  c <- integer
+  pure $ \r -> r { colour=c }
+
+shadowsParser = do
+  reserved "shadows"
+  reservedOp "="
+  b <- boolean
+  pure $ \r -> r { shadows=b }
+
+boolean :: P Boolean
+boolean = choice [
+  reserved "true" $> true,
+  reserved "false" $> false
+  ]
+
 camera :: P (List Camera)
 camera = do
   reserved "camera"
@@ -161,9 +205,6 @@ variable = choice [
   try $ Constant <$> number,
   variableOsc
   ]
-
-ethereal :: P Ethereal
-ethereal = reserved "polarGridHelper" $> defaultEthereal
 
 
 number :: P Number

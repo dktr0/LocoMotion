@@ -1,14 +1,4 @@
-module AST (
-  Program(..),
-  defaultProgram,
-  Statement(..),
-  Dancer(..),
-  defaultDancer,
-  Ethereal(..),
-  defaultEthereal,
-  Camera(..),
-  Vec3(..)
-  ) where
+module AST where
 
 import Prelude
 import Data.Identity
@@ -34,10 +24,12 @@ defaultProgram = empty
 
 data Statement =
   Dancer Dancer |
+  Floor Floor |
   Camera (List Camera)
 
 instance Show Statement where
   show (Dancer x) = show x
+  show (Floor x) = show x
   show (Camera x) = show x
 
 type Dancer = {
@@ -52,24 +44,13 @@ type Dancer = {
 defaultDancer :: Dancer
 defaultDancer = { url: "raccoon.glb", animation: 0, dur: Constant 1.0, pos: origin, rot: origin, scale: defaultScale }
 
--- and for now Ethereals are just polarGridHelpers...
-
-data Ethereal = PolarGridHelper {
-  radius :: Number, -- three.js default is 10, must be positive
-  radials :: Int, -- three.js default is 16, must be positive
-  circles :: Int, -- three.js default is 8, must be positive
-  divisions :: Int, -- three.js default is 64, must be 3 or greater
-  pos :: Vec3
+type Floor = {
+  colour :: Int,
+  shadows :: Boolean
   }
 
-defaultEthereal :: Ethereal
-defaultEthereal = PolarGridHelper {
-  radius: 10.0,
-  radials: 16,
-  circles: 8,
-  divisions: 64,
-  pos: origin
-  }
+defaultFloor :: Floor
+defaultFloor = { colour: 0x101010, shadows: true }
 
 data Camera =
   CameraX Variable |
