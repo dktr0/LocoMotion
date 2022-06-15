@@ -60,7 +60,7 @@ dancerPropertiesParser = do
   pure $ foldl (>>>) identity fs
 
 dancerPropertyParser :: P (Dancer -> Dancer)
-dancerPropertyParser = choice [ posRotScaleParser, urlPropertyParser ]
+dancerPropertyParser = choice [ posRotScaleParser, urlPropertyParser, animationPropertyParser ]
 
 -- positionPropertyParser :: forall r. P (r -> r)
 posRotScaleParser = do
@@ -103,6 +103,11 @@ urlPropertyParser = do
   x <- stringLiteral
   pure $ \r -> r { url = x }
 
+animationPropertyParser = do
+  reserved "animation"
+  reservedOp "="
+  x <- integer
+  pure $ \r -> r { animation = x }
 
 camera :: P (List Camera)
 camera = do
