@@ -55,7 +55,8 @@ runDancerWithState theScene cycleDur nCycles delta d maybeDancerState = do
       updateModelIfNecessary theScene d x
       pure x
   playAnimation dState d.animation
-  updateAnimationDuration dState (d.dur * cycleDur)
+
+
   ms <- read dState.theDancer
   case ms of
     Just s -> do
@@ -72,6 +73,7 @@ runDancerWithState theScene cycleDur nCycles delta d maybeDancerState = do
       Three.setPositionOfAnything s x' y' z'
       Three.setRotationOfAnything s rx' ry' rz'
       Three.setScaleOfAnything s sx' sy' sz'
+      updateAnimationDuration dState $ sampleVariable nCycles d.dur * cycleDur
       am0 <- read dState.animationMixer
       case am0 of
         Just am -> Three.updateAnimationMixer am delta

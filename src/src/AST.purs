@@ -43,14 +43,14 @@ instance Show Statement where
 type Dancer = {
   url :: String,
   animation :: Int,
-  dur :: Number,
+  dur :: Variable,
   pos :: Vec3,
   rot :: Vec3,
   scale :: Vec3
   }
 
 defaultDancer :: Dancer
-defaultDancer = { url: "raccoon.glb", animation: 0, dur: 1.0, pos: origin, rot: origin, scale: defaultScale }
+defaultDancer = { url: "raccoon.glb", animation: 0, dur: Constant 1.0, pos: origin, rot: origin, scale: defaultScale }
 
 -- and for now Ethereals are just polarGridHelpers...
 

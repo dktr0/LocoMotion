@@ -106,8 +106,8 @@ urlPropertyParser = do
 durPropertyParser = do
   reserved "dur"
   reservedOp "="
-  x <- stringLiteral
-  pure $ \r -> r { url = x }
+  x <- variable
+  pure $ \r -> r { dur = x }
 
 animationPropertyParser = do
   reserved "animation"
