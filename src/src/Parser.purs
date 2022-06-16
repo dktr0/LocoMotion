@@ -178,20 +178,6 @@ cameraPropertyParser = choice [
   ]
 
 
-variableProduct :: P Variable
-variableProduct = do
-  x <- number
-  reservedOp "*"
-  y <- number
-  pure $ Product (Constant x) (Constant y)
-
-variableSum :: P Variable
-variableSum = do
-  x <- number
-  reservedOp "+"
-  y <- number
-  pure $ Sum (Constant x) (Constant y)
-
 variableOsc :: P Variable
 variableOsc = do
   reserved "osc"
@@ -199,12 +185,29 @@ variableOsc = do
   pure $ Osc (Constant f)
 
 variable :: P Variable
-variable = choice [
-  try $ variableProduct,
-  try $ variableSum,
-  try $ Constant <$> number,
-  variableOsc
-  ]
+variable = do
+  _ <- pure unit
+  chainl1 variable' additionSubtraction
+
+additionSubtraction :: P (Variable -> Variable -> Variable)
+additionSubtraction = reservedOp "+" $> Sum
+
+variable' :: P Variable
+variable' = do
+  _ <- pure unit
+  chainl1 variable'' multiplicationDivision
+
+multiplicationDivision :: P (Variable -> Variable -> Variable)
+multiplicationDivision = reservedOp "*" $> Product
+
+variable'' :: P Variable
+variable'' = do
+  _ <- pure unit
+  choice [
+    parens variable,
+    try $ Constant <$> number,
+    variableOsc
+    ]
 
 
 number :: P Number
