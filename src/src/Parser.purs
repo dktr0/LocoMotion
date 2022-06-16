@@ -245,9 +245,15 @@ variableAsArgument = do
 
 number :: P Number
 number = choice [
-  try $ float, -- issue here with parsing negative floats: https://github.com/purescript-contrib/purescript-parsing/pull/142
+  try negativeFloat,
+  try float,
   toNumber <$> integer
   ]
+
+negativeFloat :: P Number
+negativeFloat = do
+  reservedOp "-"
+  ((*) (-1.0)) <$> float
 
 tokenParser :: GenTokenParser String Identity
 tokenParser = makeTokenParser $ LanguageDef (unGenLanguageDef emptyDef) {
