@@ -50,7 +50,7 @@ type Floor = {
   }
 
 defaultFloor :: Floor
-defaultFloor = { colour: 0x101010, shadows: true }
+defaultFloor = { colour: 0x888888, shadows: true }
 
 data Camera =
   CameraX Variable |

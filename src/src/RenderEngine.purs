@@ -68,12 +68,12 @@ launch cvs = do
   log "LocoMotion: launch"
   scene <- Three.newScene
 
-  hemiLight <- Three.newHemisphereLight 0xffffff 0x444444 2.0
+  hemiLight <- Three.newHemisphereLight 0xffffff 0x444444 0.8
   Three.setPositionOfAnything hemiLight 0.0 20.0 0.0
   Three.addAnythingToScene scene hemiLight
-  Three.newAmbientLight 0xffffff 1.0 >>= Three.addAnythingToScene scene
-  dirLight <- Three.newDirectionalLight 0x887766 1.0
-  Three.setPositionOfAnything dirLight (-1.0) 1.0 1.0
+  {- Three.newAmbientLight 0xffffff 0.1 >>= Three.addAnythingToScene scene -}
+  dirLight <- Three.newDirectionalLight 0xffffff 0.8
+  Three.setPositionOfAnything dirLight (-1.0) 1.0 10.0
   Three.addAnythingToScene scene dirLight
 
   {- pgh <- Three.newPolarGridHelper 10.0 8 8 8
