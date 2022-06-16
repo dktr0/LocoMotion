@@ -43,7 +43,7 @@ statement = choice [
 
 dancer :: P Dancer
 dancer = choice [
-  dancerWithProperties,
+  try $ dancerWithProperties,
   reserved "dancer" $> defaultDancer
   ]
 
@@ -118,7 +118,7 @@ animationPropertyParser = do
 
 floor :: P Floor
 floor = choice [
-  floorWithProperties,
+  try $ floorWithProperties,
   reserved "floor" $> defaultFloor
   ]
 
@@ -160,7 +160,13 @@ boolean = choice [
   ]
 
 camera :: P (List Camera)
-camera = do
+camera = choice [
+  try $ cameraWithProperties,
+  reserved "camera" $> Nil
+  ]
+
+cameraWithProperties :: P (List Camera)
+cameraWithProperties = do
   reserved "camera"
   reservedOp "{"
   fs <- commaSep cameraPropertyParser
