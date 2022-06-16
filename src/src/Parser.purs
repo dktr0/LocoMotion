@@ -14,6 +14,7 @@ import Parsing
 import Parsing.Language (emptyDef)
 import Parsing.Token (GenLanguageDef(..),LanguageDef,unGenLanguageDef,TokenParser,GenTokenParser,makeTokenParser)
 import Parsing.Combinators
+import Parsing.String (eof)
 
 import AST
 import Variable
@@ -31,15 +32,24 @@ type P a = ParserT String Identity a
 program :: P Program
 program = do
   whiteSpace
-  xs <- sepBy statement (reservedOp ";")
+  xs <- semiSep statement
+  eof
   pure $ fromFoldableWithIndex xs
 
 statement :: P Statement
 statement = choice [
   (Dancer <$> dancer) <|>
   (Floor <$> floor) <|>
-  (Camera <$> camera)
+  (Camera <$> camera) <|>
+  emptyStatement
   ]
+
+emptyStatement :: P Statement
+emptyStatement = do
+  lookAhead whiteSpace
+  lookAhead eof <|> lookAhead (reservedOp ";")
+  pure EmptyStatement
+
 
 dancer :: P Dancer
 dancer = choice [

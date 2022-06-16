@@ -25,12 +25,14 @@ defaultProgram = empty
 data Statement =
   Dancer Dancer |
   Floor Floor |
-  Camera (List Camera)
+  Camera (List Camera) |
+  EmptyStatement
 
 instance Show Statement where
   show (Dancer x) = show x
   show (Floor x) = show x
   show (Camera x) = show x
+  show EmptyStatement = "EmptyStatement"
 
 type Dancer = {
   url :: String,
