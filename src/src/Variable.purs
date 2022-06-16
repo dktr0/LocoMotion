@@ -12,13 +12,17 @@ import Data.Number
 data Variable =
   Constant Number |
   Sum Variable Variable |
+  Difference Variable Variable |
   Product Variable Variable |
+  Divide Variable Variable |
   Osc Variable
 
 instance Show Variable where
   show (Constant x) = "Constant " <> show x
   show (Sum x y) = "Sum (" <> show x <> ") (" <> show y <> ")"
+  show (Difference x y) = "Difference (" <> show x <> ") (" <> show y <> ")"
   show (Product x y) = "Product (" <> show x <> ") (" <> show y <> ")"
+  show (Divide x y) = "Divide (" <> show x <> ") (" <> show y <> ")"
   show (Osc x) = "Osc (" <> show x <> ")"
 
 -- for now, the only information provided on a per-frame
@@ -28,5 +32,11 @@ instance Show Variable where
 sampleVariable :: Number -> Variable -> Number
 sampleVariable _ (Constant x) = x
 sampleVariable nCycles (Sum x y) = sampleVariable nCycles x + sampleVariable nCycles y
+sampleVariable nCycles (Difference x y) = sampleVariable nCycles x - sampleVariable nCycles y
 sampleVariable nCycles (Product x y) = sampleVariable nCycles x * sampleVariable nCycles y
+sampleVariable nCycles (Divide x y) = safeDivide (sampleVariable nCycles x) (sampleVariable nCycles y)
 sampleVariable nCycles (Osc f) = sin $ sampleVariable nCycles f * 2.0 * pi * nCycles
+
+safeDivide :: Number -> Number -> Number
+safeDivide x 0.0 = 0.0
+safeDivide x y = x/y

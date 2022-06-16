@@ -190,7 +190,10 @@ variable = do
   chainl1 variable' additionSubtraction
 
 additionSubtraction :: P (Variable -> Variable -> Variable)
-additionSubtraction = reservedOp "+" $> Sum
+additionSubtraction = choice [
+  reservedOp "+" $> Sum,
+  reservedOp "-" $> Difference
+  ]
 
 variable' :: P Variable
 variable' = do
@@ -198,7 +201,10 @@ variable' = do
   chainl1 variable'' multiplicationDivision
 
 multiplicationDivision :: P (Variable -> Variable -> Variable)
-multiplicationDivision = reservedOp "*" $> Product
+multiplicationDivision = choice [
+  reservedOp "*" $> Product,
+  reservedOp "/" $> Divide
+  ]
 
 variable'' :: P Variable
 variable'' = do
@@ -218,8 +224,8 @@ number = choice [
 
 tokenParser :: GenTokenParser String Identity
 tokenParser = makeTokenParser $ LanguageDef (unGenLanguageDef emptyDef) {
-  reservedNames = ["dancer","camera","polarGridHelper","x","y","z","url","rx","ry","rz","sx","sy","sz","size","osc"],
-  reservedOpNames = [";","=","*","+"],
+  reservedNames = ["dancer","camera","floor","x","y","z","url","animation","dur","rx","ry","rz","sx","sy","sz","size","osc"],
+  reservedOpNames = [";","=","*","+","-","/"],
   commentStart = "{-",
   commentEnd = "-}",
   commentLine = "--",
