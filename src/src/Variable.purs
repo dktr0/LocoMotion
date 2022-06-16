@@ -1,4 +1,7 @@
-module Variable where
+module Variable (
+  Variable(..),
+  sampleVariable
+  ) where
 
 import Prelude
 import Data.Tempo
@@ -15,7 +18,8 @@ data Variable =
   Difference Variable Variable |
   Product Variable Variable |
   Divide Variable Variable |
-  Osc Variable
+  Osc Variable |
+  Range Variable Variable Variable
 
 instance Show Variable where
   show (Constant x) = "Constant " <> show x
@@ -24,6 +28,7 @@ instance Show Variable where
   show (Product x y) = "Product (" <> show x <> ") (" <> show y <> ")"
   show (Divide x y) = "Divide (" <> show x <> ") (" <> show y <> ")"
   show (Osc x) = "Osc (" <> show x <> ")"
+  show (Range r1 r2 x) = "Range (" <> show r1 <> ") (" <> show r2 <> ") (" <> show x <> ")"
 
 -- for now, the only information provided on a per-frame
 -- basis is the position in cycles in a current metric grid.
@@ -36,7 +41,11 @@ sampleVariable nCycles (Difference x y) = sampleVariable nCycles x - sampleVaria
 sampleVariable nCycles (Product x y) = sampleVariable nCycles x * sampleVariable nCycles y
 sampleVariable nCycles (Divide x y) = safeDivide (sampleVariable nCycles x) (sampleVariable nCycles y)
 sampleVariable nCycles (Osc f) = sin $ sampleVariable nCycles f * 2.0 * pi * nCycles
+sampleVariable nCycles (Range r1 r2 x) = rangeVariable (sampleVariable nCycles r1) (sampleVariable nCycles r2) (sampleVariable nCycles x)
 
 safeDivide :: Number -> Number -> Number
-safeDivide x 0.0 = 0.0
+safeDivide _ 0.0 = 0.0
 safeDivide x y = x/y
+
+rangeVariable :: Number -> Number -> Number -> Number
+rangeVariable r1 r2 x = (x * 0.5 + 0.5) * (r2 - r1) + r1

@@ -178,11 +178,7 @@ cameraPropertyParser = choice [
   ]
 
 
-variableOsc :: P Variable
-variableOsc = do
-  reserved "osc"
-  f <- number
-  pure $ Osc (Constant f)
+-- parsing of Variable-s
 
 variable :: P Variable
 variable = do
@@ -212,9 +208,34 @@ variable'' = do
   choice [
     parens variable,
     try $ Constant <$> number,
-    variableOsc
+    try $ variableOsc,
+    try $ variableRange
     ]
 
+variableOsc :: P Variable
+variableOsc = do
+  reserved "osc"
+  f <- variableAsArgument
+  pure $ Osc f
+
+variableRange :: P Variable
+variableRange = do
+  reserved "range"
+  r1 <- variableAsArgument
+  r2 <- variableAsArgument
+  x <- variableAsArgument
+  pure $ Range r1 r2 x
+
+variableAsArgument :: P Variable
+variableAsArgument = do
+  _ <- pure unit
+  choice [
+    parens variable,
+    try $ Constant <$> number
+    ]
+
+
+-- low-level tokens, numbers, etc
 
 number :: P Number
 number = choice [
