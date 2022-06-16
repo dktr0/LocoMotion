@@ -143,15 +143,14 @@ playAnimation dState n = do
             z <- read dState.prevAnimationAction
             case z of
               Just oldAction -> do
-                {- log $ "crossfading from " <> show prevN <> " to " <> show n'
-                Three.setEffectiveWeight newAction 1.0
+                {- Three.setEffectiveWeight newAction 1.0
                 Three.setEffectiveTimeScale newAction 1.0
                 Three.crossFadeTo oldAction newAction 0.1 true -}
-                log $ "stopping " <> show prevN <> " and starting " <> show n'
+                -- log $ "stopping " <> show prevN <> " and starting " <> show n'
                 Three.stop oldAction
                 Three.playAnything newAction
               Nothing -> do
-                log $ "playing newAction " <> show n'
+                -- log $ "playing newAction " <> show n'
                 -- Three.setEffectiveWeight newAction 1.0
                 Three.setEffectiveTimeScale newAction 1.0
                 Three.playAnything newAction

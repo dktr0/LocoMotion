@@ -34,6 +34,15 @@ instance Show Statement where
   show (Camera x) = show x
   show EmptyStatement = "EmptyStatement"
 
+isDancer :: Statement -> Boolean
+isDancer (Dancer _) = true
+isDancer _ = false
+
+isFloor :: Statement -> Boolean
+isFloor (Floor _) = true
+isFloor _ = false
+
+
 type Dancer = {
   url :: String,
   animation :: Int,

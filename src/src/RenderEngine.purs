@@ -166,14 +166,15 @@ removeDeletedElements re prog zoneState = do
 
 removeDeletedDancers :: RenderEngine -> Program -> ZoneState -> Effect ZoneState
 removeDeletedDancers re prog zoneState = do
-  traverse_ (removeDancer re.scene) $ Map.difference zoneState.dancers prog -- remove dancers that are in zoneState but not program
-  pure $ zoneState { dancers = Map.intersection zoneState.dancers prog } -- leave dancers that in both zoneState AND program
+  let progDancers = Map.filter isDancer prog
+  traverse_ (removeDancer re.scene) $ Map.difference zoneState.dancers progDancers -- remove dancers that are in zoneState but not program
+  pure $ zoneState { dancers = Map.intersection zoneState.dancers progDancers } -- leave dancers that in both zoneState AND program
 
 removeDeletedFloors :: RenderEngine -> Program -> ZoneState -> Effect ZoneState
 removeDeletedFloors re prog zoneState = do
-  -- TODO: this removal mechanism is now broken since prog contains both dancers and floors (both here and in above function)
-  traverse_ removeFloorState $ Map.difference zoneState.floors prog -- remove dancers that are in zoneState but not program
-  pure $ zoneState { floors = Map.intersection zoneState.floors prog } -- leave floors that in both zoneState AND program
+  let progFloors = Map.filter isFloor prog
+  traverse_ removeFloorState $ Map.difference zoneState.floors progFloors -- remove dancers that are in zoneState but not program
+  pure $ zoneState { floors = Map.intersection zoneState.floors progFloors } -- leave floors that in both zoneState AND program
 
 
 runStatement :: RenderEngine -> Number -> Number -> Number -> Int -> ZoneState -> Statement -> Effect ZoneState
