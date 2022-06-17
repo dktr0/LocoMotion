@@ -34,6 +34,14 @@
     var r = window.lm.evaluate(0,t);
     document.getElementById('errors').textContent = r.error;
   }
+  window.addEventListener('keydown', function (e) {
+    e = e || window.event;
+    if(e.shiftKey && e.key=="Enter") {
+      e.preventDefault();
+      window.doEval();
+    }
+  });
+
   </script>
 
   <div id="canvasDiv"><canvas id="canvas"></canvas></div>
@@ -45,7 +53,8 @@
 -- This is a rapidly emerging work in progress - check back often for updates
 -- Or get in touch on the Estuary discord server!
 -- More info here: https://github.com/dktr0/LocoMotion#readme
--- The lines below are a valid LocoMotion program (just click Eval!)
+-- The lines below are a valid LocoMotion program - just press shift-Enter to evaluate!
+-- And then you can make changes and press shift-Enter to re-evaluate!
 
 dancer { url="lisa.glb", size = 0.5, x = -3 };
 dancer { url="mark.glb", size = 0.5, x = 3 };
@@ -54,7 +63,7 @@ dancer { url="StoneFigure.glb", x = -2, z = -2, ry=3.14, size=0.5 }
 </textarea>
     </div>
     <div class="status">
-      <button onClick="doEval()">eval</button>
+      <!-- <button onClick="doEval()">eval</button> -->
       <span id="errors"></span>
     </div>
   </div>
