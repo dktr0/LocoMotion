@@ -122,6 +122,7 @@ durPropertyParser = do
   x <- variable
   pure $ \r -> r { dur = x }
 
+animationPropertyParser :: forall a b. P ({ animation :: a | b } -> { animation :: Int | b })
 animationPropertyParser = do
   reserved "animation"
   reservedOp "="
