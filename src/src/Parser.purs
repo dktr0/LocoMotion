@@ -1,4 +1,4 @@
-module Parser (parseProgram) where
+module Parser (parseProgram,durPropertyParser) where
 
 import Prelude
 import Data.Identity
@@ -114,6 +114,8 @@ urlPropertyParser = do
   x <- stringLiteral
   pure $ \r -> r { url = x }
 
+
+durPropertyParser :: forall a b. P ({ dur :: a | b } -> { dur :: Variable | b })
 durPropertyParser = do
   reserved "dur"
   reservedOp "="
