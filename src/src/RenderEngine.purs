@@ -50,7 +50,8 @@ type RenderEngine =
   programs :: ZoneMap Program,
   zoneStates :: ZoneMap ZoneState,
   tempo :: Ref Tempo,
-  prevTNow :: Ref DateTime
+  prevTNow :: Ref DateTime,
+  delta :: Ref Number
   }
 
 type IntMap a = Map.Map Int a
@@ -93,7 +94,8 @@ launch cvs = do
   tempo <- newTempo (1 % 2) >>= new
   tNow <- nowDateTime
   prevTNow <- new tNow
-  let re = { scene, camera, renderer, programs, zoneStates, tempo, prevTNow }
+  delta <- new 0.0
+  let re = { scene, camera, renderer, programs, zoneStates, tempo, prevTNow, delta }
   pure re
 
 
@@ -116,11 +118,16 @@ clearZone re z = do
 
 
 preAnimate :: RenderEngine -> Effect Unit
-preAnimate _ = pure unit
+preAnimate re = do
+  tNow <- nowDateTime
+  tPrev <- read re.prevTNow
+  write tNow re.prevTNow
+  write (unwrap (diff tNow tPrev :: Seconds)) re.delta
 
 
 animateZone :: RenderEngine -> Zone -> Effect Unit
 animateZone re z = do
+  -- t0 <- nowDateTime
   x <- ZoneMap.read z re.programs
   case x of
     Nothing -> do
@@ -133,10 +140,14 @@ animateZone re z = do
                         Nothing -> defaultZoneState
       zoneState' <- runProgram re prog zoneState
       ZoneMap.write z zoneState' re.zoneStates
+  -- t1 <- nowDateTime
+  -- let tDiff = unwrap (diff t1 t0 :: Milliseconds)
+  -- log $ "animateZone " <> show tDiff
 
 
 postAnimate :: RenderEngine -> Effect Unit
 postAnimate re = do
+  -- t0 <- nowDateTime
   n <- ZoneMap.count re.zoneStates
   when (n > 0) $ do
     iWidth <- Three.windowInnerWidth
@@ -144,17 +155,18 @@ postAnimate re = do
     Three.setAspect re.camera (iWidth/iHeight)
     Three.setSize re.renderer iWidth iHeight false
     Three.render re.renderer re.scene re.camera
+  -- t1 <- nowDateTime
+  -- let tDiff = unwrap (diff t1 t0 :: Milliseconds)
+  -- log $ "postAnimate " <> show tDiff
 
 
 runProgram :: RenderEngine -> Program -> ZoneState -> Effect ZoneState
 runProgram re prog zoneState = do
-  tNow <- nowDateTime
-  tPrev <- read re.prevTNow
+  tNow <- read re.prevTNow
   tempo <- read re.tempo
   let cycleDur = 1.0 / toNumber tempo.freq
   let nCycles = timeToCountNumber tempo tNow
-  let delta = unwrap (diff tNow tPrev :: Seconds)
-  write tNow re.prevTNow
+  delta <- read re.delta
   zoneState' <- foldWithIndexM (runStatement re cycleDur nCycles delta) zoneState prog
   removeDeletedElements re prog zoneState'
 
