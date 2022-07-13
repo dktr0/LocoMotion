@@ -1,23 +1,17 @@
 module Parser (parseProgram,durPropertyParser) where
 
 import Prelude
-import Data.Identity
 import Data.List
-import Data.List.NonEmpty
-import Data.Map
+import Data.Map (fromFoldableWithIndex)
 import Data.Either
-import Data.Maybe (Maybe)
-import Data.Number (fromString)
-import Data.Int (toNumber)
-import Control.Bind
 import Parsing
-import Parsing.Language (emptyDef)
-import Parsing.Token (GenLanguageDef(..),LanguageDef,unGenLanguageDef,TokenParser,GenTokenParser,makeTokenParser)
 import Parsing.Combinators
 import Parsing.String (eof)
 
+import TokenParser
 import AST
 import Variable
+import AnimationExpr
 
 parseProgram :: String -> Either String Program
 parseProgram x = case (runParser x program) of
@@ -26,8 +20,6 @@ parseProgram x = case (runParser x program) of
 
 showParseError :: ParseError -> String
 showParseError (ParseError e (Position p)) = show p.line <> ":" <> show p.column <> " " <> e
-
-type P a = ParserT String Identity a
 
 program :: P Program
 program = do
@@ -122,11 +114,11 @@ durPropertyParser = do
   x <- variable
   pure $ \r -> r { dur = x }
 
-animationPropertyParser :: forall a b. P ({ animation :: a | b } -> { animation :: Int | b })
+animationPropertyParser :: forall a b. P ({ animation :: a | b } -> { animation :: AnimationExpr | b })
 animationPropertyParser = do
   reserved "animation"
   reservedOp "="
-  x <- integer
+  x <- animationExprP
   pure $ \r -> r { animation = x }
 
 floor :: P Floor
@@ -252,112 +244,3 @@ variableAsArgument = do
     parens variable,
     try $ Constant <$> number
     ]
-
-
--- low-level tokens, numbers, etc
-
-number :: P Number
-number = choice [
-  try negativeFloat,
-  try float,
-  toNumber <$> integer
-  ]
-
-negativeFloat :: P Number
-negativeFloat = do
-  reservedOp "-"
-  ((*) (-1.0)) <$> float
-
-tokenParser :: GenTokenParser String Identity
-tokenParser = makeTokenParser $ LanguageDef (unGenLanguageDef emptyDef) {
-  reservedNames = ["dancer","camera","floor","x","y","z","url","animation","dur","rx","ry","rz","sx","sy","sz","size","osc"],
-  reservedOpNames = [";","=","*","+","-","/"],
-  commentStart = "{-",
-  commentEnd = "-}",
-  commentLine = "--",
-  nestedComments = true
-  }
-
-angles :: forall a. P a -> P a
-angles = tokenParser.angles
-
-braces :: forall a. P a -> P a
-braces = tokenParser.braces
-
-brackets :: forall a. P a -> P a
-brackets = tokenParser.brackets
-
-charLiteral :: P Char
-charLiteral = tokenParser.charLiteral
-
-colon :: P String
-colon = tokenParser.colon
-
-comma :: P String
-comma = tokenParser.comma
-
-commaSep :: forall a. P a -> P (List a)
-commaSep = tokenParser.commaSep
-
-commaSep1 :: forall a. P a -> P (NonEmptyList a)
-commaSep1 = tokenParser.commaSep1
-
-decimal :: P Int
-decimal = tokenParser.decimal
-
-dot :: P String
-dot = tokenParser.dot
-
-float :: P Number
-float = tokenParser.float
-
-hexadecimal :: P Int
-hexadecimal = tokenParser.hexadecimal
-
-identifier :: P String
-identifier = tokenParser.identifier
-
-integer :: P Int
-integer = tokenParser.integer
-
-lexeme :: forall a. P a -> P a
-lexeme = tokenParser.lexeme
-
-natural :: P Int
-natural = tokenParser.natural
-
-naturalOrFloat :: P (Either Int Number)
-naturalOrFloat = tokenParser.naturalOrFloat
-
-octal :: P Int
-octal = tokenParser.octal
-
-operator :: P String
-operator = tokenParser.operator
-
-parens :: forall a. P a -> P a
-parens = tokenParser.parens
-
-reserved :: String -> P Unit
-reserved = tokenParser.reserved
-
-reservedOp :: String -> P Unit
-reservedOp = tokenParser.reservedOp
-
-semi :: P String
-semi = tokenParser.semi
-
-semiSep :: forall a. P a -> P (List a)
-semiSep = tokenParser.semiSep
-
-semiSep1 :: forall a. P a -> P (NonEmptyList a)
-semiSep1 = tokenParser.semiSep1
-
-stringLiteral :: P String
-stringLiteral = tokenParser.stringLiteral
-
-symbol :: String -> P String
-symbol = tokenParser.symbol
-
-whiteSpace :: P Unit
-whiteSpace = tokenParser.whiteSpace

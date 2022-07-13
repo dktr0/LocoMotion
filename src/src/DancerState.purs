@@ -17,6 +17,7 @@ import Data.Rational
 import Data.Ratio
 import Data.Traversable (traverse,traverse_)
 
+import AnimationExpr
 import AST (Dancer)
 import Variable
 import URL
@@ -54,7 +55,7 @@ runDancerWithState theScene cycleDur nCycles delta d maybeDancerState = do
     Just x -> do
       updateModelIfNecessary theScene d x
       pure x
-  playAnimation dState d.animation
+  playAnimation dState (animationExprToIntHack d.animation)
 
 
   ms <- read dState.theDancer
@@ -104,11 +105,10 @@ loadModel theScene url dState = do
   let url' = resolveURL url
   _ <- Three.loadGLTF_DRACO "https://dktr0.github.io/LocoMotion/threejs/" url' $ \gltf -> do
     log $ "model " <> url' <> " loaded with " <> show (length gltf.animations) <> " animations"
+    Three.printAnything gltf
     Three.addAnything theScene gltf.scene
     mixer <- Three.newAnimationMixer gltf.scene -- make an animation mixer
     clipActions <- traverse (Three.clipAction mixer) gltf.animations -- convert all animations to AnimationActions connected to the animation mixer
-    -- traverse_ (flip Three.setEffectiveWeight $ 0.0) clipActions -- set weight of all actions to 0 initially (not sure if this is right....?)
-    -- traverse_ Three.playAnything clipActions -- play/activate all of the animation actions
     write (Just gltf.scene) dState.theDancer
     write (Just gltf.animations) dState.animations
     write (Just mixer) dState.animationMixer

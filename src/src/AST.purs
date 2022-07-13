@@ -11,6 +11,7 @@ import Data.Number (fromString)
 import Control.Bind
 
 import Variable
+import AnimationExpr
 
 -- Program-s consist of some number of semi-colon separated lists of Statement-s
 
@@ -45,7 +46,7 @@ isFloor _ = false
 
 type Dancer = {
   url :: String,
-  animation :: Int,
+  animation :: AnimationExpr,
   dur :: Variable,
   pos :: Vec3,
   rot :: Vec3,
@@ -53,7 +54,7 @@ type Dancer = {
   }
 
 defaultDancer :: Dancer
-defaultDancer = { url: "raccoon.glb", animation: 0, dur: Constant 1.0, pos: origin, rot: origin, scale: defaultScale }
+defaultDancer = { url: "raccoon.glb", animation: defaultAnimationExpr, dur: Constant 1.0, pos: origin, rot: origin, scale: defaultScale }
 
 type Floor = {
   colour :: Int,
