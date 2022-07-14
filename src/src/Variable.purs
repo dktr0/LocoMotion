@@ -1,12 +1,16 @@
 module Variable (
   Variable(..),
-  sampleVariable
+  sampleVariable,
+  variable
   ) where
 
 import Prelude
 import Data.Tempo
 import Data.Rational
 import Data.Number
+import Parsing.Combinators
+
+import TokenParser
 
 -- for now, a Variable is something that, at runtime
 -- can be sampled on a per-animation-frame basis to
@@ -49,3 +53,60 @@ safeDivide x y = x/y
 
 rangeVariable :: Number -> Number -> Number -> Number
 rangeVariable r1 r2 x = (x * 0.5 + 0.5) * (r2 - r1) + r1
+
+
+-- parsing of Variable-s
+
+variable :: P Variable
+variable = do
+  _ <- pure unit
+  chainl1 variable' additionSubtraction
+
+additionSubtraction :: P (Variable -> Variable -> Variable)
+additionSubtraction = choice [
+  reservedOp "+" $> Sum,
+  reservedOp "-" $> Difference
+  ]
+
+variable' :: P Variable
+variable' = do
+  _ <- pure unit
+  chainl1 variable'' multiplicationDivision
+
+multiplicationDivision :: P (Variable -> Variable -> Variable)
+multiplicationDivision = choice [
+  reservedOp "*" $> Product,
+  reservedOp "/" $> Divide
+  ]
+
+variable'' :: P Variable
+variable'' = do
+  _ <- pure unit
+  choice [
+    parens variable,
+    try $ Constant <$> number,
+    try $ variableOsc,
+    try $ variableRange
+    ]
+
+variableOsc :: P Variable
+variableOsc = do
+  reserved "osc"
+  f <- variableAsArgument
+  pure $ Osc f
+
+variableRange :: P Variable
+variableRange = do
+  reserved "range"
+  r1 <- variableAsArgument
+  r2 <- variableAsArgument
+  x <- variableAsArgument
+  pure $ Range r1 r2 x
+
+variableAsArgument :: P Variable
+variableAsArgument = do
+  _ <- pure unit
+  choice [
+    parens variable,
+    try $ Constant <$> number
+    ]

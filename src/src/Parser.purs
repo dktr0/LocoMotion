@@ -9,9 +9,9 @@ import Parsing.Combinators
 import Parsing.String (eof)
 
 import TokenParser
-import AST
 import Variable
 import AnimationExpr
+import AST
 
 parseProgram :: String -> Either String Program
 parseProgram x = case (runParser x program) of
@@ -187,60 +187,3 @@ cameraPropertyParser = choice [
   reserved "ry" *> reservedOp "=" *> (CameraRotY <$> variable),
   reserved "rz" *> reservedOp "=" *> (CameraRotZ <$> variable)
   ]
-
-
--- parsing of Variable-s
-
-variable :: P Variable
-variable = do
-  _ <- pure unit
-  chainl1 variable' additionSubtraction
-
-additionSubtraction :: P (Variable -> Variable -> Variable)
-additionSubtraction = choice [
-  reservedOp "+" $> Sum,
-  reservedOp "-" $> Difference
-  ]
-
-variable' :: P Variable
-variable' = do
-  _ <- pure unit
-  chainl1 variable'' multiplicationDivision
-
-multiplicationDivision :: P (Variable -> Variable -> Variable)
-multiplicationDivision = choice [
-  reservedOp "*" $> Product,
-  reservedOp "/" $> Divide
-  ]
-
-variable'' :: P Variable
-variable'' = do
-  _ <- pure unit
-  choice [
-    parens variable,
-    try $ Constant <$> number,
-    try $ variableOsc,
-    try $ variableRange
-    ]
-
-variableOsc :: P Variable
-variableOsc = do
-  reserved "osc"
-  f <- variableAsArgument
-  pure $ Osc f
-
-variableRange :: P Variable
-variableRange = do
-  reserved "range"
-  r1 <- variableAsArgument
-  r2 <- variableAsArgument
-  x <- variableAsArgument
-  pure $ Range r1 r2 x
-
-variableAsArgument :: P Variable
-variableAsArgument = do
-  _ <- pure unit
-  choice [
-    parens variable,
-    try $ Constant <$> number
-    ]
