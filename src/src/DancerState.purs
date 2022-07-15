@@ -36,28 +36,10 @@ type DancerState =
   }
 
 
-newDancerState :: String -> Effect DancerState
-newDancerState x = do
-  url <- new x
-  theDancer <- new Nothing
-  animations <- new Nothing
-  animationMixer <- new Nothing
-  clipActions <- new []
-  prevAnimationIndex <- new (-9999)
-  prevAnimationAction <- new Nothing
-  pure { url, theDancer, animations, animationMixer, clipActions, prevAnimationIndex, prevAnimationAction }
-
-
 runDancerWithState :: Three.Scene -> Number -> Number -> Number -> Dancer -> Maybe DancerState -> Effect DancerState
 runDancerWithState theScene cycleDur nCycles delta d maybeDancerState = do
-  dState <- case maybeDancerState of
-    Nothing -> addDancer theScene d
-    Just x -> do
-      updateModelIfNecessary theScene d x
-      pure x
+  dState <- loadModelIfNecessary theScene d maybeDancerState
   playAnimation dState (animationExprToIntHack d.animation)
-
-
   ms <- read dState.theDancer
   case ms of
     Just s -> do
@@ -83,20 +65,25 @@ runDancerWithState theScene cycleDur nCycles delta d maybeDancerState = do
   pure dState
 
 
-addDancer :: Three.Scene -> Dancer -> Effect DancerState
-addDancer theScene d = do
-  dState <- newDancerState d.url
+loadModelIfNecessary :: Three.Scene -> Dancer -> Maybe DancerState -> Effect DancerState
+loadModelIfNecessary theScene d Nothing = do
+  url <- new d.url
+  theDancer <- new Nothing
+  animations <- new Nothing
+  animationMixer <- new Nothing
+  clipActions <- new []
+  prevAnimationIndex <- new (-9999)
+  prevAnimationAction <- new Nothing
+  let dState = { url, theDancer, animations, animationMixer, clipActions, prevAnimationIndex, prevAnimationAction }
   loadModel theScene d.url dState
   pure dState
-
-
-updateModelIfNecessary :: Three.Scene -> Dancer -> DancerState -> Effect Unit
-updateModelIfNecessary theScene d dState = do
+loadModelIfNecessary theScene d (Just dState) = do
   let urlProg = d.url
   urlState <- read dState.url
   when (urlProg /= urlState) $ do
     removeDancer theScene dState
     loadModel theScene d.url dState
+  pure dState
 
 
 loadModel :: Three.Scene -> String -> DancerState -> Effect Unit
