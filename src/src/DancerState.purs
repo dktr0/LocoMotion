@@ -37,31 +37,10 @@ type DancerState =
 
 
 runDancerWithState :: Three.Scene -> Number -> Number -> Number -> Dancer -> Maybe DancerState -> Effect DancerState
-runDancerWithState theScene cycleDur nCycles delta d maybeDancerState = do
+runDancerWithState theScene cycleDur nowCycles delta d maybeDancerState = do
   dState <- loadModelIfNecessary theScene d maybeDancerState
-  playAnimation dState (animationExprToIntHack d.animation)
-  ms <- read dState.theDancer
-  case ms of
-    Just s -> do
-      let x'  = sampleVariable nCycles d.pos.x
-      let y'  = sampleVariable nCycles d.pos.y
-      let z'  = sampleVariable nCycles d.pos.z
-      let rx'  = sampleVariable nCycles d.rot.x
-      let ry'  = sampleVariable nCycles d.rot.y
-      let rz'  = sampleVariable nCycles d.rot.z
-      let sx'  = sampleVariable nCycles d.scale.x
-      let sy'  = sampleVariable nCycles d.scale.y
-      let sz'  = sampleVariable nCycles d.scale.z
-      -- log $ show t <> " " <> show x'
-      Three.setPositionOfAnything s x' y' z'
-      Three.setRotationOfAnything s rx' ry' rz'
-      Three.setScaleOfAnything s sx' sy' sz'
-      updateAnimationDuration dState $ sampleVariable nCycles d.dur * cycleDur
-      am0 <- read dState.animationMixer
-      case am0 of
-        Just am -> Three.updateAnimationMixer am delta
-        Nothing -> pure unit
-    Nothing -> pure unit
+  updateTransforms nowCycles d dState
+  updateAnimation delta cycleDur nowCycles d dState
   pure dState
 
 
@@ -84,6 +63,36 @@ loadModelIfNecessary theScene d (Just dState) = do
     removeDancer theScene dState
     loadModel theScene d.url dState
   pure dState
+
+
+updateTransforms :: Number -> Dancer -> DancerState -> Effect Unit
+updateTransforms nowCycles d s = do
+  maybeModel <- read s.theDancer
+  case maybeModel of
+    Just model -> do
+      let x'  = sampleVariable nowCycles d.pos.x
+      let y'  = sampleVariable nowCycles d.pos.y
+      let z'  = sampleVariable nowCycles d.pos.z
+      Three.setPositionOfAnything model x' y' z'
+      let rx'  = sampleVariable nowCycles d.rot.x
+      let ry'  = sampleVariable nowCycles d.rot.y
+      let rz'  = sampleVariable nowCycles d.rot.z
+      Three.setRotationOfAnything model rx' ry' rz'
+      let sx'  = sampleVariable nowCycles d.scale.x
+      let sy'  = sampleVariable nowCycles d.scale.y
+      let sz'  = sampleVariable nowCycles d.scale.z
+      Three.setScaleOfAnything model sx' sy' sz'
+    Nothing -> pure unit
+
+
+updateAnimation :: Number -> Number -> Number -> Dancer -> DancerState -> Effect Unit
+updateAnimation delta cycleDur nowCycles d s = do
+  playAnimation s $ animationExprToIntHack d.animation
+  updateAnimationDuration s $ sampleVariable nowCycles d.dur * cycleDur
+  am0 <- read s.animationMixer
+  case am0 of
+    Just am -> Three.updateAnimationMixer am delta
+    Nothing -> pure unit
 
 
 loadModel :: Three.Scene -> String -> DancerState -> Effect Unit
