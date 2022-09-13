@@ -2,6 +2,7 @@ module DancerState (
   DancerState(..),
   MaybeRef(..),
   Model(..),
+  MixerState(..),
   runDancerWithState,
   removeDancer
   )
@@ -37,16 +38,35 @@ type DancerState =
   {
   url :: Ref String,
   model :: MaybeRef Model,
-  prevAnimationIndex :: Ref Int,
-  prevAnimationAction :: MaybeRef Three.AnimationAction
+  prevAnimationIndex :: Ref Int, -- OBSOLETE: will be removed when MixerState refactor complete
+  prevAnimationAction :: MaybeRef Three.AnimationAction -- OBSOLETE: will be removed when MixerState refactor complete
   }
 
 type Model = {
   scene :: Three.Scene,
   clips :: Array Three.AnimationClip,
   mixer :: Three.AnimationMixer,
-  actions :: Array Three.AnimationAction
+  actions :: Array Three.AnimationAction,
+  mixerState :: Ref MixerState
   }
+
+-- the state of the animation system is represented as an array of floating point weights
+-- this is cached in the Model after update, so that in succeeding frames, the calculated
+-- MixerState (calculated from AnimationExpr + "environment") can be compared to determine
+-- if any update to the underlying AnimationMixer is required or not.
+
+type MixerState = Array Number
+
+{-
+animationExprToMixerState :: AnimationExpr -> Array Three.AnimationAction -> Effect MixerState
+animationExprToMixerState (AnimationIndexInt i) actions = pure $ ... an array where weight of i is 1.0 and all other weights is 0
+animationExprToMixerState (AnimationIndexString s) actions = do
+  i <- ...figure out the int index of the animation indexed by s...
+  pure $ exprToMixerState (AnimationIndexInt i) actions
+animationExprToAnimationMixerState (AnimationMix xs) actions = do
+  ...xs :: (List (Tuple AnimationExpr Variable)) -- example: ["headroll" 0.5, "legroll" (osc 0.5 * 0.2)]
+-}
+
 
 runDancerWithState :: Three.Scene -> Number -> Number -> Number -> Dancer -> Maybe DancerState -> Effect DancerState
 runDancerWithState theScene cycleDur nowCycles delta d maybeDancerState = do
@@ -116,7 +136,8 @@ gltfToModel :: Three.GLTF -> Effect Model
 gltfToModel gltf = do
   mixer <- Three.newAnimationMixer gltf.scene -- make an animation mixer
   actions <- traverse (Three.clipAction mixer) gltf.animations -- convert all animations to AnimationActions connected to the animation mixer
-  pure { scene: gltf.scene, clips: gltf.animations, mixer: mixer, actions: actions }
+  mixerState <- new []
+  pure { scene: gltf.scene, clips: gltf.animations, mixer, actions, mixerState }
 
 
 removeDancer :: Three.Scene -> DancerState -> Effect Unit
