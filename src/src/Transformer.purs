@@ -1,22 +1,26 @@
-module Modifier (
+module Transformer (
+  Transformer(..),
   Modifier(..),
   ValueExpr(..),
   numberFromValueExpr,
-  modifier
+  transformer
   )where
 
 import Prelude
 import Data.Map
 import Data.List as List
-import Parsing.Combinators
+import Parsing.Combinators hiding (empty)
 import Data.Number
+import Data.Semigroup
+import Data.Tuple
+import Data.Semigroup.Foldable (fold1)
 
 import TokenParser
 
 
-data Modifier =
-  ModifierDictionary (Map String ValueExpr) |
-  ModifierList (List.List Modifier)
+type Transformer = List.List Modifier
+
+type Modifier = Tuple String ValueExpr
 
 data ValueExpr =
   LiteralNumber Number |
@@ -61,22 +65,27 @@ rangeVariable r1 r2 x = (x * 0.5 + 0.5) * (r2 - r1) + r1
 
 -- parsers
 
-modifier :: P Modifier
-modifier = modifierDictionary -- modifierLists not implemented yet
+transformer :: P Transformer
+transformer = do
+  xs <- many1 transformerDictionary
+  pure $ fold1 xs
 
-modifierDictionary :: P Modifier
-modifierDictionary = do
+transformerDictionary :: P Transformer
+transformerDictionary = do
   reservedOp "{"
-  fs <- commaSep modifierProperty
+  fs <- commaSep modifier
   reservedOp "}"
-  pure $ ModifierDictionary $ unions fs
+  pure fs
 
-modifierProperty :: P (Map String ValueExpr)
-modifierProperty = do
+appendValueExpr :: Map String (List.List ValueExpr) -> Tuple String ValueExpr -> Map String (List.List ValueExpr)
+appendValueExpr m (Tuple k v) = insertWith (<>) k (pure v) m
+
+modifier :: P Modifier
+modifier = do
   k <- identifier
   reservedOp "="
   v <- valueExpr
-  pure $ singleton k v
+  pure $ Tuple k v
 
 valueExpr :: P ValueExpr
 valueExpr = do

@@ -29,7 +29,7 @@ negativeFloat = do
 
 tokenParser :: GenTokenParser String Identity
 tokenParser = makeTokenParser $ LanguageDef (unGenLanguageDef emptyDef) {
-  reservedNames = ["dancer","camera","floor","x","y","z","url","animation","dur","rx","ry","rz","sx","sy","sz","size","osc"],
+  reservedNames = ["dancer","camera","floor","osc"],
   reservedOpNames = [";","=","*","+","-","/"],
   commentStart = "{-",
   commentEnd = "-}",
