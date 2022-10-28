@@ -10,7 +10,6 @@ import Data.Maybe (Maybe)
 import Data.Number (fromString)
 import Control.Bind
 
-import Variable
 import AnimationExpr
 import Transformer
 

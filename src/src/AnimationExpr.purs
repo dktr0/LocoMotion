@@ -1,9 +1,4 @@
-module AnimationExpr (
-  AnimationExpr(..),
-  defaultAnimationExpr,
-  animationExprP,
-  animationExprToIntHack
-  ) where
+module AnimationExpr where
 
 import Prelude
 import Data.Generic.Rep (class Generic)
@@ -13,7 +8,8 @@ import Data.Tuple
 import Parsing.Combinators
 
 import TokenParser
-import Variable
+
+{-
 
 data AnimationExpr =
   AnimationIndexInt Int | -- example: 2
@@ -57,3 +53,5 @@ animationMixTuple :: P (Tuple AnimationExpr Variable)
 animationMixTuple = do
   _ <- pure unit
   Tuple <$> animationExprP <*> variable
+
+-}
