@@ -34,8 +34,10 @@ import Data.Tuple
 import Data.FoldableWithIndex (foldWithIndexM)
 import Data.Traversable (traverse_)
 
-import Variable
 import AST
+import Transformer
+import Value
+import ValueMap
 import Parser
 import DancerState
 import FloorState
@@ -111,10 +113,8 @@ evaluate re z x = do
 clearZone :: RenderEngine -> Int -> Effect Unit
 clearZone re z = do
   ZoneMap.delete z re.programs
-
   ZoneMap.delete z re.zoneStates
   log "LocoMotion WARNING: clearZone is not properly implemented yet (needs to delete assets!)"
-
 
 
 preAnimate :: RenderEngine -> Effect Unit
@@ -190,39 +190,38 @@ removeDeletedFloors re prog zoneState = do
 
 
 runStatement :: RenderEngine -> Number -> Number -> Number -> Int -> ZoneState -> Statement -> Effect ZoneState
-runStatement re cycleDur nCycles delta stmtIndex zoneState (Dancer d) = runDancer re cycleDur nCycles delta stmtIndex d zoneState
-runStatement re cycleDur nCycles delta stmtIndex zoneState (Floor f) = runFloor re cycleDur nCycles delta stmtIndex f zoneState
-runStatement re cycleDur nCycles delta _ zoneState (Camera cs) = runCameras re cycleDur nCycles delta cs *> pure zoneState
-runStatement _ _ _ _ _ zoneState _ = pure zoneState
 
-
-runDancer :: RenderEngine -> Number -> Number -> Number -> Int -> Dancer -> ZoneState -> Effect ZoneState
-runDancer re cycleDur nCycles delta stmtIndex d zoneState = do
+runStatement re cycleDur nCycles delta stmtIndex zoneState (Dancer t) = do
   let prevDancerState = Map.lookup stmtIndex zoneState.dancers
-  ds <- runDancerWithState re.scene cycleDur nCycles delta d prevDancerState
+  ds <- runDancerWithState re.scene cycleDur nCycles delta t prevDancerState
   pure $ zoneState { dancers = Map.insert stmtIndex ds zoneState.dancers }
 
-
-runFloor :: RenderEngine -> Number -> Number -> Number -> Int -> Floor -> ZoneState -> Effect ZoneState
-runFloor re cycleDur nCycles delta stmtIndex f zoneState = do
+runStatement re cycleDur nCycles delta stmtIndex zoneState (Floor t) = do
   let prevFloorState = Map.lookup stmtIndex zoneState.floors
   fState <- case prevFloorState of
     Just fState -> do
-      runFloorState f fState
+      runFloorState nCycles t fState
       pure fState
     Nothing -> do
-      fState <- newFloorState re.scene f
+      fState <- newFloorState re.scene nCycles t
       pure fState
   pure $ zoneState { floors = Map.insert stmtIndex fState zoneState.floors }
 
+runStatement re cycleDur nCycles delta _ zoneState (Camera t) = do
+  let valueMap = realizeTransformer nCycles t
+  maybeSetCameraProperty "x" valueMap (Three.setPositionX re.camera)
+  maybeSetCameraProperty "y" valueMap (Three.setPositionY re.camera)
+  maybeSetCameraProperty "z" valueMap (Three.setPositionZ re.camera)
+  maybeSetCameraProperty "rx" valueMap (Three.setRotationX re.camera)
+  maybeSetCameraProperty "ry" valueMap (Three.setRotationY re.camera)
+  maybeSetCameraProperty "rz" valueMap (Three.setRotationZ re.camera)
+  pure zoneState
 
-runCameras :: RenderEngine -> Number -> Number -> Number -> List.List Camera -> Effect Unit
-runCameras re cycleDur nCycles delta cs = traverse_ (runCamera re cycleDur nCycles delta) cs
+runStatement _ _ _ _ _ zoneState _ = pure zoneState
+  
 
-runCamera :: RenderEngine -> Number -> Number -> Number -> Camera  -> Effect Unit
-runCamera re cycleDur nCycles delta (CameraX v) = Three.setPositionX re.camera $ sampleVariable nCycles v
-runCamera re cycleDur nCycles delta (CameraY v) = Three.setPositionY re.camera $ sampleVariable nCycles v
-runCamera re cycleDur nCycles delta (CameraZ v) = Three.setPositionZ re.camera $ sampleVariable nCycles v
-runCamera re cycleDur nCycles delta (CameraRotX v) = Three.setRotationX re.camera $ sampleVariable nCycles v
-runCamera re cycleDur nCycles delta (CameraRotY v) = Three.setRotationY re.camera $ sampleVariable nCycles v
-runCamera re cycleDur nCycles delta (CameraRotZ v) = Three.setRotationZ re.camera $ sampleVariable nCycles v
+maybeSetCameraProperty :: String -> ValueMap -> (Number -> Effect Unit) -> Effect Unit
+maybeSetCameraProperty k valueMap f = do
+  case Map.lookup k valueMap of
+    Just v -> f (valueToNumber v)
+    Nothing -> pure unit
