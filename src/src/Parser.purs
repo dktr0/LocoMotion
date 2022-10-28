@@ -1,4 +1,4 @@
-module Parser (parseProgram,durPropertyParser) where
+module Parser (parseProgram) where
 
 import Prelude
 import Data.List
@@ -9,9 +9,8 @@ import Parsing.Combinators
 import Parsing.String (eof)
 
 import TokenParser
-import Variable
-import AnimationExpr
 import AST
+import Transformer (transformer)
 
 parseProgram :: String -> Either String Program
 parseProgram x = case (runParser x program) of
@@ -29,11 +28,33 @@ program = do
   pure $ fromFoldableWithIndex xs
 
 statement :: P Statement
-statement = choice [
-  (Dancer <$> dancer) <|>
-  (Floor <$> floor) <|>
-  (Camera <$> camera) <|>
-  emptyStatement
+statement = try dancer <|> try floor <|> try camera <|> emptyStatement
+
+dancer :: P Statement
+dancer = choice [
+  try $ do
+    reserved "dancer"
+    t <- transformer
+    pure $ Dancer t,
+  reserved "dancer" $> Dancer Nil
+  ]
+
+floor :: P Statement
+floor = choice [
+  try $ do
+    reserved "floor"
+    t <- transformer
+    pure $ Floor t,
+  reserved "floor" $> Floor Nil
+  ]
+
+camera :: P Statement
+camera = choice [
+  try $ do
+    reserved "camera"
+    t <- transformer
+    pure $ Camera t,
+  reserved "camera" $> Camera Nil
   ]
 
 emptyStatement :: P Statement
@@ -41,149 +62,3 @@ emptyStatement = do
   lookAhead whiteSpace
   lookAhead eof <|> lookAhead (reservedOp ";")
   pure EmptyStatement
-
-
-dancer :: P Dancer
-dancer = choice [
-  try $ dancerWithProperties,
-  reserved "dancer" $> defaultDancer
-  ]
-
-dancerWithProperties :: P Dancer
-dancerWithProperties = do
-  reserved "dancer"
-  f <- dancerPropertiesParser
-  pure $ f defaultDancer
-
-dancerPropertiesParser :: P (Dancer -> Dancer)
-dancerPropertiesParser = do
-  reservedOp "{"
-  fs <- commaSep dancerPropertyParser -- :: List (Dancer -> Dancer)
-  reservedOp "}"
-  pure $ foldl (>>>) identity fs
-
-dancerPropertyParser :: P (Dancer -> Dancer)
-dancerPropertyParser = choice [ posRotScaleParser, urlPropertyParser, animationPropertyParser, durPropertyParser ]
-
--- positionPropertyParser :: forall r. P (r -> r)
-posRotScaleParser = do
-  f <- choice [
-    reserved "x" $> setPosX,
-    reserved "y" $> setPosY,
-    reserved "z" $> setPosZ,
-    reserved "rx" $> setRotX,
-    reserved "ry" $> setRotY,
-    reserved "rz" $> setRotZ,
-    reserved "sx" $> setScaleX,
-    reserved "sy" $> setScaleY,
-    reserved "sz" $> setScaleZ,
-    reserved "size" $> setSize
-    ]
-  reservedOp "="
-  v <- variable
-  pure $ f v
-
--- there has to be a more elegant way of getting these setters, though, right?
-setPosX n r = r { pos = r.pos { x = n } }
-setPosY n r = r { pos = r.pos { y = n } }
-setPosZ n r = r { pos = r.pos { z = n } }
-setRotX n r = r { rot = r.rot { x = n } }
-setRotY n r = r { rot = r.rot { y = n } }
-setRotZ n r = r { rot = r.rot { z = n } }
-setScaleX n r = r { scale = r.scale { x = n } }
-setScaleY n r = r { scale = r.scale { y = n } }
-setScaleZ n r = r { scale = r.scale { z = n } }
-setSize n r = r { scale = {
-  x: Product r.scale.x n,
-  y: Product r.scale.y n,
-  z: Product r.scale.z n
-  }}
-
--- urlPropertyParser :: forall r. P (r -> r)
-urlPropertyParser = do
-  reserved "url"
-  reservedOp "="
-  x <- stringLiteral
-  pure $ \r -> r { url = x }
-
-
-durPropertyParser :: forall a b. P ({ dur :: a | b } -> { dur :: Variable | b })
-durPropertyParser = do
-  reserved "dur"
-  reservedOp "="
-  x <- variable
-  pure $ \r -> r { dur = x }
-
-animationPropertyParser :: forall a b. P ({ animation :: a | b } -> { animation :: AnimationExpr | b })
-animationPropertyParser = do
-  reserved "animation"
-  reservedOp "="
-  x <- animationExprP
-  pure $ \r -> r { animation = x }
-
-floor :: P Floor
-floor = choice [
-  try $ floorWithProperties,
-  reserved "floor" $> defaultFloor
-  ]
-
-floorWithProperties :: P Floor
-floorWithProperties = do
-  reserved "floor"
-  f <- floorPropertiesParser
-  pure $ f defaultFloor
-
-floorPropertiesParser :: P (Floor -> Floor)
-floorPropertiesParser = do
-  reservedOp "{"
-  fs <- commaSep floorPropertyParser -- :: List (Floor -> Floor)
-  reservedOp "}"
-  pure $ foldl (>>>) identity fs
-
-floorPropertyParser :: P (Floor -> Floor)
-floorPropertyParser = choice [
-  colourParser,
-  shadowsParser
-  ]
-
-colourParser = do
-  ((try $ reserved "colour") <|> reserved "color")
-  reservedOp "="
-  c <- integer
-  pure $ \r -> r { colour=c }
-
-shadowsParser = do
-  reserved "shadows"
-  reservedOp "="
-  b <- boolean
-  pure $ \r -> r { shadows=b }
-
-boolean :: P Boolean
-boolean = choice [
-  reserved "true" $> true,
-  reserved "false" $> false
-  ]
-
-camera :: P (List Camera)
-camera = choice [
-  try $ cameraWithProperties,
-  reserved "camera" $> Nil
-  ]
-
-cameraWithProperties :: P (List Camera)
-cameraWithProperties = do
-  reserved "camera"
-  reservedOp "{"
-  fs <- commaSep cameraPropertyParser
-  reservedOp "}"
-  pure $ fs
-
-cameraPropertyParser :: P Camera
-cameraPropertyParser = choice [
-  reserved "x" *> reservedOp "=" *> (CameraX <$> variable),
-  reserved "y" *> reservedOp "=" *> (CameraY <$> variable),
-  reserved "z" *> reservedOp "=" *> (CameraZ <$> variable),
-  reserved "rx" *> reservedOp "=" *> (CameraRotX <$> variable),
-  reserved "ry" *> reservedOp "=" *> (CameraRotY <$> variable),
-  reserved "rz" *> reservedOp "=" *> (CameraRotZ <$> variable)
-  ]

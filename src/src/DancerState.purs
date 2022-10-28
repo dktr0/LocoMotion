@@ -19,10 +19,10 @@ import Data.Rational
 import Data.Ratio
 import Data.Traversable (traverse,traverse_)
 
-import AnimationExpr
-import AST (Dancer)
-import Variable
+import AST
 import URL
+import Transformer
+import ValueMap
 
 type MaybeRef a = Ref (Maybe a)
 
@@ -68,52 +68,56 @@ animationExprToAnimationMixerState (AnimationMix xs) actions = do
 -}
 
 
-runDancerWithState :: Three.Scene -> Number -> Number -> Number -> Dancer -> Maybe DancerState -> Effect DancerState
-runDancerWithState theScene cycleDur nowCycles delta d maybeDancerState = do
-  s <- loadModelIfNecessary theScene d maybeDancerState
-  updateTransforms nowCycles d s
-  updateAnimation delta cycleDur nowCycles d s
+runDancerWithState :: Three.Scene -> Number -> Number -> Number -> Transformer -> Maybe DancerState -> Effect DancerState
+runDancerWithState theScene cycleDur nowCycles delta t maybeDancerState = do
+  let valueMap = realizeTransformer nowCycles t
+  s <- loadModelIfNecessary theScene valueMap maybeDancerState
+  updateTransforms nowCycles valueMap s
+  updateAnimation delta cycleDur valueMap s
   pure s
 
 
-loadModelIfNecessary :: Three.Scene -> Dancer -> Maybe DancerState -> Effect DancerState
-loadModelIfNecessary theScene d Nothing = do
-  url <- new d.url
+loadModelIfNecessary :: Three.Scene -> ValueMap -> Maybe DancerState -> Effect DancerState
+loadModelIfNecessary theScene valueMap Nothing = do
+  let urlProg = lookupString "raccoon.glb" "url" valueMap
+  url <- new urlProg
   model <- new Nothing
   prevAnimationIndex <- new (-9999)
   prevAnimationAction <- new Nothing
   let s = { url, model, prevAnimationIndex, prevAnimationAction }
-  loadModel theScene d.url s
+  loadModel theScene urlProg s
   pure s
-loadModelIfNecessary theScene d (Just s) = do
-  let urlProg = d.url
+loadModelIfNecessary theScene valueMap (Just s) = do
+  let urlProg = lookupString "raccoon.glb" "url" valueMap
   urlState <- read s.url
   when (urlProg /= urlState) $ do
     removeDancer theScene s
-    loadModel theScene d.url s
+    loadModel theScene urlProg s
   pure s
 
 
-updateTransforms :: Number -> Dancer -> DancerState -> Effect Unit
-updateTransforms nowCycles d s = whenMaybeRef s.model $ \m -> do
-  let x'  = sampleVariable nowCycles d.pos.x
-  let y'  = sampleVariable nowCycles d.pos.y
-  let z'  = sampleVariable nowCycles d.pos.z
-  Three.setPositionOfAnything m.scene x' y' z'
-  let rx'  = sampleVariable nowCycles d.rot.x
-  let ry'  = sampleVariable nowCycles d.rot.y
-  let rz'  = sampleVariable nowCycles d.rot.z
-  Three.setRotationOfAnything m.scene rx' ry' rz'
-  let sx'  = sampleVariable nowCycles d.scale.x
-  let sy'  = sampleVariable nowCycles d.scale.y
-  let sz'  = sampleVariable nowCycles d.scale.z
-  Three.setScaleOfAnything m.scene sx' sy' sz'
+updateTransforms :: Number -> ValueMap -> DancerState -> Effect Unit
+updateTransforms nowCycles valueMap s = whenMaybeRef s.model $ \m -> do
+  let x  = lookupNumber 0.0 "x" valueMap
+  let y  = lookupNumber 0.0 "y" valueMap
+  let z  = lookupNumber 0.0 "z" valueMap
+  Three.setPositionOfAnything m.scene x y z
+  let rx  = lookupNumber 0.0 "rx" valueMap
+  let ry  = lookupNumber 0.0 "ry" valueMap
+  let rz  = lookupNumber 0.0 "rz" valueMap
+  Three.setRotationOfAnything m.scene rx ry rz
+  let sx  = lookupNumber 1.0 "sx" valueMap
+  let sy  = lookupNumber 1.0 "sy" valueMap
+  let sz  = lookupNumber 1.0 "sz" valueMap
+  let size = lookupNumber 1.0 "size" valueMap
+  Three.setScaleOfAnything m.scene (sx*size) (sy*size) (sz*size)
 
 
-updateAnimation :: Number -> Number -> Number -> Dancer -> DancerState -> Effect Unit
-updateAnimation delta cycleDur nowCycles d s = whenMaybeRef s.model $ \m -> do
-  playAnimation s $ animationExprToIntHack d.animation
-  updateAnimationDuration s $ sampleVariable nowCycles d.dur * cycleDur
+updateAnimation :: Number -> Number -> ValueMap -> DancerState -> Effect Unit
+updateAnimation delta cycleDur valueMap s = whenMaybeRef s.model $ \m -> do
+  playAnimation s $ lookupInt 0 "animation" valueMap
+  let dur = lookupNumber 1.0 "dur" valueMap
+  updateAnimationDuration s $ dur * cycleDur
   Three.updateAnimationMixer m.mixer delta
 
 

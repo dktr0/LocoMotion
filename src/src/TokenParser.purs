@@ -27,6 +27,12 @@ negativeFloat = do
   reservedOp "-"
   ((*) (-1.0)) <$> float
 
+boolean :: P Boolean
+boolean = choice [
+  reserved "true" $> true,
+  reserved "false" $> false
+  ]
+
 tokenParser :: GenTokenParser String Identity
 tokenParser = makeTokenParser $ LanguageDef (unGenLanguageDef emptyDef) {
   reservedNames = ["dancer","camera","floor","osc"],

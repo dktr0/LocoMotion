@@ -2,8 +2,8 @@ module Transformer (
   Transformer(..),
   Modifier(..),
   ValueExpr(..),
-  numberFromValueExpr,
-  transformer
+  transformer,
+  realizeTransformer
   )where
 
 import Prelude
@@ -14,9 +14,12 @@ import Data.Number
 import Data.Semigroup
 import Data.Tuple
 import Data.Semigroup.Foldable (fold1)
+import Data.Int (toNumber)
+import Data.Foldable (foldl)
 
 import TokenParser
-
+import Value
+import ValueMap
 
 type Transformer = List.List Modifier
 
@@ -24,6 +27,9 @@ type Modifier = Tuple String ValueExpr
 
 data ValueExpr =
   LiteralNumber Number |
+  LiteralString String |
+  LiteralInt Int |
+  LiteralBoolean Boolean |
   ThisRef String | -- eg. this.x would be ValueExprThis "x"
   GlobalRef String | -- eg. x would be ValueExprGlobal "x"
   Sum ValueExpr ValueExpr |
@@ -35,6 +41,9 @@ data ValueExpr =
 
 instance Show ValueExpr where
   show (LiteralNumber x) = "LiteralNumber " <> show x
+  show (LiteralString x) = "LiteralString " <> show x
+  show (LiteralInt x) = "LiteralInt " <> show x
+  show (LiteralBoolean x) = "LiteralBoolean " <> show x
   show (ThisRef x) = "this." <> x
   show (GlobalRef x) = x
   show (Sum x y) = "Sum (" <> show x <> ") (" <> show y <> ")"
@@ -44,23 +53,30 @@ instance Show ValueExpr where
   show (Osc x) = "Osc (" <> show x <> ")"
   show (Range r1 r2 x) = "Range (" <> show r1 <> ") (" <> show r2 <> ") (" <> show x <> ")"
 
-numberFromValueExpr :: Number -> ValueExpr -> Number
-numberFromValueExpr _ (LiteralNumber x) = x
-numberFromValueExpr _ (ThisRef x) = 0.0 -- placeholder
-numberFromValueExpr _ (GlobalRef x) = 0.0 -- placeholder
-numberFromValueExpr nCycles (Sum x y) = numberFromValueExpr nCycles x + numberFromValueExpr nCycles y
-numberFromValueExpr nCycles (Difference x y) = numberFromValueExpr nCycles x - numberFromValueExpr nCycles y
-numberFromValueExpr nCycles (Product x y) = numberFromValueExpr nCycles x * numberFromValueExpr nCycles y
-numberFromValueExpr nCycles (Divide x y) = safeDivide (numberFromValueExpr nCycles x) (numberFromValueExpr nCycles y)
-numberFromValueExpr nCycles (Osc f) = sin $ numberFromValueExpr nCycles f * 2.0 * pi * nCycles
-numberFromValueExpr nCycles (Range r1 r2 x) = rangeVariable (numberFromValueExpr nCycles r1) (numberFromValueExpr nCycles r2) (numberFromValueExpr nCycles x)
 
-safeDivide :: Number -> Number -> Number
-safeDivide _ 0.0 = 0.0
-safeDivide x y = x/y
+realizeTransformer :: Number -> Transformer -> ValueMap
+realizeTransformer nCycles t = foldl (realizeModifier nCycles) empty t
 
-rangeVariable :: Number -> Number -> Number -> Number
-rangeVariable r1 r2 x = (x * 0.5 + 0.5) * (r2 - r1) + r1
+realizeModifier :: Number -> Map String Value -> Modifier -> Map String Value
+realizeModifier nCycles m (Tuple k vExpr) = insert k (realizeValueExpr nCycles m vExpr) m
+
+realizeValueExpr :: Number -> Map String Value -> ValueExpr -> Value
+realizeValueExpr _ _ (LiteralNumber x) = ValueNumber x
+realizeValueExpr _ _ (LiteralString x) = ValueString x
+realizeValueExpr _ _ (LiteralInt x) = ValueInt x
+realizeValueExpr _ _ (LiteralBoolean x) = ValueBoolean x
+realizeValueExpr _ _ (ThisRef _) = ValueNumber 0.0 -- placeholder ? lookup in map but what if not found ?
+realizeValueExpr _ _ (GlobalRef _) = ValueNumber 0.0 -- placeholder
+realizeValueExpr nCycles m (Sum x y) = realizeValueExpr nCycles m x + realizeValueExpr nCycles m y
+realizeValueExpr nCycles m (Difference x y) = realizeValueExpr nCycles m x - realizeValueExpr nCycles m y
+realizeValueExpr nCycles m (Product x y) = realizeValueExpr nCycles m x * realizeValueExpr nCycles m y
+realizeValueExpr nCycles m (Divide x y) = divideValues (realizeValueExpr nCycles m x) (realizeValueExpr nCycles m y)
+realizeValueExpr nCycles m (Osc f) = ValueNumber $ valueToNumber (realizeValueExpr nCycles m f) * 2.0 * pi * nCycles
+realizeValueExpr nCycles m (Range r1 r2 x) = ValueNumber $ (x' * 0.5 + 0.5) * (r2' - r1') + r1'
+  where
+    r1' = valueToNumber $ realizeValueExpr nCycles m r1
+    r2' = valueToNumber $ realizeValueExpr nCycles m r2
+    x' = valueToNumber $ realizeValueExpr nCycles m x
 
 
 -- parsers
@@ -76,9 +92,6 @@ transformerDictionary = do
   fs <- commaSep modifier
   reservedOp "}"
   pure fs
-
-appendValueExpr :: Map String (List.List ValueExpr) -> Tuple String ValueExpr -> Map String (List.List ValueExpr)
-appendValueExpr m (Tuple k v) = insertWith (<>) k (pure v) m
 
 modifier :: P Modifier
 modifier = do
@@ -115,6 +128,8 @@ valueExpr'' = do
   choice [
     parens valueExpr,
     try $ LiteralNumber <$> number,
+    try $ LiteralString <$> stringLiteral,
+    try $ LiteralInt <$> integer,
     try osc,
     try range,
     try thisRef,
