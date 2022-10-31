@@ -106,6 +106,7 @@ evaluate re z x = do
   case parseProgram x of
     Right p -> do
       ZoneMap.write z p re.programs
+      log $ show p
       pure Nothing
     Left err -> pure $ Just err
 
@@ -218,7 +219,7 @@ runStatement re cycleDur nCycles delta _ zoneState (Camera t) = do
   pure zoneState
 
 runStatement _ _ _ _ _ zoneState _ = pure zoneState
-  
+
 
 maybeSetCameraProperty :: String -> ValueMap -> (Number -> Effect Unit) -> Effect Unit
 maybeSetCameraProperty k valueMap f = do

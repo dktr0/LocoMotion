@@ -65,13 +65,13 @@ realizeValueExpr _ _ (LiteralNumber x) = ValueNumber x
 realizeValueExpr _ _ (LiteralString x) = ValueString x
 realizeValueExpr _ _ (LiteralInt x) = ValueInt x
 realizeValueExpr _ _ (LiteralBoolean x) = ValueBoolean x
-realizeValueExpr _ _ (ThisRef _) = ValueNumber 0.0 -- placeholder ? lookup in map but what if not found ?
+realizeValueExpr _ m (ThisRef x) = lookupValue (ValueInt 0) x m
 realizeValueExpr _ _ (GlobalRef _) = ValueNumber 0.0 -- placeholder
 realizeValueExpr nCycles m (Sum x y) = realizeValueExpr nCycles m x + realizeValueExpr nCycles m y
 realizeValueExpr nCycles m (Difference x y) = realizeValueExpr nCycles m x - realizeValueExpr nCycles m y
 realizeValueExpr nCycles m (Product x y) = realizeValueExpr nCycles m x * realizeValueExpr nCycles m y
 realizeValueExpr nCycles m (Divide x y) = divideValues (realizeValueExpr nCycles m x) (realizeValueExpr nCycles m y)
-realizeValueExpr nCycles m (Osc f) = ValueNumber $ valueToNumber (realizeValueExpr nCycles m f) * 2.0 * pi * nCycles
+realizeValueExpr nCycles m (Osc f) = ValueNumber $ sin $ valueToNumber (realizeValueExpr nCycles m f) * 2.0 * pi * nCycles
 realizeValueExpr nCycles m (Range r1 r2 x) = ValueNumber $ (x' * 0.5 + 0.5) * (r2' - r1') + r1'
   where
     r1' = valueToNumber $ realizeValueExpr nCycles m r1
