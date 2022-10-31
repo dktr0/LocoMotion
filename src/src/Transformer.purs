@@ -3,6 +3,7 @@ module Transformer (
   Modifier(..),
   ValueExpr(..),
   transformer,
+  valueExpr,
   realizeTransformer
   )where
 

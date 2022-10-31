@@ -10,7 +10,7 @@ import Parsing.String (eof)
 
 import TokenParser
 import AST
-import Transformer (transformer)
+import Transformer (transformer,valueExpr)
 
 parseProgram :: String -> Either String Program
 parseProgram x = case (runParser x program) of
@@ -28,7 +28,7 @@ program = do
   pure $ fromFoldableWithIndex xs
 
 statement :: P Statement
-statement = try dancer <|> try floor <|> try camera <|> emptyStatement
+statement = try dancer <|> try floor <|> try camera <|> try assignment <|> emptyStatement
 
 dancer :: P Statement
 dancer = choice [
@@ -56,6 +56,13 @@ camera = choice [
     pure $ Camera t,
   reserved "camera" $> Camera Nil
   ]
+
+assignment :: P Statement
+assignment = do
+  k <- identifier
+  reservedOp "="
+  v <- valueExpr
+  pure $ Assignment k v
 
 emptyStatement :: P Statement
 emptyStatement = do

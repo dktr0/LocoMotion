@@ -27,12 +27,14 @@ data Statement =
   Dancer Transformer |
   Floor Transformer |
   Camera Transformer |
+  Assignment String ValueExpr |
   EmptyStatement
 
 instance Show Statement where
   show (Dancer x) = "Dancer " <> show x
   show (Floor x) = "Floor " <> show x
   show (Camera x) = "Camera " <> show x
+  show (Assignment k v) = "Assignment " <> show k <> " " <> show v
   show EmptyStatement = "EmptyStatement"
 
 isDancer :: Statement -> Boolean
