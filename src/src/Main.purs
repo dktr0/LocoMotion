@@ -8,38 +8,41 @@ import Effect
 import Effect.Class
 import Effect.Console (log)
 import Web.HTML.HTMLCanvasElement as HTML
+import Data.Tempo
+import Effect.Ref (write)
 
-import RenderEngine
+import RenderEngine as RE
 import AST
 import Parser
 
 
-launch :: HTML.HTMLCanvasElement -> Effect RenderEngine
-launch cvs = do
-  log "LocoMotion: launch"
-  launchRenderEngine cvs
+launch :: HTML.HTMLCanvasElement -> Effect RE.RenderEngine
+launch = RE.launch
 
 
-evaluateLocomotion :: RenderEngine -> String -> Effect { success :: Boolean, error :: String }
-evaluateLocomotion re x = do
-  log "LocoMotion: evaluate"
-  y <- evaluate re x
+evaluate :: RE.RenderEngine -> Int -> String -> Effect { success :: Boolean, error :: String }
+evaluate re zone x = do
+  y <- RE.evaluate re zone x
   case y of
     Just error -> pure $ { success: false, error }
     Nothing -> pure $ { success: true, error: "" }
 
 
-animateLocomotion :: RenderEngine -> Effect Unit
-animateLocomotion re = animate re
+clearZone :: RE.RenderEngine -> Int -> Effect Unit
+clearZone = RE.clearZone
 
 
--- we imagine that this PureScript module will also be
--- a module from the standpoint of a JavaScript application as well.
--- main is provided so that spago can bundle an app, and it will
--- run when the resulting app/module is loaded into the DOM - but
--- we make it do nothing (since other definitions are the real
--- entry points into the module). Perhaps it could eventually
--- serve some use in initializing the module though?
+setTempo :: RE.RenderEngine -> ForeignTempo -> Effect Unit
+setTempo re t = write (fromForeignTempo t) re.tempo
 
-main :: Effect Unit
-main = pure unit
+
+preAnimate :: RE.RenderEngine -> Effect Unit
+preAnimate = RE.preAnimate
+
+
+animateZone :: RE.RenderEngine -> Int -> Effect Unit
+animateZone = RE.animateZone
+
+
+postAnimate :: RE.RenderEngine -> Effect Unit
+postAnimate = RE.postAnimate

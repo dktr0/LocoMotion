@@ -1,22 +1,16 @@
 module Parser (parseProgram) where
 
 import Prelude
-import Data.Identity
 import Data.List
-import Data.List.NonEmpty
+import Data.Map (fromFoldableWithIndex)
 import Data.Either
-import Data.Maybe (Maybe)
-import Data.Number (fromString)
-import Data.Int (toNumber)
-import Control.Bind
-import Text.Parsing.Parser
-import Text.Parsing.Parser.Pos
-import Text.Parsing.Parser.Language (emptyDef)
-import Text.Parsing.Parser.Token (GenLanguageDef(..),LanguageDef,unGenLanguageDef,TokenParser,GenTokenParser,makeTokenParser)
-import Text.Parsing.Parser.Combinators
+import Parsing
+import Parsing.Combinators
+import Parsing.String (eof)
 
+import TokenParser
 import AST
-import Variable
+import Transformer (transformer)
 
 parseProgram :: String -> Either String Program
 parseProgram x = case (runParser x program) of
@@ -26,218 +20,45 @@ parseProgram x = case (runParser x program) of
 showParseError :: ParseError -> String
 showParseError (ParseError e (Position p)) = show p.line <> ":" <> show p.column <> " " <> e
 
-type P a = ParserT String Identity a
-
 program :: P Program
 program = do
   whiteSpace
-  sepBy statement (reservedOp ";")
+  xs <- semiSep statement
+  eof
+  pure $ fromFoldableWithIndex xs
 
 statement :: P Statement
-statement = choice
-  [
-  (Element <$> element) {- <|>
-  (CameraChange <$> cameraChange) -}
-  ]
+statement = try dancer <|> try floor <|> try camera <|> emptyStatement
 
-element :: P Element
-element = choice [
-  (Dancer <$> dancer),
-  (Ethereal <$> ethereal)
-  ]
-
-dancer :: P Dancer
+dancer :: P Statement
 dancer = choice [
-  dancerWithProperties,
-  reserved "dancer" $> defaultDancer
+  try $ do
+    reserved "dancer"
+    t <- transformer
+    pure $ Dancer t,
+  reserved "dancer" $> Dancer Nil
   ]
 
-dancerWithProperties :: P Dancer
-dancerWithProperties = do
-  reserved "dancer"
-  f <- dancerPropertiesParser
-  pure $ f defaultDancer
-
--- there has to be a more elegant way of getting these setters, though, right?
-setPosX n r = r { pos = r.pos { x = n } }
-setPosY n r = r { pos = r.pos { y = n } }
-setPosZ n r = r { pos = r.pos { z = n } }
-setRotX n r = r { rot = r.rot { x = n } }
-setRotY n r = r { rot = r.rot { y = n } }
-setRotZ n r = r { rot = r.rot { z = n } }
-setScaleX n r = r { scale = r.scale { x = n } }
-setScaleY n r = r { scale = r.scale { y = n } }
-setScaleZ n r = r { scale = r.scale { z = n } }
-setSize n r = r { scale = {
-  x: Product r.scale.x n,
-  y: Product r.scale.y n,
-  z: Product r.scale.z n
-  }}
-
--- positionPropertyParser :: forall r. P (r -> r)
-posRotScaleParser = do
-  f <- choice [
-    reserved "x" $> setPosX,
-    reserved "y" $> setPosY,
-    reserved "z" $> setPosZ,
-    reserved "rx" $> setRotX,
-    reserved "ry" $> setRotY,
-    reserved "rz" $> setRotZ,
-    reserved "sx" $> setScaleX,
-    reserved "sy" $> setScaleY,
-    reserved "sz" $> setScaleZ,
-    reserved "size" $> setSize
-    ]
-  reservedOp "="
-  v <- variable
-  pure $ f v
-
--- urlPropertyParser :: forall r. P (r -> r)
-urlPropertyParser = do
-  reserved "url"
-  reservedOp "="
-  x <- stringLiteral
-  pure $ \r -> r { url = x }
-
-
-dancerPropertyParser :: P (Dancer -> Dancer)
-dancerPropertyParser = choice [ posRotScaleParser, urlPropertyParser ]
-
-dancerPropertiesParser :: P (Dancer -> Dancer)
-dancerPropertiesParser = do
-  reservedOp "{"
-  fs <- commaSep dancerPropertyParser -- :: List (Dancer -> Dancer)
-  reservedOp "}"
-  pure $ foldl (>>>) identity fs
-
-variableProduct :: P Variable
-variableProduct = do
-  x <- number
-  reservedOp "*"
-  y <- number
-  pure $ Product (Constant x) (Constant y)
-
-variableSum :: P Variable
-variableSum = do
-  x <- number
-  reservedOp "+"
-  y <- number
-  pure $ Sum (Constant x) (Constant y)
-
-variableOsc :: P Variable
-variableOsc = do
-  reserved "osc"
-  f <- number
-  pure $ Osc (Constant f)
-
-variable :: P Variable
-variable = choice [
-  try $ variableProduct,
-  try $ variableSum,
-  try $ Constant <$> number,
-  variableOsc
+floor :: P Statement
+floor = choice [
+  try $ do
+    reserved "floor"
+    t <- transformer
+    pure $ Floor t,
+  reserved "floor" $> Floor Nil
   ]
 
-ethereal :: P Ethereal
-ethereal = reserved "polarGridHelper" $> defaultEthereal
-
-
-number :: P Number
-number = choice [
-  try $ float, -- issue here with parsing negative floats: https://github.com/purescript-contrib/purescript-parsing/pull/142
-  toNumber <$> integer
+camera :: P Statement
+camera = choice [
+  try $ do
+    reserved "camera"
+    t <- transformer
+    pure $ Camera t,
+  reserved "camera" $> Camera Nil
   ]
 
-tokenParser :: GenTokenParser String Identity
-tokenParser = makeTokenParser $ LanguageDef (unGenLanguageDef emptyDef) {
-  reservedNames = ["dancer","polarGridHelper","x","y","z","url","rx","ry","rz","sx","sy","sz","size","osc"],
-  reservedOpNames = [";","=","*","+"],
-  commentStart = "{-",
-  commentEnd = "-}",
-  commentLine = "--",
-  nestedComments = true
-  }
-
-angles :: forall a. P a -> P a
-angles = tokenParser.angles
-
-braces :: forall a. P a -> P a
-braces = tokenParser.braces
-
-brackets :: forall a. P a -> P a
-brackets = tokenParser.brackets
-
-charLiteral :: P Char
-charLiteral = tokenParser.charLiteral
-
-colon :: P String
-colon = tokenParser.colon
-
-comma :: P String
-comma = tokenParser.comma
-
-commaSep :: forall a. P a -> P (List a)
-commaSep = tokenParser.commaSep
-
-commaSep1 :: forall a. P a -> P (NonEmptyList a)
-commaSep1 = tokenParser.commaSep1
-
-decimal :: P Int
-decimal = tokenParser.decimal
-
-dot :: P String
-dot = tokenParser.dot
-
-float :: P Number
-float = tokenParser.float
-
-hexadecimal :: P Int
-hexadecimal = tokenParser.hexadecimal
-
-identifier :: P String
-identifier = tokenParser.identifier
-
-integer :: P Int
-integer = tokenParser.integer
-
-lexeme :: forall a. P a -> P a
-lexeme = tokenParser.lexeme
-
-natural :: P Int
-natural = tokenParser.natural
-
-naturalOrFloat :: P (Either Int Number)
-naturalOrFloat = tokenParser.naturalOrFloat
-
-octal :: P Int
-octal = tokenParser.octal
-
-operator :: P String
-operator = tokenParser.operator
-
-parens :: forall a. P a -> P a
-parens = tokenParser.parens
-
-reserved :: String -> P Unit
-reserved = tokenParser.reserved
-
-reservedOp :: String -> P Unit
-reservedOp = tokenParser.reservedOp
-
-semi :: P String
-semi = tokenParser.semi
-
-semiSep :: forall a. P a -> P (List a)
-semiSep = tokenParser.semiSep
-
-semiSep1 :: forall a. P a -> P (NonEmptyList a)
-semiSep1 = tokenParser.semiSep1
-
-stringLiteral :: P String
-stringLiteral = tokenParser.stringLiteral
-
-symbol :: String -> P String
-symbol = tokenParser.symbol
-
-whiteSpace :: P Unit
-whiteSpace = tokenParser.whiteSpace
+emptyStatement :: P Statement
+emptyStatement = do
+  lookAhead whiteSpace
+  lookAhead eof <|> lookAhead (reservedOp ";")
+  pure EmptyStatement

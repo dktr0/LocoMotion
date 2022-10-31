@@ -1,13 +1,29 @@
-import PS from './index.js';
+import * as L from './index.js';
 
-export function launch(canvas) {
-  return PS.launch(canvas)();
+export function LocoMotion(canvas) {
+  this.lm = L.launch(canvas)();
 }
 
-export function evaluateLocomotion(lm,txt) {
-  return PS.evaluateLocomotion(lm)(txt)();
+LocoMotion.prototype.evaluate = function(zone,txt) {
+  return L.evaluate(this.lm)(zone)(txt)();
 }
 
-export function animateLocomotion(lm) {
-  return PS.animateLocomotion(lm)();
+LocoMotion.prototype.clearZone = function(zone) {
+  return L.clearZone(this.lm)(zone)();
+}
+
+LocoMotion.prototype.setTempo = function(foreignTempo) {
+  return L.setTempo(this.lm)(foreignTempo)();
+}
+
+LocoMotion.prototype.preAnimate = function() {
+  return L.preAnimate(this.lm)();
+}
+
+LocoMotion.prototype.animateZone = function(zone) {
+  return L.animateZone(this.lm)(zone)();
+}
+
+LocoMotion.prototype.postAnimate = function() {
+  return L.postAnimate(this.lm)();
 }

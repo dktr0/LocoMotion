@@ -6,27 +6,42 @@
  <link href="style.css" rel="stylesheet" type="text/css"/>
 </head>
 
-<body onLoad="doLaunch()">
+<body onLoad="window.doLaunch()">
 
-  <script src="three.min.js"></script> <!-- THREEJS library -->
-  <script src="GLTFLoader.js"></script> <!-- also from THREEJS -->
-  <script src="locoMotion.js"></script> --> <!-- compiled PureScript bundle -->
-  <script>
-  function doLaunch() {
+  <script src="./threejs/three.min.js"></script> <!-- THREEJS library -->
+  <script src="./threejs/GLTFLoader.js"></script> <!-- also from THREEJS -->
+  <script src="./threejs/DRACOLoader.js"></script> <!-- also from THREEJS -->
+  <script src="./locoMotion.js"></script>
+  <script type="module">
+  // note: we're currently having trouble using the webpacked version via ES6 modules -->
+  // but we can use the direct output of spago bundle-module OKAY vis ES6... -->
+  // and we can use the webpacked version as a direct script import.. -->
+  // import * as LocoMotion from "./locoMotion.js";
+  window.doLaunch = function () {
     var cvs = document.getElementById('canvas');
-    console.log("index.html 17");
-    _locomotion = locoMotion.launch(cvs);
+    window.lm = new LocoMotion.LocoMotion(cvs);
+    window.lm.evaluate(0,"");
     window.requestAnimationFrame(animate);
-  }
-  function doEval() {
-    var t = document.getElementById("editorArea").value;
-    var r = locoMotion.evaluateLocomotion(_locomotion,t);
-    document.getElementById('errors').textContent = r.error;
   }
   function animate() {
     window.requestAnimationFrame(animate);
-    locoMotion.animateLocomotion(_locomotion);
+    window.lm.preAnimate();
+    window.lm.animateZone(0);
+    window.lm.postAnimate();
   }
+  window.doEval = function () {
+    var t = document.getElementById("editorArea").value;
+    var r = window.lm.evaluate(0,t);
+    document.getElementById('errors').textContent = r.error;
+  }
+  window.addEventListener('keydown', function (e) {
+    e = e || window.event;
+    if(e.shiftKey && e.key=="Enter") {
+      e.preventDefault();
+      window.doEval();
+    }
+  });
+
   </script>
 
   <div id="canvasDiv"><canvas id="canvas"></canvas></div>
@@ -37,14 +52,18 @@
 -- Type programs here and click the "Eval" button to make them go
 -- This is a rapidly emerging work in progress - check back often for updates
 -- Or get in touch on the Estuary discord server!
--- The line below is a valid LocoMotion program (just click Eval!)
-dancer { size=0.5, ry=3.14, x = osc 0.1 };
-dancer { url="WoodFigure.glb", size=0.5, x = -2 };
-dancer { url="StoneFigure.glb", x = 2, ry=4.71, size=0.25 }
+-- More info here: https://github.com/dktr0/LocoMotion#readme
+-- The lines below are a valid LocoMotion program - just press shift-Enter to evaluate!
+-- And then you can make changes and press shift-Enter to re-evaluate!
+
+dancer { url="lisa.glb", size = 0.5, x = -3 };
+dancer { url="mark.glb", size = 0.5, x = 3 };
+dancer { url="bBoy.glb", size = 0.5, x = -2 };
+dancer { url="StoneFigure.glb", x = -2, z = -2, ry=3.14, size=0.5 }
 </textarea>
     </div>
     <div class="status">
-      <button onClick="doEval()">eval</button>
+      <!-- <button onClick="doEval()">eval</button> -->
       <span id="errors"></span>
     </div>
   </div>
