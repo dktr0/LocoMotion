@@ -10,7 +10,8 @@ import Data.Maybe (Maybe)
 import Data.Number (fromString)
 import Control.Bind
 
-import Variable
+import AnimationExpr
+import Transformer
 
 -- Program-s consist of some number of semi-colon separated lists of Statement-s
 
@@ -23,15 +24,15 @@ defaultProgram = empty
 -- or they change some other parameter of the rendering (eg. camera settings)
 
 data Statement =
-  Dancer Dancer |
-  Floor Floor |
-  Camera (List Camera) |
+  Dancer Transformer |
+  Floor Transformer |
+  Camera Transformer |
   EmptyStatement
 
 instance Show Statement where
-  show (Dancer x) = show x
-  show (Floor x) = show x
-  show (Camera x) = show x
+  show (Dancer x) = "Dancer " <> show x
+  show (Floor x) = "Floor " <> show x
+  show (Camera x) = "Camera " <> show x
   show EmptyStatement = "EmptyStatement"
 
 isDancer :: Statement -> Boolean
@@ -41,52 +42,3 @@ isDancer _ = false
 isFloor :: Statement -> Boolean
 isFloor (Floor _) = true
 isFloor _ = false
-
-
-type Dancer = {
-  url :: String,
-  animation :: Int,
-  dur :: Variable,
-  pos :: Vec3,
-  rot :: Vec3,
-  scale :: Vec3
-  }
-
-defaultDancer :: Dancer
-defaultDancer = { url: "raccoon.glb", animation: 0, dur: Constant 1.0, pos: origin, rot: origin, scale: defaultScale }
-
-type Floor = {
-  colour :: Int,
-  shadows :: Boolean
-  }
-
-defaultFloor :: Floor
-defaultFloor = { colour: 0x888888, shadows: true }
-
-data Camera =
-  CameraX Variable |
-  CameraY Variable |
-  CameraZ Variable |
-  CameraRotX Variable |
-  CameraRotY Variable |
-  CameraRotZ Variable
-
-instance Show Camera where
-  show (CameraX v) = "CameraX " <> show v
-  show (CameraY v) = "CameraY " <> show v
-  show (CameraZ v) = "CameraZ " <> show v
-  show (CameraRotX v) = "CameraRotX " <> show v
-  show (CameraRotY v) = "CameraRotY " <> show v
-  show (CameraRotZ v) = "CameraRotZ " <> show v
-
-type Vec3 = {
-  x :: Variable,
-  y :: Variable,
-  z :: Variable
-  }
-
-origin :: Vec3
-origin = { x: Constant 0.0, y: Constant 0.0, z: Constant 0.0 }
-
-defaultScale :: Vec3
-defaultScale = { x: Constant 1.0, y: Constant 1.0, z: Constant 1.0 }

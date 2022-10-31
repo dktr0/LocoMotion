@@ -1,6 +1,8 @@
 module DancerState (
   DancerState(..),
   MaybeRef(..),
+  Model(..),
+  MixerState(..),
   runDancerWithState,
   removeDancer
   )
@@ -17,153 +19,155 @@ import Data.Rational
 import Data.Ratio
 import Data.Traversable (traverse,traverse_)
 
-import AST (Dancer)
-import Variable
+import AST
 import URL
+import Transformer
+import ValueMap
 
 type MaybeRef a = Ref (Maybe a)
+
+-- like 'when' but specialized for a MaybeRef
+whenMaybeRef :: forall a. MaybeRef a -> (a -> Effect Unit) -> Effect Unit
+whenMaybeRef mRef f = do
+  m <- read mRef
+  case m of
+    Just a -> f a
+    Nothing -> pure unit
 
 type DancerState =
   {
   url :: Ref String,
-  theDancer :: MaybeRef Three.Scene,
-  animations :: MaybeRef (Array Three.AnimationClip),
-  animationMixer :: MaybeRef Three.AnimationMixer,
-  clipActions :: Ref (Array Three.AnimationAction),
-  prevAnimationIndex :: Ref Int,
-  prevAnimationAction :: MaybeRef Three.AnimationAction
+  model :: MaybeRef Model,
+  prevAnimationIndex :: Ref Int, -- OBSOLETE: will be removed when MixerState refactor complete
+  prevAnimationAction :: MaybeRef Three.AnimationAction -- OBSOLETE: will be removed when MixerState refactor complete
   }
 
+type Model = {
+  scene :: Three.Scene,
+  clips :: Array Three.AnimationClip,
+  mixer :: Three.AnimationMixer,
+  actions :: Array Three.AnimationAction,
+  mixerState :: Ref MixerState
+  }
 
-newDancerState :: String -> Effect DancerState
-newDancerState x = do
-  url <- new x
-  theDancer <- new Nothing
-  animations <- new Nothing
-  animationMixer <- new Nothing
-  clipActions <- new []
+-- the state of the animation system is represented as an array of floating point weights
+-- this is cached in the Model after update, so that in succeeding frames, the calculated
+-- MixerState (calculated from AnimationExpr + "environment") can be compared to determine
+-- if any update to the underlying AnimationMixer is required or not.
+
+type MixerState = Array Number
+
+{-
+animationExprToMixerState :: AnimationExpr -> Array Three.AnimationAction -> Effect MixerState
+animationExprToMixerState (AnimationIndexInt i) actions = pure $ ... an array where weight of i is 1.0 and all other weights is 0
+animationExprToMixerState (AnimationIndexString s) actions = do
+  i <- ...figure out the int index of the animation indexed by s...
+  pure $ exprToMixerState (AnimationIndexInt i) actions
+animationExprToAnimationMixerState (AnimationMix xs) actions = do
+  ...xs :: (List (Tuple AnimationExpr Variable)) -- example: ["headroll" 0.5, "legroll" (osc 0.5 * 0.2)]
+-}
+
+
+runDancerWithState :: Three.Scene -> Number -> Number -> Number -> Transformer -> Maybe DancerState -> Effect DancerState
+runDancerWithState theScene cycleDur nowCycles delta t maybeDancerState = do
+  let valueMap = realizeTransformer nowCycles t
+  s <- loadModelIfNecessary theScene valueMap maybeDancerState
+  updateTransforms nowCycles valueMap s
+  updateAnimation delta cycleDur valueMap s
+  pure s
+
+
+loadModelIfNecessary :: Three.Scene -> ValueMap -> Maybe DancerState -> Effect DancerState
+loadModelIfNecessary theScene valueMap Nothing = do
+  let urlProg = lookupString "raccoon.glb" "url" valueMap
+  url <- new urlProg
+  model <- new Nothing
   prevAnimationIndex <- new (-9999)
   prevAnimationAction <- new Nothing
-  pure { url, theDancer, animations, animationMixer, clipActions, prevAnimationIndex, prevAnimationAction }
-
-
-runDancerWithState :: Three.Scene -> Number -> Number -> Number -> Dancer -> Maybe DancerState -> Effect DancerState
-runDancerWithState theScene cycleDur nCycles delta d maybeDancerState = do
-  dState <- case maybeDancerState of
-    Nothing -> addDancer theScene d
-    Just x -> do
-      updateModelIfNecessary theScene d x
-      pure x
-  playAnimation dState d.animation
-
-
-  ms <- read dState.theDancer
-  case ms of
-    Just s -> do
-      let x'  = sampleVariable nCycles d.pos.x
-      let y'  = sampleVariable nCycles d.pos.y
-      let z'  = sampleVariable nCycles d.pos.z
-      let rx'  = sampleVariable nCycles d.rot.x
-      let ry'  = sampleVariable nCycles d.rot.y
-      let rz'  = sampleVariable nCycles d.rot.z
-      let sx'  = sampleVariable nCycles d.scale.x
-      let sy'  = sampleVariable nCycles d.scale.y
-      let sz'  = sampleVariable nCycles d.scale.z
-      -- log $ show t <> " " <> show x'
-      Three.setPositionOfAnything s x' y' z'
-      Three.setRotationOfAnything s rx' ry' rz'
-      Three.setScaleOfAnything s sx' sy' sz'
-      updateAnimationDuration dState $ sampleVariable nCycles d.dur * cycleDur
-      am0 <- read dState.animationMixer
-      case am0 of
-        Just am -> Three.updateAnimationMixer am delta
-        Nothing -> pure unit
-    Nothing -> pure unit
-  pure dState
-
-
-addDancer :: Three.Scene -> Dancer -> Effect DancerState
-addDancer theScene d = do
-  dState <- newDancerState d.url
-  loadModel theScene d.url dState
-  pure dState
-
-
-updateModelIfNecessary :: Three.Scene -> Dancer -> DancerState -> Effect Unit
-updateModelIfNecessary theScene d dState = do
-  let urlProg = d.url
-  urlState <- read dState.url
+  let s = { url, model, prevAnimationIndex, prevAnimationAction }
+  loadModel theScene urlProg s
+  pure s
+loadModelIfNecessary theScene valueMap (Just s) = do
+  let urlProg = lookupString "raccoon.glb" "url" valueMap
+  urlState <- read s.url
   when (urlProg /= urlState) $ do
-    removeDancer theScene dState
-    loadModel theScene d.url dState
+    removeDancer theScene s
+    loadModel theScene urlProg s
+  pure s
+
+
+updateTransforms :: Number -> ValueMap -> DancerState -> Effect Unit
+updateTransforms nowCycles valueMap s = whenMaybeRef s.model $ \m -> do
+  let x  = lookupNumber 0.0 "x" valueMap
+  let y  = lookupNumber 0.0 "y" valueMap
+  let z  = lookupNumber 0.0 "z" valueMap
+  Three.setPositionOfAnything m.scene x y z
+  let rx  = lookupNumber 0.0 "rx" valueMap
+  let ry  = lookupNumber 0.0 "ry" valueMap
+  let rz  = lookupNumber 0.0 "rz" valueMap
+  Three.setRotationOfAnything m.scene rx ry rz
+  let sx  = lookupNumber 1.0 "sx" valueMap
+  let sy  = lookupNumber 1.0 "sy" valueMap
+  let sz  = lookupNumber 1.0 "sz" valueMap
+  let size = lookupNumber 1.0 "size" valueMap
+  Three.setScaleOfAnything m.scene (sx*size) (sy*size) (sz*size)
+
+
+updateAnimation :: Number -> Number -> ValueMap -> DancerState -> Effect Unit
+updateAnimation delta cycleDur valueMap s = whenMaybeRef s.model $ \m -> do
+  playAnimation s $ lookupInt 0 "animation" valueMap
+  let dur = lookupNumber 1.0 "dur" valueMap
+  updateAnimationDuration s $ dur * cycleDur
+  Three.updateAnimationMixer m.mixer delta
 
 
 loadModel :: Three.Scene -> String -> DancerState -> Effect Unit
-loadModel theScene url dState = do
-  write url dState.url
+loadModel theScene url s = do
+  write url s.url
   let url' = resolveURL url
   _ <- Three.loadGLTF_DRACO "https://dktr0.github.io/LocoMotion/threejs/" url' $ \gltf -> do
     log $ "model " <> url' <> " loaded with " <> show (length gltf.animations) <> " animations"
     Three.addAnything theScene gltf.scene
-    mixer <- Three.newAnimationMixer gltf.scene -- make an animation mixer
-    clipActions <- traverse (Three.clipAction mixer) gltf.animations -- convert all animations to AnimationActions connected to the animation mixer
-    -- traverse_ (flip Three.setEffectiveWeight $ 0.0) clipActions -- set weight of all actions to 0 initially (not sure if this is right....?)
-    -- traverse_ Three.playAnything clipActions -- play/activate all of the animation actions
-    write (Just gltf.scene) dState.theDancer
-    write (Just gltf.animations) dState.animations
-    write (Just mixer) dState.animationMixer
-    write clipActions dState.clipActions
-    animIndex <- read dState.prevAnimationIndex
+    m <- gltfToModel gltf
+    write (Just m) s.model
+    animIndex <- read s.prevAnimationIndex
     case animIndex of
-      (-9999) -> playAnimation dState 0
-      x -> playAnimation dState x
+      (-9999) -> playAnimation s 0
+      x -> playAnimation s x
   pure unit
+
+gltfToModel :: Three.GLTF -> Effect Model
+gltfToModel gltf = do
+  mixer <- Three.newAnimationMixer gltf.scene -- make an animation mixer
+  actions <- traverse (Three.clipAction mixer) gltf.animations -- convert all animations to AnimationActions connected to the animation mixer
+  mixerState <- new []
+  pure { scene: gltf.scene, clips: gltf.animations, mixer, actions, mixerState }
 
 
 removeDancer :: Three.Scene -> DancerState -> Effect Unit
-removeDancer sc d = do
-  x <- read d.theDancer
-  case x of
-    Just y -> Three.removeObject3D sc y
-    Nothing -> pure unit
+removeDancer theScene s = whenMaybeRef s.model $ \m -> Three.removeObject3D theScene m.scene
 
 
 playAnimation :: DancerState -> Int -> Effect Unit
-playAnimation dState n = do
-  x <- read dState.animationMixer
-  case x of
-    Just _ -> do
-      clipActions <- read dState.clipActions
-      let nActions = length clipActions
-      prevN <- read dState.prevAnimationIndex
-      when ((prevN /= n) && (nActions > 0)) $ do
-        let n' = mod n nActions
-        case clipActions!!n' of
-          Just newAction -> do
-            z <- read dState.prevAnimationAction
-            case z of
-              Just oldAction -> do
-                {- Three.setEffectiveWeight newAction 1.0
-                Three.setEffectiveTimeScale newAction 1.0
-                Three.crossFadeTo oldAction newAction 0.1 true -}
-                -- log $ "stopping " <> show prevN <> " and starting " <> show n'
-                Three.stop oldAction
-                Three.playAnything newAction
-              Nothing -> do
-                -- log $ "playing newAction " <> show n'
-                -- Three.setEffectiveWeight newAction 1.0
-                Three.setEffectiveTimeScale newAction 1.0
-                Three.playAnything newAction
-            write (Just newAction) dState.prevAnimationAction
-          Nothing -> log "strange error in LocoMotion - DancerState.purs"
-      write n dState.prevAnimationIndex
-    Nothing -> pure unit
+playAnimation s n = whenMaybeRef s.model $ \m -> do
+  let nActions = length m.actions
+  prevN <- read s.prevAnimationIndex
+  when ((prevN /= n) && (nActions > 0)) $ do
+    let n' = mod n nActions
+    case m.actions!!n' of
+      Just newAction -> do
+        z <- read s.prevAnimationAction
+        case z of
+          Just oldAction -> do
+            Three.stop oldAction
+            Three.playAnything newAction
+          Nothing -> do
+            Three.setEffectiveTimeScale newAction 1.0
+            Three.playAnything newAction
+            write (Just newAction) s.prevAnimationAction
+      Nothing -> log "strange error in LocoMotion: DancerState: playAnimation"
+    write n s.prevAnimationIndex
 
 
 updateAnimationDuration :: DancerState -> Number -> Effect Unit
-updateAnimationDuration dState dur = do
-  x <- read dState.prevAnimationAction
-  case x of
-    Just action -> do
-      Three.setDuration action dur
-    Nothing -> pure unit
+updateAnimationDuration s dur = whenMaybeRef s.prevAnimationAction $ \a -> Three.setDuration a dur

@@ -11,6 +11,8 @@ import Effect (Effect)
 import Effect.Console (log)
 
 import AST
+import Transformer
+import ValueMap
 
 
 type FloorState = {
@@ -18,22 +20,27 @@ type FloorState = {
   material :: Three.MeshPhongMaterial
   }
 
-newFloorState :: Three.Scene -> Floor -> Effect FloorState
-newFloorState scene f = do
+newFloorState :: Three.Scene -> Number -> Transformer -> Effect FloorState
+newFloorState scene nCycles t = do
   log "adding floor"
+  let valueMap = realizeTransformer nCycles t
+  let colour = lookupInt 0x888888 "colour" valueMap
+  let shadows = lookupBoolean true "shadows" valueMap
   geometry <- Three.newPlaneGeometry 100.0 100.0 1 1
-  material <- Three.newMeshPhongMaterial { color: f.colour, depthWrite: false }
+  material <- Three.newMeshPhongMaterial { color: colour, depthWrite: false }
   mesh <- Three.newMesh geometry material
   Three.setRotationX mesh 4.71238898 -- 3/2 x PI
-  Three.setReceiveShadow mesh f.shadows
+  Three.setReceiveShadow mesh shadows
   Three.addAnything scene mesh
   pure { mesh, material }
 
-
-runFloorState :: Floor -> FloorState -> Effect Unit
-runFloorState f fState = do
-  Three.setColorInt fState.material f.colour
-  Three.setReceiveShadow fState.mesh f.shadows
+runFloorState :: Number -> Transformer -> FloorState -> Effect Unit
+runFloorState nCycles t fState = do
+  let valueMap = realizeTransformer nCycles t
+  let colour = lookupInt 0x888888 "colour" valueMap
+  let shadows = lookupBoolean true "shadows" valueMap
+  Three.setColorInt fState.material colour
+  Three.setReceiveShadow fState.mesh shadows
 
 removeFloorState :: FloorState -> Effect Unit
 removeFloorState fState = do
