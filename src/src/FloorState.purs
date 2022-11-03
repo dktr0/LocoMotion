@@ -9,8 +9,8 @@ import Prelude
 import ThreeJS as Three
 import Effect (Effect)
 import Effect.Console (log)
+import Data.Map (Map)
 
-import AST
 import Transformer
 import ValueMap
 
@@ -20,10 +20,10 @@ type FloorState = {
   material :: Three.MeshPhongMaterial
   }
 
-newFloorState :: Three.Scene -> Number -> Transformer -> Effect FloorState
-newFloorState scene nCycles t = do
+newFloorState :: Three.Scene -> Number -> Map String ValueExpr -> Transformer -> Effect FloorState
+newFloorState scene nCycles semiGlobalMap t = do
   log "adding floor"
-  let valueMap = realizeTransformer nCycles t
+  let valueMap = realizeTransformer nCycles semiGlobalMap t
   let colour = lookupInt 0x888888 "colour" valueMap
   let shadows = lookupBoolean true "shadows" valueMap
   geometry <- Three.newPlaneGeometry 100.0 100.0 1 1
@@ -34,9 +34,9 @@ newFloorState scene nCycles t = do
   Three.addAnything scene mesh
   pure { mesh, material }
 
-runFloorState :: Number -> Transformer -> FloorState -> Effect Unit
-runFloorState nCycles t fState = do
-  let valueMap = realizeTransformer nCycles t
+runFloorState :: Number -> Map String ValueExpr -> Transformer -> FloorState -> Effect Unit
+runFloorState nCycles semiGlobalMap t fState = do
+  let valueMap = realizeTransformer nCycles semiGlobalMap t
   let colour = lookupInt 0x888888 "colour" valueMap
   let shadows = lookupBoolean true "shadows" valueMap
   Three.setColorInt fState.material colour

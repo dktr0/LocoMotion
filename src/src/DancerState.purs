@@ -18,6 +18,7 @@ import ThreeJS as Three
 import Data.Rational
 import Data.Ratio
 import Data.Traversable (traverse,traverse_)
+import Data.Map (Map)
 
 import AST
 import URL
@@ -68,9 +69,9 @@ animationExprToAnimationMixerState (AnimationMix xs) actions = do
 -}
 
 
-runDancerWithState :: Three.Scene -> Number -> Number -> Number -> Transformer -> Maybe DancerState -> Effect DancerState
-runDancerWithState theScene cycleDur nowCycles delta t maybeDancerState = do
-  let valueMap = realizeTransformer nowCycles t
+runDancerWithState :: Three.Scene -> Number -> Number -> Map String ValueExpr -> Number -> Transformer -> Maybe DancerState -> Effect DancerState
+runDancerWithState theScene cycleDur nowCycles semiGlobalMap delta t maybeDancerState = do
+  let valueMap = realizeTransformer nowCycles semiGlobalMap t
   s <- loadModelIfNecessary theScene valueMap maybeDancerState
   updateTransforms nowCycles valueMap s
   updateAnimation delta cycleDur valueMap s

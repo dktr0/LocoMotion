@@ -28,7 +28,7 @@ program = do
   pure $ fromFoldableWithIndex xs
 
 statement :: P Statement
-statement = try dancer <|> try floor <|> try camera <|> try assignment <|> emptyStatement
+statement = try dancer <|> try floor <|> try camera <|> try semiGlobal <|> emptyStatement
 
 dancer :: P Statement
 dancer = choice [
@@ -57,12 +57,12 @@ camera = choice [
   reserved "camera" $> Camera Nil
   ]
 
-assignment :: P Statement
-assignment = do
+semiGlobal :: P Statement
+semiGlobal = do
   k <- identifier
   reservedOp "="
   v <- valueExpr
-  pure $ Assignment k v
+  pure $ SemiGlobal k v
 
 emptyStatement :: P Statement
 emptyStatement = do

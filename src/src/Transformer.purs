@@ -17,6 +17,7 @@ import Data.Tuple
 import Data.Semigroup.Foldable (fold1)
 import Data.Int (toNumber)
 import Data.Foldable (foldl)
+import Data.Maybe (maybe)
 
 import TokenParser
 import Value
@@ -32,7 +33,7 @@ data ValueExpr =
   LiteralInt Int |
   LiteralBoolean Boolean |
   ThisRef String | -- eg. this.x would be ValueExprThis "x"
-  GlobalRef String | -- eg. x would be ValueExprGlobal "x"
+  SemiGlobalRef String | -- eg. x would be ValueExprGlobal "x"
   Sum ValueExpr ValueExpr |
   Difference ValueExpr ValueExpr |
   Product ValueExpr ValueExpr |
@@ -46,7 +47,7 @@ instance Show ValueExpr where
   show (LiteralInt x) = "LiteralInt " <> show x
   show (LiteralBoolean x) = "LiteralBoolean " <> show x
   show (ThisRef x) = "this." <> x
-  show (GlobalRef x) = x
+  show (SemiGlobalRef x) = x
   show (Sum x y) = "Sum (" <> show x <> ") (" <> show y <> ")"
   show (Difference x y) = "Difference (" <> show x <> ") (" <> show y <> ")"
   show (Product x y) = "Product (" <> show x <> ") (" <> show y <> ")"
@@ -55,29 +56,30 @@ instance Show ValueExpr where
   show (Range r1 r2 x) = "Range (" <> show r1 <> ") (" <> show r2 <> ") (" <> show x <> ")"
 
 
-realizeTransformer :: Number -> Transformer -> ValueMap
-realizeTransformer nCycles t = foldl (realizeModifier nCycles) empty t
+realizeTransformer :: Number -> Map String ValueExpr -> Transformer -> ValueMap
+realizeTransformer nCycles semiGlobalMap t = foldl (realizeModifier nCycles semiGlobalMap) empty t
 
-realizeModifier :: Number -> Map String Value -> Modifier -> Map String Value
-realizeModifier nCycles m (Tuple k vExpr) = insert k (realizeValueExpr nCycles m vExpr) m
+realizeModifier :: Number -> Map String ValueExpr -> Map String Value -> Modifier -> Map String Value
+realizeModifier nCycles semiGlobalMap m (Tuple k vExpr) = insert k (realizeValueExpr nCycles semiGlobalMap m vExpr) m
 
-realizeValueExpr :: Number -> Map String Value -> ValueExpr -> Value
-realizeValueExpr _ _ (LiteralNumber x) = ValueNumber x
-realizeValueExpr _ _ (LiteralString x) = ValueString x
-realizeValueExpr _ _ (LiteralInt x) = ValueInt x
-realizeValueExpr _ _ (LiteralBoolean x) = ValueBoolean x
-realizeValueExpr _ m (ThisRef x) = lookupValue (ValueInt 0) x m
-realizeValueExpr _ _ (GlobalRef _) = ValueNumber 0.0 -- placeholder
-realizeValueExpr nCycles m (Sum x y) = realizeValueExpr nCycles m x + realizeValueExpr nCycles m y
-realizeValueExpr nCycles m (Difference x y) = realizeValueExpr nCycles m x - realizeValueExpr nCycles m y
-realizeValueExpr nCycles m (Product x y) = realizeValueExpr nCycles m x * realizeValueExpr nCycles m y
-realizeValueExpr nCycles m (Divide x y) = divideValues (realizeValueExpr nCycles m x) (realizeValueExpr nCycles m y)
-realizeValueExpr nCycles m (Osc f) = ValueNumber $ sin $ valueToNumber (realizeValueExpr nCycles m f) * 2.0 * pi * nCycles
-realizeValueExpr nCycles m (Range r1 r2 x) = ValueNumber $ (x' * 0.5 + 0.5) * (r2' - r1') + r1'
+realizeValueExpr :: Number -> Map String ValueExpr -> Map String Value -> ValueExpr -> Value
+realizeValueExpr _ _ _ (LiteralNumber x) = ValueNumber x
+realizeValueExpr _ _ _ (LiteralString x) = ValueString x
+realizeValueExpr _ _ _ (LiteralInt x) = ValueInt x
+realizeValueExpr _ _ _ (LiteralBoolean x) = ValueBoolean x
+realizeValueExpr _ _ m (ThisRef x) = lookupValue (ValueInt 0) x m
+realizeValueExpr nCycles semiGlobalMap m (SemiGlobalRef k) = realizeValueExpr nCycles semiGlobalMap m vExpr
+  where vExpr = maybe (LiteralInt 0) identity $ lookup k semiGlobalMap
+realizeValueExpr nCycles semiGlobalMap m (Sum x y) = realizeValueExpr nCycles semiGlobalMap m x + realizeValueExpr nCycles semiGlobalMap m y
+realizeValueExpr nCycles semiGlobalMap m (Difference x y) = realizeValueExpr nCycles semiGlobalMap m x - realizeValueExpr nCycles semiGlobalMap m y
+realizeValueExpr nCycles semiGlobalMap m (Product x y) = realizeValueExpr nCycles semiGlobalMap m x * realizeValueExpr nCycles semiGlobalMap m y
+realizeValueExpr nCycles semiGlobalMap m (Divide x y) = divideValues (realizeValueExpr nCycles semiGlobalMap m x) (realizeValueExpr nCycles semiGlobalMap m y)
+realizeValueExpr nCycles semiGlobalMap m (Osc f) = ValueNumber $ sin $ valueToNumber (realizeValueExpr nCycles semiGlobalMap m f) * 2.0 * pi * nCycles
+realizeValueExpr nCycles semiGlobalMap m (Range r1 r2 x) = ValueNumber $ (x' * 0.5 + 0.5) * (r2' - r1') + r1'
   where
-    r1' = valueToNumber $ realizeValueExpr nCycles m r1
-    r2' = valueToNumber $ realizeValueExpr nCycles m r2
-    x' = valueToNumber $ realizeValueExpr nCycles m x
+    r1' = valueToNumber $ realizeValueExpr nCycles semiGlobalMap m r1
+    r2' = valueToNumber $ realizeValueExpr nCycles semiGlobalMap m r2
+    x' = valueToNumber $ realizeValueExpr nCycles semiGlobalMap m x
 
 
 -- parsers
@@ -134,7 +136,7 @@ valueExpr'' = do
     try osc,
     try range,
     try thisRef,
-    try globalRef
+    try semiGlobalRef
     ]
 
 osc :: P ValueExpr
@@ -157,13 +159,17 @@ thisRef = do
   reservedOp "."
   ThisRef <$> identifier
 
-globalRef :: P ValueExpr
-globalRef = GlobalRef <$> identifier
+semiGlobalRef :: P ValueExpr
+semiGlobalRef = SemiGlobalRef <$> identifier
 
 valueExprAsArgument :: P ValueExpr
 valueExprAsArgument = do
   _ <- pure unit
   choice [
     parens valueExpr,
-    try $ LiteralNumber <$> number
+    try $ LiteralNumber <$> number,
+    try $ LiteralString <$> stringLiteral,
+    try $ LiteralInt <$> integer,
+    try thisRef,
+    try semiGlobalRef
     ]

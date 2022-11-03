@@ -15,7 +15,7 @@ import Prelude
 import Effect (Effect)
 import Effect.Ref (Ref, new, read, write)
 import Effect.Console (log)
-import Data.Foldable (foldM)
+import Data.Foldable (foldM,foldl)
 import Data.Map as Map
 import Data.Maybe
 import Data.Either
@@ -60,11 +60,12 @@ type IntMap a = Map.Map Int a
 
 type ZoneState = {
   dancers :: IntMap DancerState,
-  floors :: IntMap FloorState
+  floors :: IntMap FloorState,
+  semiGlobalMap :: Map.Map String ValueExpr
   }
 
 defaultZoneState :: ZoneState
-defaultZoneState = { dancers: Map.empty, floors: Map.empty }
+defaultZoneState = { dancers: Map.empty, floors: Map.empty, semiGlobalMap: Map.empty }
 
 launch :: HTML.HTMLCanvasElement -> Effect RenderEngine
 launch cvs = do
@@ -106,10 +107,21 @@ evaluate re z x = do
   case parseProgram x of
     Right p -> do
       ZoneMap.write z p re.programs
+      collectSemiGlobals re z p -- *** TODO: evaluation should not succeed when there are infinite reference chains in semiGlobals
       log $ show p
       pure Nothing
     Left err -> pure $ Just err
 
+collectSemiGlobals :: RenderEngine -> Int -> Program -> Effect Unit
+collectSemiGlobals re z xs = do
+  let xs' = foldl collectSemiGlobal Map.empty xs -- :: Map.Map String ValueExpr
+  y <- ZoneMap.read z re.zoneStates
+  let zoneState = (maybe defaultZoneState identity y) { semiGlobalMap = xs' }
+  ZoneMap.write z zoneState re.zoneStates
+
+collectSemiGlobal :: Map.Map String ValueExpr -> Statement -> Map.Map String ValueExpr
+collectSemiGlobal m (SemiGlobal k v) = Map.insert k v m
+collectSemiGlobal m _ = m
 
 clearZone :: RenderEngine -> Int -> Effect Unit
 clearZone re z = do
@@ -194,22 +206,22 @@ runStatement :: RenderEngine -> Number -> Number -> Number -> Int -> ZoneState -
 
 runStatement re cycleDur nCycles delta stmtIndex zoneState (Dancer t) = do
   let prevDancerState = Map.lookup stmtIndex zoneState.dancers
-  ds <- runDancerWithState re.scene cycleDur nCycles delta t prevDancerState
+  ds <- runDancerWithState re.scene cycleDur nCycles zoneState.semiGlobalMap delta t prevDancerState
   pure $ zoneState { dancers = Map.insert stmtIndex ds zoneState.dancers }
 
 runStatement re cycleDur nCycles delta stmtIndex zoneState (Floor t) = do
   let prevFloorState = Map.lookup stmtIndex zoneState.floors
   fState <- case prevFloorState of
     Just fState -> do
-      runFloorState nCycles t fState
+      runFloorState nCycles zoneState.semiGlobalMap t fState
       pure fState
     Nothing -> do
-      fState <- newFloorState re.scene nCycles t
+      fState <- newFloorState re.scene nCycles zoneState.semiGlobalMap t
       pure fState
   pure $ zoneState { floors = Map.insert stmtIndex fState zoneState.floors }
 
 runStatement re cycleDur nCycles delta _ zoneState (Camera t) = do
-  let valueMap = realizeTransformer nCycles t
+  let valueMap = realizeTransformer nCycles zoneState.semiGlobalMap t
   maybeSetCameraProperty "x" valueMap (Three.setPositionX re.camera)
   maybeSetCameraProperty "y" valueMap (Three.setPositionY re.camera)
   maybeSetCameraProperty "z" valueMap (Three.setPositionZ re.camera)
