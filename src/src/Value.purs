@@ -52,8 +52,7 @@ instance Ring Value where
   sub x y = ValueInt $ valueToInt x - valueToInt y
 
 divideValues :: Value -> Value -> Value
-divideValues x y = ValueNumber $ safeDivide (valueToNumber x) (valueToNumber y)
-
-safeDivide :: Number -> Number -> Number
-safeDivide _ 0.0 = 0.0
-safeDivide x y = x/y
+divideValues x y = ValueNumber $ f (valueToNumber x) (valueToNumber y)
+  where
+    f _ 0.0 = 0.0
+    f x y = x/y
