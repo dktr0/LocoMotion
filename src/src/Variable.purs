@@ -31,5 +31,3 @@ osc (Variable f) = Variable $ \nCycles -> sin $ f nCycles * nCycles * 2.0 * pi
 
 range :: Variable -> Variable -> Variable -> Variable
 range (Variable r1) (Variable r2) (Variable x) = Variable $ \nCycles -> (x nCycles * 0.5 + 0.5) * (r2 nCycles - r1 nCycles) + r1 nCycles
-
-safeDivide x y = x/y
