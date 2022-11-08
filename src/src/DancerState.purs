@@ -23,7 +23,7 @@ import Data.Map (Map)
 import AST
 import URL
 import Transformer
-import ValueMap
+import Value
 
 type MaybeRef a = Ref (Maybe a)
 

@@ -1,9 +1,12 @@
 module Value where
 
-import Prelude (identity, ($))
+import Prelude (identity, ($), show, (/=), class Semiring, class Ring, (/), (+), (-), (*), pure, (<>), bind)
 import Data.Int (toNumber,floor)
 import Data.Map (Map, lookup)
-import Data.Maybe (maybe)
+import Data.Maybe (maybe,Maybe(..))
+import Data.Either (Either)
+import Parsing (ParseError(..))
+import Control.Monad.Error.Class (throwError)
 
 import AST (Expression)
 import AST as AST
@@ -48,9 +51,8 @@ valueToVariable :: Value -> Variable
 valueToVariable (ValueNumber x) = constantVariable x
 valueToVariable (ValueInt x) = constantVariable $ toNumber x
 valueToVariable (ValueBoolean true) = constantVariable 1.0
-valueToVariable (ValueBoolean false) = constantVariable 0.0
 valueToVariable (ValueVariable x) = x
-valueToVariable _ =
+valueToVariable _ = constantVariable 0.0
 
 instance Semiring Value where
   add (ValueNumber x) y = ValueNumber $ x + valueToNumber y
@@ -71,7 +73,7 @@ divideValues :: Value -> Value -> Value
 divideValues x y = ValueNumber $ f (valueToNumber x) (valueToNumber y)
   where
     f _ 0.0 = 0.0
-    f x y = x/y
+    f a b = a/b
 
 
 -- ValueMap
@@ -100,50 +102,38 @@ lookupValue d k m = maybe d identity $ lookup k m
 -- parsing from AST to Values
 
 expressionToValue :: ValueMap -> ValueMap -> Expression -> Either ParseError Value
-expressionToValue _ _ (AST.LiteralNumber x) = pure $ ValueNumber x
-expressionToValue _ _ (AST.LiteralString x) = pure $ ValueString x
-expressionToValue _ _ (AST.LiteralInt x) = pure $ ValueInt x
-expressionToValue _ _ (AST.LiteralBoolean x) = pure $ ValueBoolean x
-expressionToValue _ thisMap (AST.This k) = do
+expressionToValue _ _ (AST.LiteralNumber _ x) = pure $ ValueNumber x
+expressionToValue _ _ (AST.LiteralString _ x) = pure $ ValueString x
+expressionToValue _ _ (AST.LiteralInt _ x) = pure $ ValueInt x
+expressionToValue _ _ (AST.LiteralBoolean _ x) = pure $ ValueBoolean x
+expressionToValue _ thisMap (AST.This p k) = do
   case lookup k thisMap of
-    Nothing -> ...error, no definition named this.k exists...
+    Nothing -> throwError $ ParseError ("unknown this reference " <> k) p
     Just v -> pure v
-expressionToValue semiMap _ (AST.SemiGlobal k) = do
+expressionToValue semiMap _ (AST.SemiGlobal p k) = do
   case lookup k semiMap of
-    Nothing -> ...error, no definition named k exists...
+    Nothing -> throwError $ ParseError ("unknown semiglobal reference " <> k) p
     Just v -> pure v
-expressionToValue semiMap thisMap (AST.Application e1 e2) = applicationExpressionToValue semiMap thisMap e1 e2
-expressionToValue semiMap thisMap (AST.Transformer xs) = transformerExpressionToValue semiMap thisMap xs
-expressionToValue _ _ AST.Dancer = ...error, since can't be a value
-expressionToValue _ _ AST.Floor = ...error, since can't be a value
-expressionToValue _ _ AST.Camera = ...error, since can't be a value
-expressionToValue _ _ AST.Osc = ...error, since can't be a value
-expressionToValue _ _ AST.Range = ...error, since can't be a value
-expressionToValue semiMap thisMap (AST.Sum e1 e2) = do
+expressionToValue _ _ (AST.Application p _ _) = throwError $ ParseError "placeholder: AST.Application not fully supported yet" p
+expressionToValue _ _ (AST.Transformer p _) = throwError $ ParseError "placeholder: AST.Transformer not fully supported yet" p
+expressionToValue _ _ (AST.Dancer p) = throwError $ ParseError "dancer, by itself, cannot be a value" p
+expressionToValue _ _ (AST.Floor p) = throwError $ ParseError "floor, by itself, cannot be a value" p
+expressionToValue _ _ (AST.Camera p) = throwError $ ParseError "camera, by itself, cannot be a value" p
+expressionToValue _ _ (AST.Osc p) = throwError $ ParseError "osc, by itself, cannot be a value" p
+expressionToValue _ _ (AST.Range p) = throwError $ ParseError "range, by itself, cannot be a value" p
+expressionToValue semiMap thisMap (AST.Sum _ e1 e2) = do
   e1' <- expressionToValue semiMap thisMap e1
   e2' <- expressionToValue semiMap thisMap e2
   pure $ e1' + e2'
-expressionToValue semiMap thisMap (AST.Difference e1 e2) = do
+expressionToValue semiMap thisMap (AST.Difference _ e1 e2) = do
   e1' <- expressionToValue semiMap thisMap e1
   e2' <- expressionToValue semiMap thisMap e2
   pure $ e1' - e2'
-expressionToValue semiMap thisMap (AST.Product e1 e2) = do
+expressionToValue semiMap thisMap (AST.Product _ e1 e2) = do
   e1' <- expressionToValue semiMap thisMap e1
   e2' <- expressionToValue semiMap thisMap e2
   pure $ e1' * e2'
-expressionToValue semiMap thisMap (AST.Divide e1 e2) = do
+expressionToValue semiMap thisMap (AST.Divide _ e1 e2) = do
   e1' <- expressionToValue semiMap thisMap e1
   e2' <- expressionToValue semiMap thisMap e2
-  pure $ divideValues e1 e2
-
-
-applicationExpressionToValue :: ValueMap -> ValueMap -> Expression -> Expression -> Either ParseError Value
-applicationExpressionToValue semiMap thisMap e1 e2 = do
-  ...
-
--- thinking here: normal function application kind of requires AST to be left associative, but we have it right associative...
-
-
-transformerExpressionToValue :: ValueMap -> ValueMap -> List (Tuple String Expression) -> Either ParseError Value
-transformerExpressionToValue semiMap thisMap xs = do
-  ...
+  pure $ divideValues e1' e2'

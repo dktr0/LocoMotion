@@ -37,7 +37,6 @@ import Data.Traversable (traverse_)
 import AST
 import Transformer
 import Value
-import ValueMap
 import Parser
 import DancerState
 import FloorState

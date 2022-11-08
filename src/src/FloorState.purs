@@ -12,7 +12,7 @@ import Effect.Console (log)
 import Data.Map (Map)
 
 import Transformer
-import ValueMap
+import Value
 
 
 type FloorState = {

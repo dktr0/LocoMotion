@@ -21,7 +21,6 @@ import Data.Maybe (maybe)
 
 import TokenParser
 import Value
-import ValueMap
 
 type Transformer = List.List Modifier
 
