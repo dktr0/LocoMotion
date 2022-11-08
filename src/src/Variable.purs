@@ -11,6 +11,9 @@ newtype Variable = Variable (Number -> Number)
 realizeVariable :: Number -> Variable -> Number
 realizeVariable nCycles (Variable f) = f nCycles
 
+constantVariable :: Number -> Variable
+constantVariable x = Variable $ \_ -> x
+
 instance Semiring Variable where
   add (Variable fx) (Variable fy) = Variable $ \nCycles -> fx nCycles + fy nCycles
   zero = Variable $ \_ -> 0.0
