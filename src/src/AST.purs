@@ -9,8 +9,9 @@ import Prelude (class Show, bind, discard, pure, show, unit, ($), ($>), (<$), (<
 import Data.List (List)
 import Data.Tuple (Tuple(..))
 import Parsing (Position,position)
-import Parsing.Combinators (chainl1, choice, lookAhead, try, (<|>))
+import Parsing.Combinators (chainl1, choice, lookAhead, try, (<|>), many)
 import Parsing.String (eof)
+import Data.Foldable (foldl)
 
 import TokenParser (P, boolean, commaSep, identifier, integer, number, parens, reserved, reservedOp, semiSep, stringLiteral, whiteSpace)
 
@@ -143,13 +144,14 @@ application :: P Expression
 application = do
   _ <- pure unit
   p <- position
-  e1 <- expression
-  e2 <- expressionAsArgument
-  pure $ Application p e1 e2
+  f <- expression
+  firstArg <- argument
+  otherArgs <- many argument
+  pure $ foldl (Application p) (Application p f firstArg) otherArgs
 
 -- note: this is the same as expression'' minus the direct pathway for Application
-expressionAsArgument :: P Expression
-expressionAsArgument = do
+argument :: P Expression
+argument = do
   _ <- pure unit
   p <- position
   choice [
