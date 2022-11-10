@@ -35,7 +35,6 @@ import Data.FoldableWithIndex (foldWithIndexM)
 import Data.Traversable (traverse_)
 
 import AST
-import Transformer
 import Value
 import Parser
 import DancerState

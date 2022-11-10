@@ -1,12 +1,15 @@
 module Value where
 
-import Prelude (identity, ($), show, (/=), class Semiring, class Ring, (/), (+), (-), (*), pure, (<>), bind)
+import Prelude (identity, ($), show, (/=), class Semiring, class Ring, (/), (+), (-), (*), pure, (<>), bind, (>>=), map)
 import Data.Int (toNumber,floor)
-import Data.Map (Map, lookup)
+import Data.Map (Map, lookup, insert)
 import Data.Maybe (maybe,Maybe(..))
+import Data.Tuple (Tuple(..))
 import Data.Either (Either)
+import Data.List (List)
 import Parsing (ParseError(..))
 import Control.Monad.Error.Class (throwError)
+import Data.Foldable (foldl)
 
 import AST (Expression)
 import AST as AST
@@ -17,7 +20,8 @@ data Value =
   ValueString String |
   ValueInt Int |
   ValueBoolean Boolean |
-  ValueVariable Variable
+  ValueVariable Variable |
+  ValueTransformer Transformer
 
 valueToNumber :: Value -> Number
 valueToNumber (ValueNumber x) = x
@@ -53,6 +57,10 @@ valueToVariable (ValueInt x) = constantVariable $ toNumber x
 valueToVariable (ValueBoolean true) = constantVariable 1.0
 valueToVariable (ValueVariable x) = x
 valueToVariable _ = constantVariable 0.0
+
+valueToTransformer :: Value -> Transformer
+valueToTransformer (ValueTransformer x) = x
+valueToTransformer _ = pure
 
 instance Semiring Value where
   add (ValueNumber x) y = ValueNumber $ x + valueToNumber y
@@ -115,7 +123,7 @@ expressionToValue semiMap _ (AST.SemiGlobal p k) = do
     Nothing -> throwError $ ParseError ("unknown semiglobal reference " <> k) p
     Just v -> pure v
 expressionToValue _ _ (AST.Application p _ _) = throwError $ ParseError "placeholder: AST.Application not fully supported yet" p
-expressionToValue _ _ (AST.Transformer p _) = throwError $ ParseError "placeholder: AST.Transformer not fully supported yet" p
+expressionToValue semiMap _ (AST.Transformer _ xs) = pure $ ValueTransformer $ realizeTransformer semiMap xs
 expressionToValue _ _ (AST.Dancer p) = throwError $ ParseError "dancer, by itself, cannot be a value" p
 expressionToValue _ _ (AST.Floor p) = throwError $ ParseError "floor, by itself, cannot be a value" p
 expressionToValue _ _ (AST.Camera p) = throwError $ ParseError "camera, by itself, cannot be a value" p
@@ -137,3 +145,17 @@ expressionToValue semiMap thisMap (AST.Divide _ e1 e2) = do
   e1' <- expressionToValue semiMap thisMap e1
   e2' <- expressionToValue semiMap thisMap e2
   pure $ divideValues e1' e2'
+
+
+type Transformer = ValueMap -> Either ParseError ValueMap
+
+realizeModifier :: ValueMap -> Tuple String Expression -> Transformer
+realizeModifier semiMap (Tuple k e) thisMap = do
+  v <- expressionToValue semiMap thisMap e
+  pure $ insert k v thisMap
+
+realizeTransformer :: ValueMap -> (List (Tuple String Expression)) -> Transformer
+realizeTransformer semiMap xs = foldl appendTransformers pure $ map (realizeModifier semiMap) xs
+
+appendTransformers :: Transformer -> Transformer -> Transformer
+appendTransformers fx fy = \thisMap -> fx thisMap >>= fy

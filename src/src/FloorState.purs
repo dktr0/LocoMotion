@@ -11,7 +11,6 @@ import Effect (Effect)
 import Effect.Console (log)
 import Data.Map (Map)
 
-import Transformer
 import Value
 
 
