@@ -134,7 +134,7 @@ expressionToValue _ _ (AST.Dancer _) = pure $ ValueDancer defaultDancerTransform
 expressionToValue _ _ (AST.Floor _) = pure $ ValueFloor defaultFloorTransformer
 expressionToValue _ _ (AST.Camera _) = pure $ ValueCamera defaultCameraTransformer
 expressionToValue _ _ (AST.Osc _) = pure $ ValueFunction $ oscFunction
-expressionToValue _ _ (AST.Range p) = throwError $ ParseError "range not implemented yet" p
+expressionToValue _ _ (AST.Range _) = pure $ ValueFunction $ rangeFunction
 expressionToValue semiMap thisMap (AST.Sum _ e1 e2) = do
   e1' <- expressionToValue semiMap thisMap e1
   e2' <- expressionToValue semiMap thisMap e2
@@ -237,6 +237,6 @@ oscFunction _ (ValueNumber f) = pure $ ValueVariable $ Variable $ \nCycles -> si
 oscFunction p (ValueInt f) = oscFunction p (ValueNumber $ toNumber f)
 oscFunction p _ = throwError $ ParseError "argument to osc must be Variable/Number/Int" p
 
--- range :: Position -> Value -> Variable -> Variable -> Variable -> Variable
--- range (Variable r1) (Variable r2) (Variable x) = Variable $ \nCycles -> (x nCycles * 0.5 + 0.5) * (r2 nCycles - r1 nCycles) + r1 nCycles
--- rangeFunction ::
+rangeFunction :: Position -> Value -> Either ParseError Value
+rangeFunction _ r1 = pure $ ValueFunction (\_ r2 -> pure $ ValueFunction (\_ x -> pure $ ValueVariable $ f (valueToVariable r1) (valueToVariable r2) (valueToVariable x)))
+  where f (Variable r1') (Variable r2') (Variable x') = Variable $ \nCycles -> (x' nCycles * 0.5 + 0.5) * (r2' nCycles - r1' nCycles) + r1' nCycles
