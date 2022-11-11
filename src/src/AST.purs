@@ -2,7 +2,8 @@ module AST (
   AST,
   Statement(..),
   Expression(..),
-  ast
+  ast,
+  expressionPosition
   ) where
 
 import Prelude (class Show, bind, discard, pure, show, unit, ($), ($>), (<$), (<$>), (<*>), (<>))
@@ -61,6 +62,25 @@ instance Show Expression where
   show (Difference p e1 e2) = "Difference (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
   show (Product p e1 e2) = "Product (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
   show (Divide p e1 e2) = "Divide (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
+
+expressionPosition :: Expression -> Position
+expressionPosition (LiteralNumber p _) = p
+expressionPosition (LiteralString p _) = p
+expressionPosition (LiteralInt p _) = p
+expressionPosition (LiteralBoolean p _) = p
+expressionPosition (This p _) = p
+expressionPosition (SemiGlobal p _) = p
+expressionPosition (Application p _ _) = p
+expressionPosition (Transformer p _) = p
+expressionPosition (Dancer p) = p
+expressionPosition (Floor p) = p
+expressionPosition (Camera p) = p
+expressionPosition (Osc p) = p
+expressionPosition (Range p) = p
+expressionPosition (Sum p _ _) = p
+expressionPosition (Difference p _ _) = p
+expressionPosition (Product p _ _) = p
+expressionPosition (Divide p _ _) = p
 
 
 -- parsing:

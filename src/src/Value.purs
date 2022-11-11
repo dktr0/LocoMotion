@@ -2,12 +2,12 @@ module Value where
 
 import Prelude (identity, ($), show, (/=), class Semiring, class Ring, (/), (+), (-), (*), pure, (<>), bind, (>>=), map)
 import Data.Int (toNumber,floor)
-import Data.Map (Map, lookup, insert)
+import Data.Map (Map, lookup, insert, fromFoldable)
 import Data.Maybe (maybe,Maybe(..))
 import Data.Tuple (Tuple(..))
 import Data.Either (Either)
 import Data.List (List)
-import Parsing (ParseError(..))
+import Parsing (ParseError(..),Position)
 import Control.Monad.Error.Class (throwError)
 import Data.Foldable (foldl)
 
@@ -21,7 +21,10 @@ data Value =
   ValueInt Int |
   ValueBoolean Boolean |
   ValueVariable Variable |
-  ValueTransformer Transformer
+  ValueTransformer Transformer |
+  ValueDancer Transformer |
+  ValueFloor Transformer |
+  ValueCamera Transformer
 
 valueToNumber :: Value -> Number
 valueToNumber (ValueNumber x) = x
@@ -122,13 +125,13 @@ expressionToValue semiMap _ (AST.SemiGlobal p k) = do
   case lookup k semiMap of
     Nothing -> throwError $ ParseError ("unknown semiglobal reference " <> k) p
     Just v -> pure v
-expressionToValue _ _ (AST.Application p _ _) = throwError $ ParseError "placeholder: AST.Application not fully supported yet" p
+expressionToValue semiMap thisMap (AST.Application p e1 e2) = applicationToValue p semiMap thisMap e1 e2
 expressionToValue semiMap _ (AST.Transformer _ xs) = pure $ ValueTransformer $ realizeTransformer semiMap xs
-expressionToValue _ _ (AST.Dancer p) = throwError $ ParseError "dancer, by itself, cannot be a value" p
-expressionToValue _ _ (AST.Floor p) = throwError $ ParseError "floor, by itself, cannot be a value" p
-expressionToValue _ _ (AST.Camera p) = throwError $ ParseError "camera, by itself, cannot be a value" p
-expressionToValue _ _ (AST.Osc p) = throwError $ ParseError "osc, by itself, cannot be a value" p
-expressionToValue _ _ (AST.Range p) = throwError $ ParseError "range, by itself, cannot be a value" p
+expressionToValue _ _ (AST.Dancer _) = pure $ ValueDancer defaultDancerTransformer
+expressionToValue _ _ (AST.Floor _) = pure $ ValueFloor defaultFloorTransformer
+expressionToValue _ _ (AST.Camera _) = pure $ ValueCamera defaultCameraTransformer
+expressionToValue _ _ (AST.Osc p) = throwError $ ParseError "Osc not re-implemented yet" p
+expressionToValue _ _ (AST.Range p) = throwError $ ParseError "Osc not re-implemented yet" p
 expressionToValue semiMap thisMap (AST.Sum _ e1 e2) = do
   e1' <- expressionToValue semiMap thisMap e1
   e2' <- expressionToValue semiMap thisMap e2
@@ -159,3 +162,66 @@ realizeTransformer semiMap xs = foldl appendTransformers pure $ map (realizeModi
 
 appendTransformers :: Transformer -> Transformer -> Transformer
 appendTransformers fx fy = \thisMap -> fx thisMap >>= fy
+
+defaultDancerTransformer :: Transformer
+defaultDancerTransformer = pure $ pure $ fromFoldable [
+  Tuple "x" (ValueNumber 0.0),
+  Tuple "y" (ValueNumber 0.0),
+  Tuple "z" (ValueNumber 0.0),
+  Tuple "rx" (ValueNumber 0.0),
+  Tuple "ry" (ValueNumber 0.0),
+  Tuple "rz" (ValueNumber 0.0),
+  Tuple "sx" (ValueNumber 1.0),
+  Tuple "sy" (ValueNumber 1.0),
+  Tuple "sz" (ValueNumber 1.0),
+  Tuple "size" (ValueNumber 1.0)
+  ]
+
+defaultFloorTransformer :: Transformer
+defaultFloorTransformer = pure $ pure $ fromFoldable [
+  Tuple "colour" (ValueInt 0x888888),
+  Tuple "shadows" (ValueBoolean true)
+  ]
+
+defaultCameraTransformer :: Transformer
+defaultCameraTransformer = pure $ pure $ fromFoldable [
+  Tuple "x" (ValueNumber 0.0),
+  Tuple "y" (ValueNumber 1.0),
+  Tuple "z" (ValueNumber 10.0),
+  Tuple "rx" (ValueNumber 0.0),
+  Tuple "ry" (ValueNumber 0.0),
+  Tuple "rz" (ValueNumber 0.0)
+  ]
+
+applicationToValue :: Position -> ValueMap -> ValueMap -> Expression -> Expression -> Either ParseError Value
+applicationToValue p semiMap thisMap eF eX = do
+  f <- expressionToValue semiMap thisMap eF
+  x <- expressionToValue semiMap thisMap eX
+  case f of
+    ValueNumber _ -> throwError $ ParseError "A Number can't be the left side of a function application" p
+    ValueString _ -> throwError $ ParseError "A String can't be the left side of a function application" p
+    ValueInt _ -> throwError $ ParseError "An Int can't be the left side of a function application" p
+    ValueBoolean _ -> throwError $ ParseError "A Boolean can't be the left side of a function application" p
+    ValueVariable _ -> throwError $ ParseError "A Variable can't be the left side of a function application" p
+    ValueTransformer tF -> do
+      case x of
+        ValueTransformer tX -> pure $ ValueTransformer $ appendTransformers tF tX
+        ValueDancer tX -> pure $ ValueDancer $ appendTransformers tX tF -- note reverse application when transformers are on left of dancers/floor/camera
+        ValueFloor tX -> pure $ ValueFloor $ appendTransformers tX tF
+        ValueCamera tX -> pure $ ValueCamera $ appendTransformers tX tF
+        _ -> throwError $ ParseError "invalid argument applied to Transformer" (AST.expressionPosition eX)
+    ValueDancer tF -> do
+      case x of
+        ValueTransformer tX -> pure $ ValueDancer $ appendTransformers tF tX
+        ValueDancer tX -> pure $ ValueDancer $ appendTransformers tF tX
+        _ -> throwError $ ParseError "invalid argument applied to Dancer" (AST.expressionPosition eX)
+    ValueCamera tF -> do
+      case x of
+        ValueTransformer tX -> pure $ ValueCamera $ appendTransformers tF tX
+        ValueCamera tX -> pure $ ValueCamera $ appendTransformers tF tX
+        _ -> throwError $ ParseError "invalid argument applied to Camera" (AST.expressionPosition eX)
+    ValueFloor tF -> do
+      case x of
+        ValueTransformer tX -> pure $ ValueFloor $ appendTransformers tF tX
+        ValueFloor tX -> pure $ ValueFloor $ appendTransformers tF tX
+        _ -> throwError $ ParseError "invalid argument applied to Floor" (AST.expressionPosition eX)
