@@ -10,6 +10,8 @@ import Data.List (List)
 import Parsing (ParseError(..),Position)
 import Control.Monad.Error.Class (throwError)
 import Data.Foldable (foldl)
+import Data.Number (sin,pi)
+
 
 import AST (Expression)
 import AST as AST
@@ -24,7 +26,8 @@ data Value =
   ValueTransformer Transformer |
   ValueDancer Transformer |
   ValueFloor Transformer |
-  ValueCamera Transformer
+  ValueCamera Transformer |
+  ValueFunction (Position -> Value -> Either ParseError Value)
 
 valueToNumber :: Value -> Number
 valueToNumber (ValueNumber x) = x
@@ -130,8 +133,8 @@ expressionToValue semiMap _ (AST.Transformer _ xs) = pure $ ValueTransformer $ r
 expressionToValue _ _ (AST.Dancer _) = pure $ ValueDancer defaultDancerTransformer
 expressionToValue _ _ (AST.Floor _) = pure $ ValueFloor defaultFloorTransformer
 expressionToValue _ _ (AST.Camera _) = pure $ ValueCamera defaultCameraTransformer
-expressionToValue _ _ (AST.Osc p) = throwError $ ParseError "Osc not re-implemented yet" p
-expressionToValue _ _ (AST.Range p) = throwError $ ParseError "Osc not re-implemented yet" p
+expressionToValue _ _ (AST.Osc _) = pure $ ValueFunction $ oscFunction
+expressionToValue _ _ (AST.Range p) = throwError $ ParseError "range not implemented yet" p
 expressionToValue semiMap thisMap (AST.Sum _ e1 e2) = do
   e1' <- expressionToValue semiMap thisMap e1
   e2' <- expressionToValue semiMap thisMap e2
@@ -225,3 +228,15 @@ applicationToValue p semiMap thisMap eF eX = do
         ValueTransformer tX -> pure $ ValueFloor $ appendTransformers tF tX
         ValueFloor tX -> pure $ ValueFloor $ appendTransformers tF tX
         _ -> throwError $ ParseError "invalid argument applied to Floor" (AST.expressionPosition eX)
+    ValueFunction f' -> f' (AST.expressionPosition eX) x
+
+
+oscFunction :: Position -> Value -> Either ParseError Value
+oscFunction _ (ValueVariable (Variable f)) = pure $ ValueVariable $ Variable $ \nCycles -> sin $ f nCycles * nCycles * 2.0 * pi
+oscFunction _ (ValueNumber f) = pure $ ValueVariable $ Variable $ \nCycles -> sin $ f * nCycles * 2.0 * pi
+oscFunction p (ValueInt f) = oscFunction p (ValueNumber $ toNumber f)
+oscFunction p _ = throwError $ ParseError "argument to osc must be Variable/Number/Int" p
+
+-- range :: Position -> Value -> Variable -> Variable -> Variable -> Variable
+-- range (Variable r1) (Variable r2) (Variable x) = Variable $ \nCycles -> (x nCycles * 0.5 + 0.5) * (r2 nCycles - r1 nCycles) + r1 nCycles
+-- rangeFunction ::

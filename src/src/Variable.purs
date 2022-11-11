@@ -4,7 +4,6 @@ module Variable where
 -- for now, such things are just numbers (or things that can be adequately represented with numbers)
 
 import Prelude
-import Data.Number (sin,pi)
 
 newtype Variable = Variable (Number -> Number)
 
@@ -28,9 +27,3 @@ divide (Variable fx) (Variable fy) = Variable $ \nCycles -> f (fx nCycles) (fy n
   where
     f _ 0.0 = 0.0
     f x y = x/y
-
-osc :: Variable -> Variable
-osc (Variable f) = Variable $ \nCycles -> sin $ f nCycles * nCycles * 2.0 * pi
-
-range :: Variable -> Variable -> Variable -> Variable
-range (Variable r1) (Variable r2) (Variable x) = Variable $ \nCycles -> (x nCycles * 0.5 + 0.5) * (r2 nCycles - r1 nCycles) + r1 nCycles
