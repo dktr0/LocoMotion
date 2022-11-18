@@ -115,7 +115,9 @@ lookupValue d k m = maybe d identity $ lookup k m
 
 -- parsing from AST to Values
 
-expressionToValue :: ValueMap -> ValueMap -> Expression -> Either ParseError Value
+type SemiMap = Map String Expression
+
+expressionToValue :: SemiMap -> ValueMap -> Expression -> Either ParseError Value
 expressionToValue _ _ (AST.LiteralNumber _ x) = pure $ ValueNumber x
 expressionToValue _ _ (AST.LiteralString _ x) = pure $ ValueString x
 expressionToValue _ _ (AST.LiteralInt _ x) = pure $ ValueInt x
@@ -124,10 +126,10 @@ expressionToValue _ thisMap (AST.This p k) = do
   case lookup k thisMap of
     Nothing -> throwError $ ParseError ("unknown this reference " <> k) p
     Just v -> pure v
-expressionToValue semiMap _ (AST.SemiGlobal p k) = do
+expressionToValue semiMap thisMap (AST.SemiGlobal p k) = do
   case lookup k semiMap of
     Nothing -> throwError $ ParseError ("unknown semiglobal reference " <> k) p
-    Just v -> pure v
+    Just e -> expressionToValue semiMap thisMap e
 expressionToValue semiMap thisMap (AST.Application p e1 e2) = applicationToValue p semiMap thisMap e1 e2
 expressionToValue semiMap _ (AST.Transformer _ xs) = pure $ ValueTransformer $ realizeTransformer semiMap xs
 expressionToValue _ _ (AST.Dancer _) = pure $ ValueDancer defaultDancerTransformer
@@ -155,12 +157,12 @@ expressionToValue semiMap thisMap (AST.Divide _ e1 e2) = do
 
 type Transformer = ValueMap -> Either ParseError ValueMap
 
-realizeModifier :: ValueMap -> Tuple String Expression -> Transformer
+realizeModifier :: SemiMap -> Tuple String Expression -> Transformer
 realizeModifier semiMap (Tuple k e) thisMap = do
   v <- expressionToValue semiMap thisMap e
   pure $ insert k v thisMap
 
-realizeTransformer :: ValueMap -> (List (Tuple String Expression)) -> Transformer
+realizeTransformer :: SemiMap -> (List (Tuple String Expression)) -> Transformer
 realizeTransformer semiMap xs = foldl appendTransformers pure $ map (realizeModifier semiMap) xs
 
 appendTransformers :: Transformer -> Transformer -> Transformer
@@ -196,7 +198,7 @@ defaultCameraTransformer = pure $ pure $ fromFoldable [
   Tuple "rz" (ValueNumber 0.0)
   ]
 
-applicationToValue :: Position -> ValueMap -> ValueMap -> Expression -> Expression -> Either ParseError Value
+applicationToValue :: Position -> SemiMap -> ValueMap -> Expression -> Expression -> Either ParseError Value
 applicationToValue p semiMap thisMap eF eX = do
   f <- expressionToValue semiMap thisMap eF
   x <- expressionToValue semiMap thisMap eX
