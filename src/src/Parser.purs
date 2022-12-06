@@ -1,15 +1,18 @@
-module Parser where
+module Parser (
+  Program,
+  Action(..),
+  parseProgram
+  ) where
 
-import Prelude
+import Prelude (bind, pure, show, ($), (<>), (>>=))
 import Data.Map (insert,empty)
-import Data.List
-import Data.Tuple
-import Data.Either
-import Data.Maybe
-import Parsing (Position,ParseError(..))
-import Data.Foldable (foldl)
+import Data.List (List, foldl, mapMaybe)
+import Data.Either (Either)
+import Data.Maybe (Maybe(..))
+import Parsing (Position(..),ParseError(..),runParser)
 import Data.Traversable (traverse)
 import Control.Monad.Error.Class (throwError)
+import Data.Bifunctor (lmap)
 
 import Value
 import AST (AST,Expression,Statement)
@@ -46,12 +49,8 @@ expressionToAction semiMap e = do
     ValueCamera t -> pure $ Camera t
     _ -> throwError $ ParseError "an Action must be a Dancer, Floor, or Camera" (AST.expressionPosition e)
 
-{-
 parseProgram :: String -> Either String Program
-parseProgram x = case (runParser x program) of
-  Left err -> Left $ showParseError err
-  Right prog -> Right prog
+parseProgram x = lmap showParseError $ runParser x AST.ast >>= astToProgram
 
 showParseError :: ParseError -> String
 showParseError (ParseError e (Position p)) = show p.line <> ":" <> show p.column <> " " <> e
--}

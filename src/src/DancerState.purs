@@ -1,6 +1,5 @@
 module DancerState (
   DancerState(..),
-  MaybeRef(..),
   Model(..),
   MixerState(..),
   runDancerWithState,
@@ -23,16 +22,8 @@ import Data.Map (Map)
 import AST
 import URL
 import Value
+import MaybeRef
 
-type MaybeRef a = Ref (Maybe a)
-
--- like 'when' but specialized for a MaybeRef
-whenMaybeRef :: forall a. MaybeRef a -> (a -> Effect Unit) -> Effect Unit
-whenMaybeRef mRef f = do
-  m <- read mRef
-  case m of
-    Just a -> f a
-    Nothing -> pure unit
 
 type DancerState =
   {
@@ -96,8 +87,8 @@ loadModelIfNecessary theScene valueMap (Just s) = do
   pure s
 
 
-updateTransforms :: Number -> ValueMap -> DancerState -> Effect Unit
-updateTransforms nowCycles valueMap s = whenMaybeRef s.model $ \m -> do
+updateTransforms :: ValueMap -> DancerState -> Effect Unit
+updateTransforms valueMap s = whenMaybeRef s.model $ \m -> do
   let x  = lookupNumber 0.0 "x" valueMap
   let y  = lookupNumber 0.0 "y" valueMap
   let z  = lookupNumber 0.0 "z" valueMap

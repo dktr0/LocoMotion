@@ -157,16 +157,17 @@ expressionToValue semiMap thisMap (AST.Divide _ e1 e2) = do
 
 type Transformer = ValueMap -> Either ParseError ValueMap
 
+realizeTransformer :: SemiMap -> (List (Tuple String Expression)) -> Transformer
+realizeTransformer semiMap xs = foldl appendTransformers pure $ map (realizeModifier semiMap) xs
+
 realizeModifier :: SemiMap -> Tuple String Expression -> Transformer
 realizeModifier semiMap (Tuple k e) thisMap = do
   v <- expressionToValue semiMap thisMap e
   pure $ insert k v thisMap
 
-realizeTransformer :: SemiMap -> (List (Tuple String Expression)) -> Transformer
-realizeTransformer semiMap xs = foldl appendTransformers pure $ map (realizeModifier semiMap) xs
-
 appendTransformers :: Transformer -> Transformer -> Transformer
 appendTransformers fx fy = \thisMap -> fx thisMap >>= fy
+
 
 defaultDancerTransformer :: Transformer
 defaultDancerTransformer = pure $ pure $ fromFoldable [
@@ -197,6 +198,7 @@ defaultCameraTransformer = pure $ pure $ fromFoldable [
   Tuple "ry" (ValueNumber 0.0),
   Tuple "rz" (ValueNumber 0.0)
   ]
+
 
 applicationToValue :: Position -> SemiMap -> ValueMap -> Expression -> Expression -> Either ParseError Value
 applicationToValue p semiMap thisMap eF eX = do
