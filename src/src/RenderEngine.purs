@@ -106,7 +106,6 @@ evaluate re z x = do
     Right p -> do
       ZoneMap.write z p re.programs
       collectSemiGlobals re z p -- *** TODO: evaluation should not succeed when there are infinite reference chains in semiGlobals
-      log $ show p
       pure Nothing
     Left err -> pure $ Just err
 

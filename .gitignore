@@ -12,3 +12,4 @@ npm-debug.log
 /.psa*
 .spago
 .psci_modules
+.DS_Store
