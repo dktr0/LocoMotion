@@ -1,5 +1,11 @@
 module Value where
 
+-- A Value represents anything that can be on the right-hand side of some assignment
+-- statement (but not all Values can be on the right-hand side of particular assignments).
+-- At runtime, a Value has one of a number of specific types - and it is possible to
+-- implicitly cast it to any of the other types in particular circumstances where the
+-- Value is consumed.
+
 import Prelude (identity, ($), show, (/=), class Semiring, class Ring, (/), (+), (-), (*), pure, (<>), bind, (>>=), map)
 import Data.Int (toNumber,floor)
 import Data.Map (Map, lookup, insert, fromFoldable)
@@ -12,22 +18,21 @@ import Control.Monad.Error.Class (throwError)
 import Data.Foldable (foldl)
 import Data.Number (sin,pi)
 
-
 import AST (Expression)
 import AST as AST
 import Variable
 
 data Value =
-  ValueNumber Number |
-  ValueString String |
-  ValueInt Int |
-  ValueBoolean Boolean |
-  ValueVariable Variable |
-  ValueTransformer Transformer |
-  ValueDancer Transformer |
+  ValueNumber Number | -- x = 4.0;
+  ValueString String | -- x = "a string";
+  ValueInt Int | -- x = 4;
+  ValueBoolean Boolean | -- x = true;
+  ValueVariable Variable | -- x = osc 1.0;
+  ValueTransformer Transformer | -- x = { ry = this.ry + osc 1.0 };
+  ValueFunction (Position -> Value -> Either ParseError Value) |
+  ValueDancer Transformer | -- WORKING HERE: changing representation ValueDancer Int Transformer, etc
   ValueFloor Transformer |
-  ValueCamera Transformer |
-  ValueFunction (Position -> Value -> Either ParseError Value)
+  ValueCamera Transformer
 
 valueToNumber :: Value -> Number
 valueToNumber (ValueNumber x) = x
