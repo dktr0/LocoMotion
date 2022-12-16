@@ -25,7 +25,6 @@ data Action =
   Floor Transformer |
   Camera Transformer
 
-
 astToProgram :: AST -> Either ParseError Program
 astToProgram ast = do
   let semiMap = foldl collectSemiGlobal empty ast -- :: SemiMap

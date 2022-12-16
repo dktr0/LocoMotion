@@ -30,8 +30,8 @@ data Value =
   ValueVariable Variable | -- x = osc 1.0;
   ValueTransformer Transformer | -- x = { ry = this.ry + osc 1.0 };
   ValueFunction (Position -> Value -> Either ParseError Value) |
-  ValueDancer Transformer | -- WORKING HERE: changing representation ValueDancer Int Transformer, etc
-  ValueFloor Transformer |
+  ValueDancer Int Transformer |
+  ValueFloor Int Transformer |
   ValueCamera Transformer
 
 valueToNumber :: Value -> Number
@@ -71,6 +71,8 @@ valueToVariable _ = constantVariable 0.0
 
 valueToTransformer :: Value -> Transformer
 valueToTransformer (ValueTransformer x) = x
+valueToTransformer (ValueDancer _ x) = x
+valueToTransformer (ValueFloor _ x) = x
 valueToTransformer _ = pure
 
 instance Semiring Value where
@@ -137,8 +139,8 @@ expressionToValue semiMap thisMap (AST.SemiGlobal p k) = do
     Just e -> expressionToValue semiMap thisMap e
 expressionToValue semiMap thisMap (AST.Application p e1 e2) = applicationToValue p semiMap thisMap e1 e2
 expressionToValue semiMap _ (AST.Transformer _ xs) = pure $ ValueTransformer $ realizeTransformer semiMap xs
-expressionToValue _ _ (AST.Dancer _) = pure $ ValueDancer defaultDancerTransformer
-expressionToValue _ _ (AST.Floor _) = pure $ ValueFloor defaultFloorTransformer
+expressionToValue _ _ (AST.Dancer _) = pure $ ValueDancer ??? defaultDancerTransformer
+expressionToValue _ _ (AST.Floor _) = pure $ ValueFloor ??? defaultFloorTransformer
 expressionToValue _ _ (AST.Camera _) = pure $ ValueCamera defaultCameraTransformer
 expressionToValue _ _ (AST.Osc _) = pure $ ValueFunction $ oscFunction
 expressionToValue _ _ (AST.Range _) = pure $ ValueFunction $ rangeFunction
