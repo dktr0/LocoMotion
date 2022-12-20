@@ -18,14 +18,14 @@ import Value
 import AST (AST,Expression,Statement)
 import AST as AST
 
-type Program = List Action
+type Program = R Unit
 
 data Action =
   Dancer Transformer |
   Floor Transformer |
   Camera Transformer
 
-astToProgram :: AST -> Either ParseError Program
+astToProgram :: AST -> Either ParseError (R Unit)
 astToProgram ast = do
   let semiMap = foldl collectSemiGlobal empty ast -- :: SemiMap
   let actionList = mapMaybe collectAction ast -- :: List Expression

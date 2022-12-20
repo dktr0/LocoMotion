@@ -12,7 +12,8 @@ import ThreeJS as Three
 type RenderEnvironment = {
   _scene :: Three.Scene,
   _camera :: Three.PerspectiveCamera,
-  _renderer :: Three.Renderer
+  _renderer :: Three.Renderer,
+  _nCycles :: Number
   }
 
 type RenderState = {
@@ -32,7 +33,21 @@ renderer = asks _renderer
 
 
 -- camera { x = 12, z = 10 }
-camera :: Transformer -> R ()
+camera :: ValueMap -> R ()
+camera valueMap = do
+  maybeSetCameraProperty "x" valueMap (Three.setPositionX re.camera)
+  maybeSetCameraProperty "y" valueMap (Three.setPositionY re.camera)
+  maybeSetCameraProperty "z" valueMap (Three.setPositionZ re.camera)
+  maybeSetCameraProperty "rx" valueMap (Three.setRotationX re.camera)
+  maybeSetCameraProperty "ry" valueMap (Three.setRotationY re.camera)
+  maybeSetCameraProperty "rz" valueMap (Three.setRotationZ re.camera)
+
+maybeSetCameraProperty :: String -> ValueMap -> (Number -> Effect Unit) -> R Unit
+maybeSetCameraProperty k valueMap f = do
+  case Map.lookup k valueMap of
+    Just v -> liftIO $ f (valueToNumber v)
+    Nothing -> pure unit
+
 
 
 -- floor { colour = 0xff00ff }
@@ -41,3 +56,6 @@ floor :: Transformer -> R ()
 
 -- lisa = dancer { url="lisa.glb" }
 dancer :: Transformer -> R ???
+
+
+astToProgram :: AST -> R ()
