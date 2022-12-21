@@ -6,14 +6,16 @@ module R where
 -- in other words, a LocoMotion program is a structure of such render-actions
 -- they have access to a RenderState (State monad) and RenderEnvironment (Reader monad)
 
+import Control.Monad.State.Trans
 import ThreeJS as Three
 
 
+
 type RenderEnvironment = {
-  _scene :: Three.Scene,
-  _camera :: Three.PerspectiveCamera,
-  _renderer :: Three.Renderer,
-  _nCycles :: Number
+  scene :: Three.Scene,
+  camera :: Three.PerspectiveCamera,
+  renderer :: Three.Renderer,
+  nCycles :: Number
   }
 
 type RenderState = {
@@ -21,26 +23,19 @@ type RenderState = {
   floors :: IntMap FloorState
   }
 
-
-scene :: R Three.Scene
-scene = asks _scene
-
-camera :: R Three.PerspectiveCamera
-camera = asks _camera
-
-renderer :: R Three.Renderer
-renderer = asks _renderer
+type R a = StateT RenderState (ReaderT RenderEnvironment Effect) a
 
 
 -- camera { x = 12, z = 10 }
 camera :: ValueMap -> R ()
 camera valueMap = do
-  maybeSetCameraProperty "x" valueMap (Three.setPositionX re.camera)
-  maybeSetCameraProperty "y" valueMap (Three.setPositionY re.camera)
-  maybeSetCameraProperty "z" valueMap (Three.setPositionZ re.camera)
-  maybeSetCameraProperty "rx" valueMap (Three.setRotationX re.camera)
-  maybeSetCameraProperty "ry" valueMap (Three.setRotationY re.camera)
-  maybeSetCameraProperty "rz" valueMap (Three.setRotationZ re.camera)
+  c <- asks camera
+  maybeSetCameraProperty "x" valueMap (Three.setPositionX c)
+  maybeSetCameraProperty "y" valueMap (Three.setPositionY c)
+  maybeSetCameraProperty "z" valueMap (Three.setPositionZ c)
+  maybeSetCameraProperty "rx" valueMap (Three.setRotationX c)
+  maybeSetCameraProperty "ry" valueMap (Three.setRotationY c)
+  maybeSetCameraProperty "rz" valueMap (Three.setRotationZ c)
 
 maybeSetCameraProperty :: String -> ValueMap -> (Number -> Effect Unit) -> R Unit
 maybeSetCameraProperty k valueMap f = do
