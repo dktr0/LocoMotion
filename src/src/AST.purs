@@ -21,12 +21,12 @@ type AST = List Statement
 
 data Statement =
   Assignment Position String Expression |
-  Action Position Expression |
+  Action Expression | -- Action doesn't need to record Position since the contained Expression will have the Position
   EmptyStatement Position
 
 instance Show Statement where
   show (Assignment p k e) = "Assignment (" <> show p <> ") " <> show k <> " (" <> show e <> ")"
-  show (Action p e) = "Action (" <> show p <> ") (" <> show e <> ")"
+  show (Action e) = "Action (" <> show e <> ")"
   show (EmptyStatement p) = "EmptyStatement (" <> show p <> ")"
 
 data Expression =
@@ -104,7 +104,7 @@ assignment = do
   pure $ Assignment p k v
 
 action :: P Statement
-action = Action <$> position <*> expression
+action = Action <$> expression
 
 emptyStatement :: P Statement
 emptyStatement = do
