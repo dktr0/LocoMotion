@@ -6,10 +6,15 @@ module R where
 -- in other words, a LocoMotion program is a structure of such render-actions
 -- they have access to a RenderState (State monad) and RenderEnvironment (Reader monad)
 
+import Prelude
+import Effect (Effect)
+import Data.Maybe
+import Data.Map
 import Control.Monad.State.Trans
+import Control.Monad.Reader.Trans
 import ThreeJS as Three
 
-
+import Value
 
 type RenderEnvironment = {
   scene :: Three.Scene,
@@ -19,13 +24,13 @@ type RenderEnvironment = {
   }
 
 type RenderState = {
-  dancers :: IntMap DancerState,
-  floors :: IntMap FloorState
+  -- dancers :: Map Int DancerState,
+  -- floors :: Map Int FloorState
   }
 
 type R a = StateT RenderState (ReaderT RenderEnvironment Effect) a
 
-
+{-
 -- camera { x = 12, z = 10 }
 camera :: ValueMap -> R ()
 camera valueMap = do
@@ -39,18 +44,7 @@ camera valueMap = do
 
 maybeSetCameraProperty :: String -> ValueMap -> (Number -> Effect Unit) -> R Unit
 maybeSetCameraProperty k valueMap f = do
-  case Map.lookup k valueMap of
+  case lookup k valueMap of
     Just v -> liftIO $ f (valueToNumber v)
     Nothing -> pure unit
-
-
-
--- floor { colour = 0xff00ff }
-floor :: Transformer -> R ()
-
-
--- lisa = dancer { url="lisa.glb" }
-dancer :: Transformer -> R ???
-
-
-astToProgram :: AST -> R ()
+-}

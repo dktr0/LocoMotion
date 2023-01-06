@@ -3,72 +3,67 @@ module Parser (
   parseProgram
   ) where
 
-import Prelude (bind, pure, show, ($), (<>), (>>=))
-import Data.Map (insert,empty)
-import Data.List (List, foldl, mapMaybe)
+import Prelude
+import Data.Number (sin,pi)
+import Data.Int (toNumber)
+import Data.Map (insert,empty,lookup)
+import Data.Map (fromFoldable) as Map
+import Data.List (List, foldl, mapMaybe, fromFoldable)
+import Data.Tuple (Tuple(..))
 import Data.Either (Either)
 import Data.Maybe (Maybe(..))
 import Parsing (Position(..),ParseError(..),runParser)
-import Data.Traversable (traverse)
+import Data.Traversable (traverse,sequence)
 import Control.Monad.Error.Class (throwError)
+import Control.Monad.State.Trans (get,modify_)
 import Data.Bifunctor (lmap)
 
 import Value
+import Variable
 import AST (AST,Expression,Statement)
 import AST as AST
 import R (R)
 
--- needs to be updated to new approach:
+type Program = R Unit
+
 parseProgram :: String -> Either String Program
-parseProgram x = lmap showParseError $ runParser x AST.ast >>= astToProgram
+parseProgram x = lmap showParseError $ runParser x AST.ast >>= (astToProgram >>> runP)
 
 showParseError :: ParseError -> String
 showParseError (ParseError e (Position p)) = show p.line <> ":" <> show p.column <> " " <> e
 
--- We have already (in the module AST) provided a parser from text to an abstract syntax tree
--- The type P a will be used to build a parser from that AST to a Program, which is a computation
--- that can be run "in" the render engine (ie. a computation with access to the various fixed and
--- stateful elements of rendering). A Parser (P a) can read and write a PState (used to store
--- semiglobal and this definitions and counts used for defining references to instantiated 3D objects),
--- and can throw ParseErrors.
-
-type Program = R Unit
-
-type PState = {
-  semiMap :: ValueMap,
-  thisMap :: ValueMap,
-  refCount :: Int
-  }
-
-type P a = StateT PState (Either ParseError) a
-
-runP :: P a -> Either ParseError a
-runP p = evalStateT p { semiMap: empty, thisMap: empty, dancerCount: 0 }
-
-newRef :: P Int
-newRef = do
-  s <- get
-  let n = s.refCount
-  modify $ \x -> x { refCount = n+1 }
-  pure n
-
 astToProgram :: AST -> P Program
-astToProgram ast = ...TODO...
+astToProgram ast = do
+ ps <- traverse statementToProgram ast -- :: P (List Program)
+ pure $ do
+   sequence ps
+   pure unit
 
 statementToProgram :: Statement -> P (R Unit)
-statementToProgram (Assignment _ k e) = do -- position is currently unused, but it might be used in future if we were checking validity of definition names
+statementToProgram (AST.Assignment _ k e) = do -- position is currently unused, but it might be used in future if we were checking validity of definition names
   v <- expressionToValue empty e
   modify_ $ \s -> s { semiGlobals = insert k v s.semiGlobals }
   pure $ performValue v
-statementToProgram (Action e) = do
+statementToProgram (AST.Action e) = do
   v <- expressionToValue empty e
   pure $ performValue v
 
 performValue :: Value -> R Unit
-performValue (ValueDancer r t) = performDancer r t -- to be defined elsewhere
-performValue (ValueFloor r t) = performFloor r t -- to be defined elsewhere
-performValue (ValueCamera t) = performCamera t -- to be defined elsewhere
+performValue (ValueDancer r t) = performDancer r t
+performValue (ValueFloor r t) = performFloor r t
+performValue (ValueCamera t) = performCamera t
 performValue _ = pure unit -- all other values yield a Program that does nothing
+
+-- performDancer Floor and Camera are placeholders - these would be defined elsewhere
+performDancer :: Int -> Transformer -> R Unit
+performDancer _ _ = pure unit
+
+performFloor :: Int -> Transformer -> R Unit
+performFloor _ _ = pure unit
+
+performCamera :: Transformer -> R Unit
+performCamera _ = pure unit
+
 
 expressionToValue :: Expression -> P Value
 expressionToValue (AST.LiteralNumber _ x) = pure $ ValueNumber x
@@ -76,12 +71,14 @@ expressionToValue (AST.LiteralString _ x) = pure $ ValueString x
 expressionToValue (AST.LiteralInt _ x) = pure $ ValueInt x
 expressionToValue (AST.LiteralBoolean _ x) = pure $ ValueBoolean x
 expressionToValue (AST.This p k) = do
-  tMap <- gets thisMap
+  s <- get
+  let tMap = s.thisMap
   case lookup k tMap of
     Nothing -> throwError $ ParseError ("unknown this reference " <> k) p
     Just v -> pure v
 expressionToValue (AST.SemiGlobal p k) = do
-  sMap <- gets semiMap
+  s <- get
+  let sMap = s.semiMap
   case lookup k sMap of
     Nothing -> throwError $ ParseError ("unknown semiglobal reference " <> k) p
     Just v -> pure v
@@ -127,6 +124,7 @@ applicationToValue p eF eX = do
     ValueTransformer tF -> do
       case x of
         ValueTransformer tX -> pure $ ValueTransformer $ appendTransformers tF tX
+        ...WORKING HERE... what happens when we have things like: y = { ... } dancer { ... }; vs... y = { ... } x; where x is a previously instanced dancer....
         ValueDancer _ tX -> pure $ ValueDancer $ appendTransformers tX tF -- note reverse application when transformers are on left of dancers/floor/camera
         ValueFloor _ tX -> pure $ ValueFloor $ appendTransformers tX tF
         ValueCamera tX -> pure $ ValueCamera $ appendTransformers tX tF
@@ -149,6 +147,8 @@ applicationToValue p eF eX = do
     ValueFunction f' -> f' (AST.expressionPosition eX) x
 
 
+-- Miscellaneous functions
+
 oscFunction :: Position -> Value -> Either ParseError Value
 oscFunction _ (ValueVariable (Variable f)) = pure $ ValueVariable $ Variable $ \nCycles -> sin $ f nCycles * nCycles * 2.0 * pi
 oscFunction _ (ValueNumber f) = pure $ ValueVariable $ Variable $ \nCycles -> sin $ f * nCycles * 2.0 * pi
@@ -160,35 +160,23 @@ rangeFunction _ r1 = pure $ ValueFunction (\_ r2 -> pure $ ValueFunction (\_ x -
   where f (Variable r1') (Variable r2') (Variable x') = Variable $ \nCycles -> (x' nCycles * 0.5 + 0.5) * (r2' nCycles - r1' nCycles) + r1' nCycles
 
 
--- WORKING HERE on transformerToValue etc:
--- notes:
--- type Transformer = ValueMap -> Either ParseError ValueMap
--- (old) realizeTransformer :: SemiMap -> (List (Tuple String Expression)) -> Transformer
--- (old) realizeTransformer semiMap xs = foldl appendTransformers pure $ map (realizeModifier semiMap) xs
+-- Transformers
 
 transformerToValue :: List (Tuple String Expression) -> P Value
-transformerToValue xs =
-  ... TODO ...
-  pure $ ValueTransformer t
+transformerToValue xs = do
+  ts <- traverse parseModifier xs -- :: P (List Transformer)
+  pure $ ValueTransformer $ foldl appendTransformers pure ts
 
 parseModifier :: Tuple String Expression -> P Transformer
-parseModifier (Tuple k e) = do
-  v <- expressionToValue thisMap e ????
-  pure $ insert k v thisMap
-
-f :: String -> Expression -> ValueMap -> P ValueMap
-f k e thisMap = do
+parseModifier (Tuple k e) = pure $ \thisMap -> do
   v <- expressionToValue thisMap e
   pure $ insert k v thisMap
-
-
 
 appendTransformers :: Transformer -> Transformer -> Transformer
 appendTransformers fx fy = \thisMap -> fx thisMap >>= fy
 
-
-defaultDancerTransformer :: Transformer
-defaultDancerTransformer = pure $ pure $ fromFoldable [
+defaultDancerTransformer :: Transformer -- ValueMap -> P ValueMap
+defaultDancerTransformer _ = pure $ Map.fromFoldable [
   Tuple "x" (ValueNumber 0.0),
   Tuple "y" (ValueNumber 0.0),
   Tuple "z" (ValueNumber 0.0),
@@ -202,13 +190,16 @@ defaultDancerTransformer = pure $ pure $ fromFoldable [
   ]
 
 defaultFloorTransformer :: Transformer
-defaultFloorTransformer = pure $ pure $ fromFoldable [
+defaultFloorTransformer = defaultDancerTransformer
+{-
+defaultFloorTransformer _ = pure $ Map.fromFoldable [
   Tuple "colour" (ValueInt 0x888888),
   Tuple "shadows" (ValueBoolean true)
   ]
+-}
 
 defaultCameraTransformer :: Transformer
-defaultCameraTransformer = pure $ pure $ fromFoldable [
+defaultCameraTransformer = pure $ pure $ Map.fromFoldable [
   Tuple "x" (ValueNumber 0.0),
   Tuple "y" (ValueNumber 1.0),
   Tuple "z" (ValueNumber 10.0),

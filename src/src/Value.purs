@@ -6,9 +6,9 @@ module Value where
 -- implicitly cast it to any of the other types in particular circumstances where the
 -- Value is consumed.
 
-import Prelude (identity, ($), show, (/=), class Semiring, class Ring, (/), (+), (-), (*), pure, (<>), bind, (>>=), map)
+import Prelude (identity, ($), show, (/=), class Semiring, class Ring, (/), (+), (-), (*), pure, (<>), bind, discard, (>>=), map)
 import Data.Int (toNumber,floor)
-import Data.Map (Map, lookup, insert, fromFoldable)
+import Data.Map (Map, lookup, insert, fromFoldable, empty)
 import Data.Maybe (maybe,Maybe(..))
 import Data.Tuple (Tuple(..))
 import Data.Either (Either)
@@ -17,12 +17,14 @@ import Parsing (ParseError(..),Position)
 import Control.Monad.Error.Class (throwError)
 import Data.Foldable (foldl)
 import Data.Number (sin,pi)
+import Control.Monad.State.Trans
+
 
 import AST (Expression)
 import AST as AST
 import Variable
 
-type Transformer = ValueMap -> Either ParseError ValueMap
+type Transformer = ValueMap -> P ValueMap
 
 data Value =
   ValueNumber Number | -- x = 4.0;
@@ -120,3 +122,24 @@ lookupVariable d k m = valueToVariable $ lookupValue (ValueVariable d) k m
 
 lookupValue :: Value -> String -> ValueMap -> Value
 lookupValue d k m = maybe d identity $ lookup k m
+
+
+-- the P monad
+
+type PState = {
+  semiMap :: ValueMap,
+  thisMap :: ValueMap,
+  refCount :: Int
+  }
+
+type P a = StateT PState (Either ParseError) a
+
+runP :: forall a. P a -> Either ParseError a
+runP p = evalStateT p { semiMap: empty, thisMap: empty, refCount: 0 }
+
+newRef :: P Int
+newRef = do
+  s <- get
+  let n = s.refCount
+  modify_ $ \x -> x { refCount = n+1 }
+  pure n
