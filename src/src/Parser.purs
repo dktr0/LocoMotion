@@ -124,9 +124,11 @@ applicationToValue p eF eX = do
     ValueTransformer tF -> do
       case x of
         ValueTransformer tX -> pure $ ValueTransformer $ appendTransformers tF tX
-        ...WORKING HERE... what happens when we have things like: y = { ... } dancer { ... }; vs... y = { ... } x; where x is a previously instanced dancer....
-        ValueDancer _ tX -> pure $ ValueDancer $ appendTransformers tX tF -- note reverse application when transformers are on left of dancers/floor/camera
-        ValueFloor _ tX -> pure $ ValueFloor $ appendTransformers tX tF
+
+        *** WORKING HERE  ***
+        
+        ValueDancer i tX -> pure $ ValueDancer i ???? $ appendTransformers tX tF -- note reverse application when transformers are on left of dancers/floor/camera
+        ValueFloor i tX -> pure $ ValueFloor $ appendTransformers tX tF
         ValueCamera tX -> pure $ ValueCamera $ appendTransformers tX tF
         _ -> throwError $ ParseError "invalid argument applied to Transformer" (AST.expressionPosition eX)
     ValueDancer _ tF -> do
@@ -172,31 +174,8 @@ parseModifier (Tuple k e) = pure $ \thisMap -> do
   v <- expressionToValue thisMap e
   pure $ insert k v thisMap
 
-appendTransformers :: Transformer -> Transformer -> Transformer
-appendTransformers fx fy = \thisMap -> fx thisMap >>= fy
 
-defaultDancerTransformer :: Transformer -- ValueMap -> P ValueMap
-defaultDancerTransformer _ = pure $ Map.fromFoldable [
-  Tuple "x" (ValueNumber 0.0),
-  Tuple "y" (ValueNumber 0.0),
-  Tuple "z" (ValueNumber 0.0),
-  Tuple "rx" (ValueNumber 0.0),
-  Tuple "ry" (ValueNumber 0.0),
-  Tuple "rz" (ValueNumber 0.0),
-  Tuple "sx" (ValueNumber 1.0),
-  Tuple "sy" (ValueNumber 1.0),
-  Tuple "sz" (ValueNumber 1.0),
-  Tuple "size" (ValueNumber 1.0)
-  ]
 
-defaultFloorTransformer :: Transformer
-defaultFloorTransformer = defaultDancerTransformer
-{-
-defaultFloorTransformer _ = pure $ Map.fromFoldable [
-  Tuple "colour" (ValueInt 0x888888),
-  Tuple "shadows" (ValueBoolean true)
-  ]
--}
 
 defaultCameraTransformer :: Transformer
 defaultCameraTransformer = pure $ pure $ Map.fromFoldable [

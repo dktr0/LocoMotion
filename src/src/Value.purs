@@ -6,9 +6,10 @@ module Value where
 -- implicitly cast it to any of the other types in particular circumstances where the
 -- Value is consumed.
 
-import Prelude (identity, ($), show, (/=), class Semiring, class Ring, (/), (+), (-), (*), pure, (<>), bind, discard, (>>=), map)
+import Prelude (identity, ($), show, (/=), class Semiring, class Ring, (/), (+), (-), (*), pure, (<>), bind, discard, (>>=), map, unit)
 import Data.Int (toNumber,floor)
 import Data.Map (Map, lookup, insert, fromFoldable, empty)
+import Data.Array as Array
 import Data.Maybe (maybe,Maybe(..))
 import Data.Tuple (Tuple(..))
 import Data.Either (Either)
@@ -24,7 +25,12 @@ import AST (Expression)
 import AST as AST
 import Variable
 
+
 type Transformer = ValueMap -> P ValueMap
+
+appendTransformers :: Transformer -> Transformer -> Transformer
+appendTransformers fx fy = \thisMap -> fx thisMap >>= fy
+
 
 data Value =
   ValueNumber Number | -- x = 4.0;
@@ -34,9 +40,9 @@ data Value =
   ValueVariable Variable | -- x = osc 1.0;
   ValueTransformer Transformer | -- x = { ry = this.ry + osc 1.0 };
   ValueFunction (Position -> Value -> Either ParseError Value) |
-  ValueDancer Int Transformer |
-  ValueFloor Int Transformer |
-  ValueCamera Transformer
+  ValueDancer Int ValueMap |
+  ValueFloor Int ValueMap |
+  ValueCamera ValueMap
 
 valueToNumber :: Value -> Number
 valueToNumber (ValueNumber x) = x
@@ -75,8 +81,8 @@ valueToVariable _ = constantVariable 0.0
 
 valueToTransformer :: Value -> Transformer
 valueToTransformer (ValueTransformer x) = x
-valueToTransformer (ValueDancer _ x) = x
-valueToTransformer (ValueFloor _ x) = x
+-- valueToTransformer (ValueDancer _ x) = x -- not sure if these two pathways are necessary
+-- valueToTransformer (ValueFloor _ x) = x
 valueToTransformer _ = pure
 
 instance Semiring Value where
@@ -129,17 +135,73 @@ lookupValue d k m = maybe d identity $ lookup k m
 type PState = {
   semiMap :: ValueMap,
   thisMap :: ValueMap,
-  refCount :: Int
+  instantiators :: Array ValueMap
   }
 
 type P a = StateT PState (Either ParseError) a
 
 runP :: forall a. P a -> Either ParseError a
-runP p = evalStateT p { semiMap: empty, thisMap: empty, refCount: 0 }
+runP p = evalStateT p {
+  semiMap: empty,
+  thisMap: empty,
+  instantiators: []
+  }
 
-newRef :: P Int
-newRef = do
+-- newInstantiator and modifyInstantiator are not meant to be used from elsewhere
+-- use the interface provided by new/modify-Dancer/Floor instead
+
+newInstantiator :: ValueMap -> P Int
+newInstantiator m = do
+  s <- modify $ \s -> s { instantiators = Array.snoc s.instantiators m }
+  pure $ Array.length s.instantiators - 1
+
+modifyInstantiator :: Int -> Transformer -> P ValueMap
+modifyInstantiator n t = do
   s <- get
-  let n = s.refCount
-  modify_ $ \x -> x { refCount = n+1 }
-  pure n
+  mNew <- case Array.index s.instantiators n of
+    Nothing -> pure empty -- note: this should not ever happen
+    Just m -> t m
+  case Array.insertAt n mNew s.instantiators of
+    Nothing -> pure unit  -- note: this should also not ever happen
+    Just x -> put $ s { instantiators = x }
+  pure mNew
+
+newDancer :: P Value
+newDancer = do
+  n <- newInstantiator defaultDancer
+  pure $ ValueDancer n defaultDancer
+
+defaultDancer :: ValueMap
+defaultDancer = fromFoldable [
+  Tuple "x" (ValueNumber 0.0),
+  Tuple "y" (ValueNumber 0.0),
+  Tuple "z" (ValueNumber 0.0),
+  Tuple "rx" (ValueNumber 0.0),
+  Tuple "ry" (ValueNumber 0.0),
+  Tuple "rz" (ValueNumber 0.0),
+  Tuple "sx" (ValueNumber 1.0),
+  Tuple "sy" (ValueNumber 1.0),
+  Tuple "sz" (ValueNumber 1.0),
+  Tuple "size" (ValueNumber 1.0)
+  ]
+
+modifyDancer :: Int -> Transformer -> P Value
+modifyDancer n ty = do
+  mNew <- modifyInstantiator n ty
+  pure $ ValueDancer n mNew
+
+newFloor :: P Value
+newFloor = do
+  n <- newInstantiator defaultFloor
+  pure $ ValueFloor n defaultFloor
+
+defaultFloor :: ValueMap
+defaultFloor = fromFoldable [
+  Tuple "colour" (ValueInt 0x888888),
+  Tuple "shadows" (ValueBoolean true)
+  ]
+
+modifyFloor :: Int -> Transformer -> P Value
+modifyFloor n ty = do
+  mNew <- modifyInstantiator n ty
+  pure $ ValueFloor n mNew
