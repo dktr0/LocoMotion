@@ -26,12 +26,6 @@ import AST as AST
 import Variable
 
 
-type Transformer = ValueMap -> P ValueMap
-
-appendTransformers :: Transformer -> Transformer -> Transformer
-appendTransformers fx fy = \thisMap -> fx thisMap >>= fy
-
-
 data Value =
   ValueNumber Number | -- x = 4.0;
   ValueString String | -- x = "a string";
@@ -128,6 +122,14 @@ lookupVariable d k m = valueToVariable $ lookupValue (ValueVariable d) k m
 
 lookupValue :: Value -> String -> ValueMap -> Value
 lookupValue d k m = maybe d identity $ lookup k m
+
+
+-- Transformer
+
+type Transformer = ValueMap -> P ValueMap
+
+appendTransformers :: Transformer -> Transformer -> Transformer
+appendTransformers fx fy = \thisMap -> fx thisMap >>= fy
 
 
 -- the P monad

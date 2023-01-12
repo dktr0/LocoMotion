@@ -24,6 +24,7 @@ import AST (AST,Expression,Statement)
 import AST as AST
 import R (R)
 
+
 type Program = R Unit
 
 parseProgram :: String -> Either String Program
@@ -49,19 +50,19 @@ statementToProgram (AST.Action e) = do
   pure $ performValue v
 
 performValue :: Value -> R Unit
-performValue (ValueDancer r t) = performDancer r t
-performValue (ValueFloor r t) = performFloor r t
-performValue (ValueCamera t) = performCamera t
+performValue (ValueDancer i vm) = performDancer i vm
+performValue (ValueFloor i vm) = performFloor i vm
+performValue (ValueCamera vm) = performCamera vm
 performValue _ = pure unit -- all other values yield a Program that does nothing
 
 -- performDancer Floor and Camera are placeholders - these would be defined elsewhere
-performDancer :: Int -> Transformer -> R Unit
+performDancer :: Int -> ValueMap -> R Unit
 performDancer _ _ = pure unit
 
-performFloor :: Int -> Transformer -> R Unit
+performFloor :: Int -> ValueMap -> R Unit
 performFloor _ _ = pure unit
 
-performCamera :: Transformer -> R Unit
+performCamera :: ValueMap -> R Unit
 performCamera _ = pure unit
 
 
@@ -84,13 +85,9 @@ expressionToValue (AST.SemiGlobal p k) = do
     Just v -> pure v
 expressionToValue (AST.Application p e1 e2) = applicationToValue p e1 e2
 expressionToValue (AST.Transformer _ xs) = transformerToValue xs
-expressionToValue (AST.Dancer _) = do
-  n <- newRef
-  pure $ ValueDancer n defaultDancerTransformer
-expressionToValue (AST.Floor _) = do
-  n <- newRef
-  pure $ ValueFloor n defaultFloorTransformer
-expressionToValue (AST.Camera _) = pure $ ValueCamera defaultCameraTransformer
+expressionToValue (AST.Dancer _) = newDancer
+expressionToValue (AST.Floor _) = newFloor
+expressionToValue (AST.Camera _) = pure $ ValueCamera defaultCamera
 expressionToValue (AST.Osc _) = pure $ ValueFunction $ oscFunction
 expressionToValue (AST.Range _) = pure $ ValueFunction $ rangeFunction
 expressionToValue (AST.Sum _ e1 e2) = do
@@ -124,28 +121,31 @@ applicationToValue p eF eX = do
     ValueTransformer tF -> do
       case x of
         ValueTransformer tX -> pure $ ValueTransformer $ appendTransformers tF tX
-
-        *** WORKING HERE  ***
-        
-        ValueDancer i tX -> pure $ ValueDancer i ???? $ appendTransformers tX tF -- note reverse application when transformers are on left of dancers/floor/camera
-        ValueFloor i tX -> pure $ ValueFloor $ appendTransformers tX tF
-        ValueCamera tX -> pure $ ValueCamera $ appendTransformers tX tF
+        ValueDancer _ tX -> pure $ ValueTransformer $ appendTransformers tF tX
+        ValueFloor _ tX -> pure $ ValueTransformer $ appendTransformers tF tX
+        ValueCamera tX -> pure $ ValueTransformer $ appendTransformers tF tX
         _ -> throwError $ ParseError "invalid argument applied to Transformer" (AST.expressionPosition eX)
-    ValueDancer _ tF -> do
+    ValueDancer i _ -> do
       case x of
-        ValueTransformer tX -> pure $ ValueDancer $ appendTransformers tF tX
-        ValueDancer _ tX -> pure $ ValueDancer $ appendTransformers tF tX
+        ValueTransformer tX -> modifyDancer i tX
+        ValueDancer _ tX -> modifyDancer i tX
+        ValueFloor _ tX -> modifyDancer i tX
+        ValueCamera tX -> modifyDancer i tX
         _ -> throwError $ ParseError "invalid argument applied to Dancer" (AST.expressionPosition eX)
+    ValueFloor i _ -> do
+      case x of
+        ValueTransformer tX -> modifyFloor i tX
+        ValueDancer _ tX -> modifyFloor i tX
+        ValueFloor _ tX -> modifyFloor i tX
+        ValueCamera tX -> modifyFloor i tX
+        _ -> throwError $ ParseError "invalid argument applied to Floor" (AST.expressionPosition eX)
     ValueCamera tF -> do
       case x of
         ValueTransformer tX -> pure $ ValueCamera $ appendTransformers tF tX
+        ValueDancer _ tX -> pure $ ValueCamera $ appendTransformers tF tX
+        ValueFloor _ tX -> pure $ ValueCamera $ appendTransformers tF tX
         ValueCamera tX -> pure $ ValueCamera $ appendTransformers tF tX
         _ -> throwError $ ParseError "invalid argument applied to Camera" (AST.expressionPosition eX)
-    ValueFloor _ tF -> do
-      case x of
-        ValueTransformer tX -> pure $ ValueFloor $ appendTransformers tF tX
-        ValueFloor _ tX -> pure $ ValueFloor $ appendTransformers tF tX
-        _ -> throwError $ ParseError "invalid argument applied to Floor" (AST.expressionPosition eX)
     ValueFunction f' -> f' (AST.expressionPosition eX) x
 
 
@@ -164,6 +164,8 @@ rangeFunction _ r1 = pure $ ValueFunction (\_ r2 -> pure $ ValueFunction (\_ x -
 
 -- Transformers
 
+-- type Transformer = ValueMap -> P ValueMap
+
 transformerToValue :: List (Tuple String Expression) -> P Value
 transformerToValue xs = do
   ts <- traverse parseModifier xs -- :: P (List Transformer)
@@ -177,8 +179,8 @@ parseModifier (Tuple k e) = pure $ \thisMap -> do
 
 
 
-defaultCameraTransformer :: Transformer
-defaultCameraTransformer = pure $ pure $ Map.fromFoldable [
+defaultCamera :: ValueMap
+defaultCamera = Map.fromFoldable [
   Tuple "x" (ValueNumber 0.0),
   Tuple "y" (ValueNumber 1.0),
   Tuple "z" (ValueNumber 10.0),
