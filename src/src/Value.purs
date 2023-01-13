@@ -36,7 +36,7 @@ data Value =
   ValueFunction (Position -> Value -> Either ParseError Value) |
   ValueDancer Int ValueMap |
   ValueFloor Int ValueMap |
-  ValueCamera ValueMap
+  ValueCamera
 
 valueToNumber :: Value -> Number
 valueToNumber (ValueNumber x) = x
@@ -128,8 +128,16 @@ lookupValue d k m = maybe d identity $ lookup k m
 
 type Transformer = ValueMap -> P ValueMap
 
+valueMapToTransformer :: ValueMap -> Transformer
+valueMapToTransformer vm _ = pure vm
+
 appendTransformers :: Transformer -> Transformer -> Transformer
 appendTransformers fx fy = \thisMap -> fx thisMap >>= fy
+
+applyTransformer :: Transformer -> ValueMap -> P Value -- where Value is always a Transformer
+applyTransformer tF x = do
+  vm <- tF x
+  pure $ ValueTransformer $ valueMapToTransformer vm
 
 
 -- the P monad
@@ -137,7 +145,8 @@ appendTransformers fx fy = \thisMap -> fx thisMap >>= fy
 type PState = {
   semiMap :: ValueMap,
   thisMap :: ValueMap,
-  instantiators :: Array ValueMap
+  instantiators :: Array ValueMap,
+  cameraMap :: ValueMap
   }
 
 type P a = StateT PState (Either ParseError) a
@@ -146,7 +155,8 @@ runP :: forall a. P a -> Either ParseError a
 runP p = evalStateT p {
   semiMap: empty,
   thisMap: empty,
-  instantiators: []
+  instantiators: [],
+  cameraMap: empty
   }
 
 -- newInstantiator and modifyInstantiator are not meant to be used from elsewhere
@@ -207,3 +217,11 @@ modifyFloor :: Int -> Transformer -> P Value
 modifyFloor n ty = do
   mNew <- modifyInstantiator n ty
   pure $ ValueFloor n mNew
+
+modifyCamera :: Transformer -> P Value
+modifyCamera t = do
+  s <- get
+  let cm = s.cameraMap
+  cm' <- t cm
+  modify_ $ \x -> x { cameraMap = cm' }
+  pure ValueCamera

@@ -6,15 +6,12 @@ module R where
 -- in other words, a LocoMotion program is a structure of such render-actions
 -- they have access to a RenderState (State monad) and RenderEnvironment (Reader monad)
 
-import Prelude
 import Effect (Effect)
-import Data.Maybe
 import Data.Map
 import Control.Monad.State.Trans
 import Control.Monad.Reader.Trans
 import ThreeJS as Three
 
-import Value
 
 type RenderEnvironment = {
   scene :: Three.Scene,
