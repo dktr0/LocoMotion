@@ -156,7 +156,7 @@ runP p = evalStateT p {
   semiMap: empty,
   thisMap: empty,
   instantiators: [],
-  cameraMap: empty
+  cameraMap: defaultCamera
   }
 
 -- newInstantiator and modifyInstantiator are not meant to be used from elsewhere
@@ -220,8 +220,22 @@ modifyFloor n ty = do
 
 modifyCamera :: Transformer -> P Value
 modifyCamera t = do
-  s <- get
-  let cm = s.cameraMap
+  cm <- readCamera
   cm' <- t cm
   modify_ $ \x -> x { cameraMap = cm' }
   pure ValueCamera
+
+readCamera :: P ValueMap
+readCamera = do
+  s <- get
+  pure s.cameraMap
+
+defaultCamera :: ValueMap
+defaultCamera = fromFoldable [
+  Tuple "x" (ValueNumber 0.0),
+  Tuple "y" (ValueNumber 1.0),
+  Tuple "z" (ValueNumber 10.0),
+  Tuple "rx" (ValueNumber 0.0),
+  Tuple "ry" (ValueNumber 0.0),
+  Tuple "rz" (ValueNumber 0.0)
+  ]

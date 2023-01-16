@@ -6,12 +6,13 @@ module Parser (
 import Prelude
 import Data.Number (sin,pi)
 import Data.Int (toNumber)
-import Data.Map (insert,empty,lookup)
+import Data.Map (insert,empty,lookup,Map(..))
 import Data.Map (fromFoldable) as Map
 import Data.List (List, foldl, mapMaybe, fromFoldable)
 import Data.Tuple (Tuple(..))
 import Data.Either (Either)
 import Data.Maybe (Maybe(..))
+import Data.Either (Either(..))
 import Parsing (Position(..),ParseError(..),runParser)
 import Data.Traversable (traverse,sequence)
 import Control.Monad.Error.Class (throwError)
@@ -52,7 +53,7 @@ statementToProgram (AST.Action e) = do
 performValue :: Value -> R Unit
 performValue (ValueDancer i vm) = performDancer i vm
 performValue (ValueFloor i vm) = performFloor i vm
-performValue (ValueCamera vm) = performCamera vm
+performValue (ValueCamera) = performCamera
 performValue _ = pure unit -- all other values yield a Program that does nothing
 
 -- performDancer Floor and Camera are placeholders - these would be defined elsewhere
@@ -62,8 +63,8 @@ performDancer _ _ = pure unit
 performFloor :: Int -> ValueMap -> R Unit
 performFloor _ _ = pure unit
 
-performCamera :: ValueMap -> R Unit
-performCamera _ = pure unit
+performCamera :: R Unit
+performCamera = pure unit
 
 
 expressionToValue :: Expression -> P Value
@@ -123,21 +124,27 @@ applicationToValue p eF eX = do
         ValueTransformer tX -> pure $ ValueTransformer $ appendTransformers tF tX
         ValueDancer _ vmX -> applyTransformer tF vmX
         ValueFloor _ vmX -> applyTransformer tF vmX
-        ValueCamera vmX -> applyTransformer tF vmX
+        ValueCamera -> do
+          vmX <- readCamera
+          applyTransformer tF vmX
         _ -> throwError $ ParseError "invalid argument applied to Transformer" (AST.expressionPosition eX)
     ValueDancer i _ -> do
       case x of
         ValueTransformer tX -> modifyDancer i tX
         ValueDancer _ vmX -> modifyDancer i (valueMapToTransformer vmX)
         ValueFloor _ vmX -> modifyDancer i (valueMapToTransformer vmX)
-        ValueCamera vmX -> modifyDancer i (valueMapToTransformer vmX)
+        ValueCamera -> do
+          vmX <- readCamera
+          modifyDancer i (valueMapToTransformer vmX)
         _ -> throwError $ ParseError "invalid argument applied to Dancer" (AST.expressionPosition eX)
     ValueFloor i _ -> do
       case x of
         ValueTransformer tX -> modifyFloor i tX
         ValueDancer _ vmX -> modifyFloor i (valueMapToTransformer vmX)
         ValueFloor _ vmX -> modifyFloor i (valueMapToTransformer vmX)
-        ValueCamera vmX -> modifyFloor i (valueMapToTransformer vmX)
+        ValueCamera -> do
+          vmX <- readCamera
+          modifyFloor i (valueMapToTransformer vmX)
         _ -> throwError $ ParseError "invalid argument applied to Floor" (AST.expressionPosition eX)
     ValueCamera -> do
       case x of
@@ -147,10 +154,10 @@ applicationToValue p eF eX = do
         ValueFloor _ vmX -> modifyCamera (valueMapToTransformer vmX)
         ValueCamera -> pure ValueCamera
         _ -> throwError $ ParseError "invalid argument applied to Camera" (AST.expressionPosition eX)
-    ValueFunction f' -> f' (AST.expressionPosition eX) x
-
-
--- applyTransformer :: Transformer -> ValueMap -> P Value -- where Value is always a Transformer
+    ValueFunction f' -> do
+      case f' (AST.expressionPosition eX) x of
+        Left pe -> throwError pe
+        Right v -> pure v
 
 
 -- Miscellaneous functions
@@ -177,16 +184,5 @@ parseModifier :: Tuple String Expression -> P Transformer
 parseModifier (Tuple k e) = pure $ \tm -> do
   modify_ $ \s -> s { thisMap = tm }
   v <- expressionToValue e
-  modify_ $ \s -> s { thisMap = empty }
+  modify_ $ \s -> s { thisMap = empty :: Map String Value }
   pure $ insert k v tm
-
-
-defaultCamera :: ValueMap
-defaultCamera = Map.fromFoldable [
-  Tuple "x" (ValueNumber 0.0),
-  Tuple "y" (ValueNumber 1.0),
-  Tuple "z" (ValueNumber 10.0),
-  Tuple "rx" (ValueNumber 0.0),
-  Tuple "ry" (ValueNumber 0.0),
-  Tuple "rz" (ValueNumber 0.0)
-  ]
