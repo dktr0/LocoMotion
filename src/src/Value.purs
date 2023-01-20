@@ -8,7 +8,7 @@ module Value where
 
 import Prelude (identity, ($), show, (/=), class Semiring, class Ring, (/), (+), (-), (*), pure, (<>), bind, discard, (>>=), map, unit)
 import Data.Int (toNumber,floor)
-import Data.Map (Map, lookup, insert, fromFoldable, empty)
+import Data.Map (Map, lookup, insert, fromFoldable, empty, union)
 import Data.Array as Array
 import Data.Maybe (maybe,Maybe(..))
 import Data.Tuple (Tuple(..))
@@ -37,6 +37,7 @@ data Value =
   ValueDancer Int ValueMap |
   ValueFloor Int ValueMap |
   ValueCamera
+
 
 valueToNumber :: Value -> Number
 valueToNumber (ValueNumber x) = x
@@ -124,118 +125,12 @@ lookupValue :: Value -> String -> ValueMap -> Value
 lookupValue d k m = maybe d identity $ lookup k m
 
 
--- Transformer
+-- Transformers
 
-type Transformer = ValueMap -> P ValueMap
+type Transformer = ValueMap -> Either ParseError ValueMap
 
 valueMapToTransformer :: ValueMap -> Transformer
-valueMapToTransformer vm _ = pure vm
+valueMapToTransformer vmNew vmOld = pure $ union vmNew vmOld
 
 appendTransformers :: Transformer -> Transformer -> Transformer
 appendTransformers fx fy = \thisMap -> fx thisMap >>= fy
-
-applyTransformer :: Transformer -> ValueMap -> P Value -- where Value is always a Transformer
-applyTransformer tF x = do
-  vm <- tF x
-  pure $ ValueTransformer $ valueMapToTransformer vm
-
-
--- the P monad
-
-type PState = {
-  semiMap :: ValueMap,
-  thisMap :: ValueMap,
-  instantiators :: Array ValueMap,
-  cameraMap :: ValueMap
-  }
-
-type P a = StateT PState (Either ParseError) a
-
-runP :: forall a. P a -> Either ParseError a
-runP p = evalStateT p {
-  semiMap: empty,
-  thisMap: empty,
-  instantiators: [],
-  cameraMap: defaultCamera
-  }
-
--- newInstantiator and modifyInstantiator are not meant to be used from elsewhere
--- use the interface provided by new/modify-Dancer/Floor instead
-
-newInstantiator :: ValueMap -> P Int
-newInstantiator m = do
-  s <- modify $ \s -> s { instantiators = Array.snoc s.instantiators m }
-  pure $ Array.length s.instantiators - 1
-
-modifyInstantiator :: Int -> Transformer -> P ValueMap
-modifyInstantiator n t = do
-  s <- get
-  mNew <- case Array.index s.instantiators n of
-    Nothing -> pure empty -- note: this should not ever happen
-    Just m -> t m
-  case Array.insertAt n mNew s.instantiators of
-    Nothing -> pure unit  -- note: this should also not ever happen
-    Just x -> put $ s { instantiators = x }
-  pure mNew
-
-newDancer :: P Value
-newDancer = do
-  n <- newInstantiator defaultDancer
-  pure $ ValueDancer n defaultDancer
-
-defaultDancer :: ValueMap
-defaultDancer = fromFoldable [
-  Tuple "x" (ValueNumber 0.0),
-  Tuple "y" (ValueNumber 0.0),
-  Tuple "z" (ValueNumber 0.0),
-  Tuple "rx" (ValueNumber 0.0),
-  Tuple "ry" (ValueNumber 0.0),
-  Tuple "rz" (ValueNumber 0.0),
-  Tuple "sx" (ValueNumber 1.0),
-  Tuple "sy" (ValueNumber 1.0),
-  Tuple "sz" (ValueNumber 1.0),
-  Tuple "size" (ValueNumber 1.0)
-  ]
-
-modifyDancer :: Int -> Transformer -> P Value
-modifyDancer n ty = do
-  mNew <- modifyInstantiator n ty
-  pure $ ValueDancer n mNew
-
-newFloor :: P Value
-newFloor = do
-  n <- newInstantiator defaultFloor
-  pure $ ValueFloor n defaultFloor
-
-defaultFloor :: ValueMap
-defaultFloor = fromFoldable [
-  Tuple "colour" (ValueInt 0x888888),
-  Tuple "shadows" (ValueBoolean true)
-  ]
-
-modifyFloor :: Int -> Transformer -> P Value
-modifyFloor n ty = do
-  mNew <- modifyInstantiator n ty
-  pure $ ValueFloor n mNew
-
-modifyCamera :: Transformer -> P Value
-modifyCamera t = do
-  cm <- readCamera
-  cm' <- t cm
-  modify_ $ \x -> x { cameraMap = cm' }
-  pure ValueCamera
-
-readCamera :: P ValueMap
-readCamera = do
-  s <- get
-  pure s.cameraMap
-
-defaultCamera :: ValueMap
-defaultCamera = fromFoldable [
-  Tuple "x" (ValueNumber 0.0),
-  Tuple "y" (ValueNumber 1.0),
-  Tuple "z" (ValueNumber 10.0),
-  Tuple "rx" (ValueNumber 0.0),
-  Tuple "ry" (ValueNumber 0.0),
-  Tuple "rz" (ValueNumber 0.0)
-  ]

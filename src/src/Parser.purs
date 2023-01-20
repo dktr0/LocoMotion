@@ -1,7 +1,4 @@
-module Parser (
-  Program,
-  parseProgram
-  ) where
+module Parser (parseProgram) where
 
 import Prelude
 import Data.Number (sin,pi)
@@ -14,19 +11,20 @@ import Data.Either (Either)
 import Data.Maybe (Maybe(..))
 import Data.Either (Either(..))
 import Parsing (Position(..),ParseError(..),runParser)
-import Data.Traversable (traverse,sequence)
+import Data.Traversable (traverse_,traverse,sequence)
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.State.Trans (get,modify_)
 import Data.Bifunctor (lmap)
 
 import Value
+import Value as Value
 import Variable
 import AST (AST,Expression,Statement)
 import AST as AST
 import R (R)
+import P
+import Program
 
-
-type Program = R Unit
 
 parseProgram :: String -> Either String Program
 parseProgram x = lmap showParseError $ runParser x AST.ast >>= (astToProgram >>> runP)
@@ -36,36 +34,18 @@ showParseError (ParseError e (Position p)) = show p.line <> ":" <> show p.column
 
 astToProgram :: AST -> P Program
 astToProgram ast = do
- ps <- traverse statementToProgram ast -- :: P (List Program)
- pure $ do
-   sequence ps
-   pure unit
+ traverse_ parseStatement ast
+ s <- get
+ pure { dancers: s.program.dancers, floors: s.program.floors, cameraMap: s.program.cameraMap }
 
-statementToProgram :: Statement -> P (R Unit)
-statementToProgram (AST.Assignment _ k e) = do -- position is currently unused, but it might be used in future if we were checking validity of definition names
-  v <- expressionToValue empty e
-  modify_ $ \s -> s { semiGlobals = insert k v s.semiGlobals }
-  pure $ performValue v
-statementToProgram (AST.Action e) = do
-  v <- expressionToValue empty e
-  pure $ performValue v
-
-performValue :: Value -> R Unit
-performValue (ValueDancer i vm) = performDancer i vm
-performValue (ValueFloor i vm) = performFloor i vm
-performValue (ValueCamera) = performCamera
-performValue _ = pure unit -- all other values yield a Program that does nothing
-
--- performDancer Floor and Camera are placeholders - these would be defined elsewhere
-performDancer :: Int -> ValueMap -> R Unit
-performDancer _ _ = pure unit
-
-performFloor :: Int -> ValueMap -> R Unit
-performFloor _ _ = pure unit
-
-performCamera :: R Unit
-performCamera = pure unit
-
+parseStatement :: Statement -> P Unit
+parseStatement (AST.Assignment _ k e) = do -- position is currently unused, but it might be used in future if we were checking validity of definition names
+  v <- expressionToValue e
+  modify_ $ \s -> s { semiMap = insert k v s.semiMap }
+parseStatement (AST.Action e) = do
+  _ <- expressionToValue e
+  pure unit
+parseStatement (AST.EmptyStatement _) = pure unit
 
 expressionToValue :: Expression -> P Value
 expressionToValue (AST.LiteralNumber _ x) = pure $ ValueNumber x
@@ -181,8 +161,14 @@ transformerToValue xs = do
   pure $ ValueTransformer $ foldl appendTransformers pure ts
 
 parseModifier :: Tuple String Expression -> P Transformer
-parseModifier (Tuple k e) = pure $ \tm -> do
-  modify_ $ \s -> s { thisMap = tm }
-  v <- expressionToValue e
-  modify_ $ \s -> s { thisMap = empty :: Map String Value }
-  pure $ insert k v tm
+parseModifier (Tuple k e) = do
+  s <- get
+  pure $ \tm -> evalP s.semiMap tm s.program $ do
+    v <- expressionToValue e
+    pure $ insert k v tm
+
+applyTransformer :: Transformer -> ValueMap -> P Value -- where Value is always a Transformer
+applyTransformer tF x =
+  case tF x of
+    Left pe -> throwError pe
+    Right vm -> pure $ ValueTransformer $ valueMapToTransformer vm
