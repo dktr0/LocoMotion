@@ -13,17 +13,18 @@ import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Effect.Ref (Ref, new, read, write)
 import Effect.Console (log)
+import Effect.Class (liftEffect)
 import ThreeJS as Three
 import Data.Rational
 import Data.Ratio
 import Data.Traversable (traverse,traverse_)
 import Data.Map (Map)
+import Control.Monad.Reader.Trans (ask)
 
-import AST
 import URL
 import Value
 import MaybeRef
-
+import R
 
 type DancerState =
   {
@@ -59,66 +60,69 @@ animationExprToAnimationMixerState (AnimationMix xs) actions = do
 -}
 
 
-runDancerWithState :: Three.Scene -> Number -> Number -> Map String ValueExpr -> Number -> Transformer -> Maybe DancerState -> Effect DancerState
-runDancerWithState theScene cycleDur nowCycles semiGlobalMap delta t maybeDancerState = do
-  let valueMap = realizeTransformer nowCycles semiGlobalMap t
-  s <- loadModelIfNecessary theScene valueMap maybeDancerState
-  updateTransforms nowCycles valueMap s
-  updateAnimation delta cycleDur valueMap s
+runDancerWithState :: ValueMap -> Maybe DancerState -> R DancerState
+runDancerWithState vm maybeDancerState = do
+  s <- loadModelIfNecessary vm maybeDancerState
+  updateTransforms vm s
+  updateAnimation vm s
   pure s
 
 
-loadModelIfNecessary :: Three.Scene -> ValueMap -> Maybe DancerState -> Effect DancerState
-loadModelIfNecessary theScene valueMap Nothing = do
-  let urlProg = lookupString "raccoon.glb" "url" valueMap
-  url <- new urlProg
-  model <- new Nothing
-  prevAnimationIndex <- new (-9999)
-  prevAnimationAction <- new Nothing
+loadModelIfNecessary :: ValueMap -> Maybe DancerState -> R DancerState
+loadModelIfNecessary vm Nothing = do
+  let urlProg = lookupString "raccoon.glb" "url" vm
+  url <- liftEffect $ new urlProg
+  model <- liftEffect $ new Nothing
+  prevAnimationIndex <- liftEffect $ new (-9999)
+  prevAnimationAction <- liftEffect $ new Nothing
   let s = { url, model, prevAnimationIndex, prevAnimationAction }
-  loadModel theScene urlProg s
+  loadModel urlProg s
   pure s
-loadModelIfNecessary theScene valueMap (Just s) = do
-  let urlProg = lookupString "raccoon.glb" "url" valueMap
-  urlState <- read s.url
+loadModelIfNecessary vm (Just s) = do
+  let urlProg = lookupString "raccoon.glb" "url" vm
+  urlState <- liftEffect $ read s.url
   when (urlProg /= urlState) $ do
-    removeDancer theScene s
-    loadModel theScene urlProg s
+    removeDancer s
+    loadModel urlProg s
   pure s
 
 
-updateTransforms :: ValueMap -> DancerState -> Effect Unit
-updateTransforms valueMap s = whenMaybeRef s.model $ \m -> do
-  let x  = lookupNumber 0.0 "x" valueMap
-  let y  = lookupNumber 0.0 "y" valueMap
-  let z  = lookupNumber 0.0 "z" valueMap
-  Three.setPositionOfAnything m.scene x y z
-  let rx  = lookupNumber 0.0 "rx" valueMap
-  let ry  = lookupNumber 0.0 "ry" valueMap
-  let rz  = lookupNumber 0.0 "rz" valueMap
-  Three.setRotationOfAnything m.scene rx ry rz
-  let sx  = lookupNumber 1.0 "sx" valueMap
-  let sy  = lookupNumber 1.0 "sy" valueMap
-  let sz  = lookupNumber 1.0 "sz" valueMap
-  let size = lookupNumber 1.0 "size" valueMap
-  Three.setScaleOfAnything m.scene (sx*size) (sy*size) (sz*size)
+updateTransforms :: ValueMap -> DancerState -> R Unit
+updateTransforms valueMap s = do
+  x <- realizeNumber "x" 0.0 valueMap
+  y <- realizeNumber "y" 0.0 valueMap
+  z <- realizeNumber "z" 0.0 valueMap
+  rx <- realizeNumber "rx" 0.0 valueMap
+  ry <- realizeNumber "ry" 0.0 valueMap
+  rz <- realizeNumber "rz" 0.0 valueMap
+  sx <- realizeNumber "sx" 1.0 valueMap
+  sy <- realizeNumber "sy" 1.0 valueMap
+  sz <- realizeNumber "sz" 1.0 valueMap
+  size <- realizeNumber "size" 1.0 valueMap
+  liftEffect $ whenMaybeRef s.model $ \m -> do
+    Three.setPositionOfAnything m.scene x y z
+    Three.setRotationOfAnything m.scene rx ry rz
+    Three.setScaleOfAnything m.scene (sx*size) (sy*size) (sz*size)
 
 
-updateAnimation :: Number -> Number -> ValueMap -> DancerState -> Effect Unit
-updateAnimation delta cycleDur valueMap s = whenMaybeRef s.model $ \m -> do
-  playAnimation s $ lookupInt 0 "animation" valueMap
-  let dur = lookupNumber 1.0 "dur" valueMap
-  updateAnimationDuration s $ dur * cycleDur
-  Three.updateAnimationMixer m.mixer delta
+updateAnimation :: ValueMap -> DancerState -> R Unit
+updateAnimation valueMap s = do
+  env <- ask
+  liftEffect $ whenMaybeRef s.model $ \m -> do
+    playAnimation s $ lookupInt 0 "animation" valueMap
+    let dur = lookupNumber 1.0 "dur" valueMap
+    updateAnimationDuration s $ dur * env.cycleDur
+    Three.updateAnimationMixer m.mixer env.delta
 
 
-loadModel :: Three.Scene -> String -> DancerState -> Effect Unit
-loadModel theScene url s = do
-  write url s.url
+loadModel :: String -> DancerState -> R Unit
+loadModel url s = do
+  env <- ask
+  liftEffect $ write url s.url
   let url' = resolveURL url
-  _ <- Three.loadGLTF_DRACO "https://dktr0.github.io/LocoMotion/threejs/" url' $ \gltf -> do
+  _ <- liftEffect $ Three.loadGLTF_DRACO "https://dktr0.github.io/LocoMotion/threejs/" url' $ \gltf -> do
     log $ "model " <> url' <> " loaded with " <> show (length gltf.animations) <> " animations"
-    Three.addAnything theScene gltf.scene
+    Three.addAnything env.scene gltf.scene
     m <- gltfToModel gltf
     write (Just m) s.model
     animIndex <- read s.prevAnimationIndex
@@ -135,8 +139,10 @@ gltfToModel gltf = do
   pure { scene: gltf.scene, clips: gltf.animations, mixer, actions, mixerState }
 
 
-removeDancer :: Three.Scene -> DancerState -> Effect Unit
-removeDancer theScene s = whenMaybeRef s.model $ \m -> Three.removeObject3D theScene m.scene
+removeDancer :: DancerState -> R Unit
+removeDancer s = do
+   env <- ask
+   liftEffect $ whenMaybeRef s.model $ \m -> Three.removeObject3D env.scene m.scene
 
 
 playAnimation :: DancerState -> Int -> Effect Unit

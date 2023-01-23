@@ -7,8 +7,7 @@ module RenderEngine
   preAnimate,
   animateZone,
   postAnimate,
-  ZoneState(..),
-  IntMap(..)
+  ZoneState(..)
   ) where
 
 import Prelude
@@ -34,32 +33,26 @@ import Data.Tuple
 import Data.FoldableWithIndex (foldWithIndexM)
 import Data.Traversable (traverse_)
 
-import AST
 import Value
 import Parser
 import DancerState
 import FloorState
 import ZoneMap (Zone,ZoneMap)
 import ZoneMap as ZoneMap
+import R
+import Program
 
 type RenderEngine =
   {
-  scene :: Three.Scene,
-  camera :: Three.PerspectiveCamera,
-  renderer :: Three.Renderer,
+  renderEnvironment :: Ref RenderEnvironment,
   programs :: ZoneMap Program,
   zoneStates :: ZoneMap ZoneState,
-  tempo :: Ref Tempo,
-  prevTNow :: Ref DateTime,
-  delta :: Ref Number
+  prevTNow :: Ref DateTime
   }
 
-type IntMap a = Map.Map Int a
-
 type ZoneState = {
-  dancers :: IntMap DancerState,
-  floors :: IntMap FloorState,
-  semiGlobalMap :: Map.Map String ValueExpr
+  dancers :: Map.Map Int DancerState,
+  floors :: Map.Map Int FloorState
   }
 
 defaultZoneState :: ZoneState
@@ -92,12 +85,12 @@ launch cvs = do
 
   programs <- ZoneMap.new
   zoneStates <- ZoneMap.new
-  tempo <- newTempo (1 % 2) >>= new
+  tempo <- newTempo (1 % 2)
   tNow <- nowDateTime
   prevTNow <- new tNow
   delta <- new 0.0
-  let re = { scene, camera, renderer, programs, zoneStates, tempo, prevTNow, delta }
-  pure re
+  renderEnvironment <- new { scene, camera, renderer, tempo, nCycles, cycleDur, delta }
+  pure { renderEnvironment, programs, zoneStates, prevTNow }
 
 
 evaluate :: RenderEngine -> Int -> String -> Effect (Maybe String)
@@ -105,20 +98,9 @@ evaluate re z x = do
   case parseProgram x of
     Right p -> do
       ZoneMap.write z p re.programs
-      collectSemiGlobals re z p -- *** TODO: evaluation should not succeed when there are infinite reference chains in semiGlobals
       pure Nothing
     Left err -> pure $ Just err
 
-collectSemiGlobals :: RenderEngine -> Int -> Program -> Effect Unit
-collectSemiGlobals re z xs = do
-  let xs' = foldl collectSemiGlobal Map.empty xs -- :: Map.Map String ValueExpr
-  y <- ZoneMap.read z re.zoneStates
-  let zoneState = (maybe defaultZoneState identity y) { semiGlobalMap = xs' }
-  ZoneMap.write z zoneState re.zoneStates
-
-collectSemiGlobal :: Map.Map String ValueExpr -> Statement -> Map.Map String ValueExpr
-collectSemiGlobal m (SemiGlobal k v) = Map.insert k v m
-collectSemiGlobal m _ = m
 
 clearZone :: RenderEngine -> Int -> Effect Unit
 clearZone re z = do
@@ -132,7 +114,13 @@ preAnimate re = do
   tNow <- nowDateTime
   tPrev <- read re.prevTNow
   write tNow re.prevTNow
-  write (unwrap (diff tNow tPrev :: Seconds)) re.delta
+  envPrev <- read re.renderEnvironment
+  let envNew = envPrev {
+    delta = unwrap (diff tNow tPrev :: Seconds),
+    nCycles = timeToCountNumber envPrev.tempo tNow,
+    cycleDur = 1.0 / toNumber envPrev.tempo.freq
+    }
+  write envNew re.renderEnvironment
 
 
 animateZone :: RenderEngine -> Zone -> Effect Unit
@@ -169,6 +157,8 @@ postAnimate re = do
   -- let tDiff = unwrap (diff t1 t0 :: Milliseconds)
   -- log $ "postAnimate " <> show tDiff
 
+
+-- *** continue here ***
 
 runProgram :: RenderEngine -> Program -> ZoneState -> Effect ZoneState
 runProgram re prog zoneState = do

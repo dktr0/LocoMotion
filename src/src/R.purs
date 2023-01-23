@@ -6,18 +6,26 @@ module R where
 -- in other words, a LocoMotion program is a structure of such render-actions
 -- they have access to a RenderState (State monad) and RenderEnvironment (Reader monad)
 
+import Prelude (bind,($),pure)
 import Effect (Effect)
 import Data.Map
 import Control.Monad.State.Trans
 import Control.Monad.Reader.Trans
 import ThreeJS as Three
+import Data.Tempo (Tempo)
+
+import Variable
+import Value
 
 
 type RenderEnvironment = {
   scene :: Three.Scene,
   camera :: Three.PerspectiveCamera,
   renderer :: Three.Renderer,
-  nCycles :: Number
+  tempo :: Tempo,
+  nCycles :: Number,
+  cycleDur :: Number,
+  delta :: Number
   }
 
 type RenderState = {
@@ -26,6 +34,20 @@ type RenderState = {
   }
 
 type R a = StateT RenderState (ReaderT RenderEnvironment Effect) a
+
+
+-- looks up the specified entry in the value map
+-- if not found, then the provided default is returned
+-- if found, and it is a Variable, the variable is realized with respect to the environment
+-- if found, and it is some other type, valueToNumber is used to cast it appropriately
+realizeNumber :: String -> Number -> ValueMap -> R Number
+realizeNumber k def valueMap = do
+  let v = lookupValue (ValueNumber def) k valueMap
+  case v of
+    ValueVariable x -> do
+      env <- ask
+      pure $ realizeVariable env.nCycles x
+    _ -> pure $ valueToNumber v
 
 {-
 -- camera { x = 12, z = 10 }
