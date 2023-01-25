@@ -6,14 +6,14 @@ module RenderEngine
   clearZone,
   preAnimate,
   animateZone,
-  postAnimate,
-  ZoneState(..)
+  postAnimate
   ) where
 
 import Prelude
 import Effect (Effect)
 import Effect.Ref (Ref, new, read, write)
 import Effect.Console (log)
+import Data.Array (length,drop,take,index,insertAt)
 import Data.Foldable (foldM,foldl)
 import Data.Map as Map
 import Data.Maybe
@@ -31,7 +31,11 @@ import Data.Tempo
 import Data.Rational
 import Data.Tuple
 import Data.FoldableWithIndex (foldWithIndexM)
+import Data.TraversableWithIndex (traverseWithIndex)
 import Data.Traversable (traverse_)
+import Control.Monad.State (get,modify_)
+import Control.Monad.Reader (ask)
+import Effect.Class (liftEffect)
 
 import Value
 import Parser
@@ -50,13 +54,6 @@ type RenderEngine =
   prevTNow :: Ref DateTime
   }
 
-type ZoneState = {
-  dancers :: Map.Map Int DancerState,
-  floors :: Map.Map Int FloorState
-  }
-
-defaultZoneState :: ZoneState
-defaultZoneState = { dancers: Map.empty, floors: Map.empty, semiGlobalMap: Map.empty }
 
 launch :: HTML.HTMLCanvasElement -> Effect RenderEngine
 launch cvs = do
@@ -86,6 +83,8 @@ launch cvs = do
   programs <- ZoneMap.new
   zoneStates <- ZoneMap.new
   tempo <- newTempo (1 % 2)
+  let nCycles = 0
+  let cycleDur = 2.0
   tNow <- nowDateTime
   prevTNow <- new tNow
   delta <- new 0.0
@@ -100,7 +99,7 @@ evaluate re z x = do
       ZoneMap.write z p re.programs
       pure Nothing
     Left err -> pure $ Just err
-
+ traverseWithIndex
 
 clearZone :: RenderEngine -> Int -> Effect Unit
 clearZone re z = do
@@ -158,70 +157,65 @@ postAnimate re = do
   -- log $ "postAnimate " <> show tDiff
 
 
--- *** continue here ***
-
 runProgram :: RenderEngine -> Program -> ZoneState -> Effect ZoneState
-runProgram re prog zoneState = do
-  tNow <- read re.prevTNow
-  tempo <- read re.tempo
-  let cycleDur = 1.0 / toNumber tempo.freq
-  let nCycles = timeToCountNumber tempo tNow
-  delta <- read re.delta
-  zoneState' <- foldWithIndexM (runStatement re cycleDur nCycles delta) zoneState prog
-  removeDeletedElements re prog zoneState'
+runProgram re prog zoneState = runR re.renderEnvironment zoneState $ do
+  runDancers prog.dancers
+  runFloors prog.floors
+  runCamera prog.cameraMap
 
 
-removeDeletedElements :: RenderEngine -> Program -> ZoneState -> Effect ZoneState
-removeDeletedElements re prog zoneState = do
-  a <- removeDeletedDancers re prog zoneState
-  removeDeletedFloors re prog a
-
-removeDeletedDancers :: RenderEngine -> Program -> ZoneState -> Effect ZoneState
-removeDeletedDancers re prog zoneState = do
-  let progDancers = Map.filter isDancer prog
-  traverse_ (removeDancer re.scene) $ Map.difference zoneState.dancers progDancers -- remove dancers that are in zoneState but not program
-  pure $ zoneState { dancers = Map.intersection zoneState.dancers progDancers } -- leave dancers that in both zoneState AND program
-
-removeDeletedFloors :: RenderEngine -> Program -> ZoneState -> Effect ZoneState
-removeDeletedFloors re prog zoneState = do
-  let progFloors = Map.filter isFloor prog
-  traverse_ removeFloorState $ Map.difference zoneState.floors progFloors -- remove dancers that are in zoneState but not program
-  pure $ zoneState { floors = Map.intersection zoneState.floors progFloors } -- leave floors that in both zoneState AND program
+runDancers :: Array ValueMap -> R Unit
+runDancers xs = do
+  -- run/update active dancers
+  _ <- traverseWithIndex runDancer xs
+  let nDancers = length xs
+  -- remove any deleted dancers
+  s <- get
+  traverse_ removeDancer $ drop nDancers s.dancers
+  modify_ $ \x -> x { dancers = take nDancers x.dancers }
 
 
-runStatement :: RenderEngine -> Number -> Number -> Number -> Int -> ZoneState -> Statement -> Effect ZoneState
-
-runStatement re cycleDur nCycles delta stmtIndex zoneState (Dancer t) = do
-  let prevDancerState = Map.lookup stmtIndex zoneState.dancers
-  ds <- runDancerWithState re.scene cycleDur nCycles zoneState.semiGlobalMap delta t prevDancerState
-  pure $ zoneState { dancers = Map.insert stmtIndex ds zoneState.dancers }
-
-runStatement re cycleDur nCycles delta stmtIndex zoneState (Floor t) = do
-  let prevFloorState = Map.lookup stmtIndex zoneState.floors
-  fState <- case prevFloorState of
-    Just fState -> do
-      runFloorState nCycles zoneState.semiGlobalMap t fState
-      pure fState
-    Nothing -> do
-      fState <- newFloorState re.scene nCycles zoneState.semiGlobalMap t
-      pure fState
-  pure $ zoneState { floors = Map.insert stmtIndex fState zoneState.floors }
-
-runStatement re cycleDur nCycles delta _ zoneState (Camera t) = do
-  let valueMap = realizeTransformer nCycles zoneState.semiGlobalMap t
-  maybeSetCameraProperty "x" valueMap (Three.setPositionX re.camera)
-  maybeSetCameraProperty "y" valueMap (Three.setPositionY re.camera)
-  maybeSetCameraProperty "z" valueMap (Three.setPositionZ re.camera)
-  maybeSetCameraProperty "rx" valueMap (Three.setRotationX re.camera)
-  maybeSetCameraProperty "ry" valueMap (Three.setRotationY re.camera)
-  maybeSetCameraProperty "rz" valueMap (Three.setRotationZ re.camera)
-  pure zoneState
-
-runStatement _ _ _ _ _ zoneState _ = pure zoneState
+runDancer :: Int -> ValueMap -> R Unit
+runDancer i vm = do
+  s <- get
+  updatedDancerState <- runDancerWithState vm (index s.dancers i)
+  modify_ $ \x -> x { dancers = insertAt' i updatedDancerState x.dancers }
 
 
-maybeSetCameraProperty :: String -> ValueMap -> (Number -> Effect Unit) -> Effect Unit
-maybeSetCameraProperty k valueMap f = do
-  case Map.lookup k valueMap of
-    Just v -> f (valueToNumber v)
-    Nothing -> pure unit
+insertAt' :: forall a. Int -> a -> Array a -> Array a
+insertAt' i v a = case insertAt i v a of
+  Just a' -> a'
+  Nothing -> a
+
+runFloors :: Array ValueMap -> R Unit
+runFloors xs = do
+  -- run/update active dancers
+  _ <- traverseWithIndex runFloor xs
+  let nFloors = length xs
+  -- remove any deleted floors
+  s <- get
+  traverse_ removeFloor $ drop nFloors s.floors
+  modify_ $ \x -> x { floors = take nFloors x.floors }
+
+
+runFloor :: Int -> ValueMap -> R Unit
+runFloor i vm = do
+  s <- get
+  updatedFloorState <- runFloorWithState vm (index s.floors i)
+  modify_ $ \x -> x { floors = insertAt' i updatedFloorState x.floors }
+
+
+runCamera :: ValueMap -> R Unit
+runCamera vm = do
+  re <- ask
+  setCameraProperty "x" 0.0 vm (Three.setPositionX re.camera)
+  setCameraProperty "y" 1.0 vm (Three.setPositionY re.camera)
+  setCameraProperty "z" 10.0 vm (Three.setPositionZ re.camera)
+  setCameraProperty "rx" 0.0 vm (Three.setRotationX re.camera)
+  setCameraProperty "ry" 0.0 vm (Three.setRotationY re.camera)
+  setCameraProperty "rz" 0.0 vm (Three.setRotationZ re.camera)
+
+setCameraProperty :: String -> ValueMap -> (Number -> Effect Unit) -> R Unit
+setCameraProperty k d vm f = do
+  n <- realizeNumber k d vm
+  liftEffect $ f n

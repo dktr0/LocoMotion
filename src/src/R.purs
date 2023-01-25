@@ -8,12 +8,13 @@ module R where
 
 import Prelude (bind,($),pure)
 import Effect (Effect)
-import Data.Map
 import Control.Monad.State.Trans
 import Control.Monad.Reader.Trans
 import ThreeJS as Three
 import Data.Tempo (Tempo)
+import Effect.Ref (Ref)
 
+import MaybeRef
 import Variable
 import Value
 
@@ -28,12 +29,44 @@ type RenderEnvironment = {
   delta :: Number
   }
 
-type RenderState = {
-  -- dancers :: Map Int DancerState,
-  -- floors :: Map Int FloorState
+
+type ZoneState = {
+  dancers :: Array DancerState,
+  floors :: Array FloorState
   }
 
-type R a = StateT RenderState (ReaderT RenderEnvironment Effect) a
+defaultZoneState :: ZoneState
+defaultZoneState = { dancers: [], floors: [] }
+
+
+type DancerState =
+  {
+  url :: Ref String,
+  model :: MaybeRef Model,
+  prevAnimationIndex :: Ref Int, -- OBSOLETE: will be removed when MixerState refactor complete
+  prevAnimationAction :: MaybeRef Three.AnimationAction -- OBSOLETE: will be removed when MixerState refactor complete
+  }
+
+type Model = {
+  scene :: Three.Scene,
+  clips :: Array Three.AnimationClip,
+  mixer :: Three.AnimationMixer,
+  actions :: Array Three.AnimationAction,
+  mixerState :: Ref MixerState
+  }
+
+type MixerState = Array Number
+
+type FloorState = {
+  mesh :: Three.Mesh,
+  material :: Three.MeshPhongMaterial
+  }
+
+type R a = StateT ZoneState (ReaderT RenderEnvironment Effect) a
+
+
+-- continue here: need to provide implementation
+runR :: forall a. RenderEnvironment -> ZoneState -> R a -> Effect ZoneState
 
 
 -- looks up the specified entry in the value map
@@ -48,22 +81,3 @@ realizeNumber k def valueMap = do
       env <- ask
       pure $ realizeVariable env.nCycles x
     _ -> pure $ valueToNumber v
-
-{-
--- camera { x = 12, z = 10 }
-camera :: ValueMap -> R ()
-camera valueMap = do
-  c <- asks camera
-  maybeSetCameraProperty "x" valueMap (Three.setPositionX c)
-  maybeSetCameraProperty "y" valueMap (Three.setPositionY c)
-  maybeSetCameraProperty "z" valueMap (Three.setPositionZ c)
-  maybeSetCameraProperty "rx" valueMap (Three.setRotationX c)
-  maybeSetCameraProperty "ry" valueMap (Three.setRotationY c)
-  maybeSetCameraProperty "rz" valueMap (Three.setRotationZ c)
-
-maybeSetCameraProperty :: String -> ValueMap -> (Number -> Effect Unit) -> R Unit
-maybeSetCameraProperty k valueMap f = do
-  case lookup k valueMap of
-    Just v -> liftIO $ f (valueToNumber v)
-    Nothing -> pure unit
--}

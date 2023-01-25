@@ -1,7 +1,4 @@
 module DancerState (
-  DancerState(..),
-  Model(..),
-  MixerState(..),
   runDancerWithState,
   removeDancer
   )
@@ -26,28 +23,15 @@ import Value
 import MaybeRef
 import R
 
-type DancerState =
-  {
-  url :: Ref String,
-  model :: MaybeRef Model,
-  prevAnimationIndex :: Ref Int, -- OBSOLETE: will be removed when MixerState refactor complete
-  prevAnimationAction :: MaybeRef Three.AnimationAction -- OBSOLETE: will be removed when MixerState refactor complete
-  }
 
-type Model = {
-  scene :: Three.Scene,
-  clips :: Array Three.AnimationClip,
-  mixer :: Three.AnimationMixer,
-  actions :: Array Three.AnimationAction,
-  mixerState :: Ref MixerState
-  }
+
 
 -- the state of the animation system is represented as an array of floating point weights
 -- this is cached in the Model after update, so that in succeeding frames, the calculated
 -- MixerState (calculated from AnimationExpr + "environment") can be compared to determine
 -- if any update to the underlying AnimationMixer is required or not.
 
-type MixerState = Array Number
+
 
 {-
 animationExprToMixerState :: AnimationExpr -> Array Three.AnimationAction -> Effect MixerState
