@@ -3,13 +3,14 @@ module AST (
   Statement(..),
   Expression(..),
   ast,
-  expressionPosition
+  expressionPosition,
+  emptyAST
   ) where
 
 import Prelude (class Show, bind, discard, pure, show, unit, ($), ($>), (<$), (<$>), (<*>), (<>))
-import Data.List (List)
+import Data.List (List(..),(:))
 import Data.Tuple (Tuple(..))
-import Parsing (Position,position)
+import Parsing (Position(..),position)
 import Parsing.Combinators (chainl1, choice, lookAhead, try, (<|>), many)
 import Parsing.String (eof)
 import Data.Foldable (foldl)
@@ -28,6 +29,9 @@ instance Show Statement where
   show (Assignment p k e) = "Assignment (" <> show p <> ") " <> show k <> " (" <> show e <> ")"
   show (Action e) = "Action (" <> show e <> ")"
   show (EmptyStatement p) = "EmptyStatement (" <> show p <> ")"
+
+emptyAST :: AST
+emptyAST = EmptyStatement (Position { column: 1, index: 1, line: 1 }) : Nil
 
 data Expression =
   LiteralNumber Position Number |

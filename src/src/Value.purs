@@ -6,7 +6,7 @@ module Value where
 -- implicitly cast it to any of the other types in particular circumstances where the
 -- Value is consumed.
 
-import Prelude (identity, ($), show, (/=), class Semiring, class Ring, (/), (+), (-), (*), pure, (<>), bind, discard, (>>=), map, unit)
+import Prelude (identity, ($), class Show, show, (/=), class Semiring, class Ring, (/), (+), (-), (*), pure, (<>), bind, discard, (>>=), map, unit)
 import Data.Int (toNumber,floor)
 import Data.Map (Map, lookup, insert, fromFoldable, empty, union)
 import Data.Array as Array
@@ -37,6 +37,18 @@ data Value =
   ValueDancer Int ValueMap |
   ValueFloor Int ValueMap |
   ValueCamera
+
+instance Show Value where
+  show (ValueNumber x) = "ValueNumber " <> show x
+  show (ValueString x) = "ValueString " <> show x
+  show (ValueInt x) = "ValueInt " <> show x
+  show (ValueBoolean x) = "ValueBoolean " <> show x
+  show (ValueVariable x) = "ValueVariable..."
+  show (ValueTransformer _) = "ValueTransformer..."
+  show (ValueFunction _) = "ValueTransformer... "
+  show (ValueDancer i vm) = "ValueDancer " <> show i <> " (" <> show vm <> ")"
+  show (ValueFloor i vm) = "ValueFloor " <> show i <> " (" <> show vm <> ")"
+  show ValueCamera = "ValueCamera"
 
 
 valueToNumber :: Value -> Number

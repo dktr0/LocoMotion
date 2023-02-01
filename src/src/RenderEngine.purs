@@ -57,7 +57,7 @@ type RenderEngine =
 
 launch :: HTML.HTMLCanvasElement -> Effect RenderEngine
 launch cvs = do
-  log "LocoMotion: launch"
+  log "LocoMotion: launch..."
   scene <- Three.newScene
 
   hemiLight <- Three.newHemisphereLight 0xffffff 0x444444 0.8
@@ -88,16 +88,22 @@ launch cvs = do
   programs <- ZoneMap.new
   zoneStates <- ZoneMap.new
   prevTNow <- nowDateTime >>= new
+  log "LocoMotion: launch completed"
   pure { renderEnvironment, programs, zoneStates, prevTNow }
 
 
 evaluate :: RenderEngine -> Int -> String -> Effect (Maybe String)
 evaluate re z x = do
-  case parseProgram x of
+  log "evaluate..."
+  x' <- parseProgramDebug x
+  case x' of
     Right p -> do
       ZoneMap.write z p re.programs
+      log "evaluate completed with no error"
       pure Nothing
-    Left err -> pure $ Just err
+    Left err -> do
+      log "evaluate completed with error"
+      pure $ Just err
 
 
 clearZone :: RenderEngine -> Int -> Effect Unit

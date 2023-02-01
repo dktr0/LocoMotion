@@ -1,6 +1,8 @@
-module Parser (parseProgram) where
+module Parser (parseProgram,parseProgramDebug) where
 
 import Prelude
+import Effect
+import Effect.Console (log)
 import Data.Number (sin,pi)
 import Data.Int (toNumber)
 import Data.Map (insert,empty,lookup,Map(..))
@@ -28,6 +30,20 @@ import Program
 
 parseProgram :: String -> Either String Program
 parseProgram x = lmap showParseError $ runParser x AST.ast >>= (astToProgram >>> runP)
+
+parseProgramDebug :: String -> Effect (Either String Program)
+parseProgramDebug x = do
+  -- let y = runParser x AST.ast
+  let y = Right AST.emptyAST
+  log "result of runParser: "
+  log $ show y
+  case y of
+    Right y' -> do
+     let z = runP $ astToProgram y'
+     log "result of astToProgram: "
+     log $ show z
+     pure $ lmap showParseError z
+    Left e -> pure (Left $ showParseError e)
 
 showParseError :: ParseError -> String
 showParseError (ParseError e (Position p)) = show p.line <> ":" <> show p.column <> " " <> e
