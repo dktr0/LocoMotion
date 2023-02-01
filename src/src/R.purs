@@ -64,10 +64,8 @@ type FloorState = {
 
 type R a = StateT ZoneState (ReaderT RenderEnvironment Effect) a
 
-
--- continue here: need to provide implementation
-runR :: forall a. RenderEnvironment -> ZoneState -> R a -> Effect ZoneState
-
+execR :: forall a. RenderEnvironment -> ZoneState -> R a -> Effect ZoneState
+execR rEnv zState r = runReaderT (execStateT r zState) rEnv
 
 -- looks up the specified entry in the value map
 -- if not found, then the provided default is returned

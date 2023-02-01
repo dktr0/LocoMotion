@@ -80,15 +80,14 @@ launch cvs = do
   renderer <- Three.newWebGLRenderer { antialias: true, canvas: cvs }
   Three.setSize renderer iWidth iHeight false
 
+  tempo <- newTempo (1 % 2)
+  let nCycles = 0.0
+  let cycleDur = 2.0
+  let delta = 0.0
+  renderEnvironment <- new { scene, camera, renderer, tempo, nCycles, cycleDur, delta }
   programs <- ZoneMap.new
   zoneStates <- ZoneMap.new
-  tempo <- newTempo (1 % 2)
-  let nCycles = 0
-  let cycleDur = 2.0
-  tNow <- nowDateTime
-  prevTNow <- new tNow
-  delta <- new 0.0
-  renderEnvironment <- new { scene, camera, renderer, tempo, nCycles, cycleDur, delta }
+  prevTNow <- nowDateTime >>= new
   pure { renderEnvironment, programs, zoneStates, prevTNow }
 
 
@@ -99,7 +98,7 @@ evaluate re z x = do
       ZoneMap.write z p re.programs
       pure Nothing
     Left err -> pure $ Just err
- traverseWithIndex
+
 
 clearZone :: RenderEngine -> Int -> Effect Unit
 clearZone re z = do
@@ -135,7 +134,8 @@ animateZone re z = do
       let zoneState = case y of
                         Just y' -> y'
                         Nothing -> defaultZoneState
-      zoneState' <- runProgram re prog zoneState
+      rEnv <- read re.renderEnvironment
+      zoneState' <- runProgram rEnv prog zoneState
       ZoneMap.write z zoneState' re.zoneStates
   -- t1 <- nowDateTime
   -- let tDiff = unwrap (diff t1 t0 :: Milliseconds)
@@ -149,16 +149,17 @@ postAnimate re = do
   when (n > 0) $ do
     iWidth <- Three.windowInnerWidth
     iHeight <- Three.windowInnerHeight
-    Three.setAspect re.camera (iWidth/iHeight)
-    Three.setSize re.renderer iWidth iHeight false
-    Three.render re.renderer re.scene re.camera
+    rEnv <- read re.renderEnvironment
+    Three.setAspect rEnv.camera (iWidth/iHeight)
+    Three.setSize rEnv.renderer iWidth iHeight false
+    Three.render rEnv.renderer rEnv.scene rEnv.camera
   -- t1 <- nowDateTime
   -- let tDiff = unwrap (diff t1 t0 :: Milliseconds)
   -- log $ "postAnimate " <> show tDiff
 
 
-runProgram :: RenderEngine -> Program -> ZoneState -> Effect ZoneState
-runProgram re prog zoneState = runR re.renderEnvironment zoneState $ do
+runProgram :: RenderEnvironment -> Program -> ZoneState -> Effect ZoneState
+runProgram re prog zoneState = execR re zoneState $ do
   runDancers prog.dancers
   runFloors prog.floors
   runCamera prog.cameraMap
@@ -215,7 +216,7 @@ runCamera vm = do
   setCameraProperty "ry" 0.0 vm (Three.setRotationY re.camera)
   setCameraProperty "rz" 0.0 vm (Three.setRotationZ re.camera)
 
-setCameraProperty :: String -> ValueMap -> (Number -> Effect Unit) -> R Unit
+setCameraProperty :: String -> Number -> ValueMap -> (Number -> Effect Unit) -> R Unit
 setCameraProperty k d vm f = do
   n <- realizeNumber k d vm
   liftEffect $ f n

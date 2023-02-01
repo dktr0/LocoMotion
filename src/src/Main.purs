@@ -9,7 +9,7 @@ import Effect.Class
 import Effect.Console (log)
 import Web.HTML.HTMLCanvasElement as HTML
 import Data.Tempo
-import Effect.Ref (write)
+import Effect.Ref (write,read)
 
 import RenderEngine as RE
 import AST
@@ -33,7 +33,9 @@ clearZone = RE.clearZone
 
 
 setTempo :: RE.RenderEngine -> ForeignTempo -> Effect Unit
-setTempo re t = write (fromForeignTempo t) re.tempo
+setTempo re t = do
+  rEnv <- read re.renderEnvironment
+  write (rEnv { tempo = fromForeignTempo t } ) re.renderEnvironment
 
 
 preAnimate :: RE.RenderEngine -> Effect Unit

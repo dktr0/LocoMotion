@@ -1,6 +1,7 @@
 { name = "LocoMotion"
 , dependencies =
   [ "arrays"
+  , "bifunctors"
   , "console"
   , "datetime"
   , "effect"
@@ -22,6 +23,7 @@
   , "rationals"
   , "refs"
   , "strings"
+  , "transformers"
   , "tuples"
   , "web-html"
   ]
