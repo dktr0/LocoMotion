@@ -3,6 +3,8 @@ module P where
 -- the P monad
 
 import Prelude
+import Effect.Unsafe (unsafePerformEffect)
+import Effect.Console (log)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Map (empty)
@@ -44,10 +46,14 @@ modifyDancer :: Int -> Transformer -> P Value
 modifyDancer n t = do
   s <- get
   mNew <- case Array.index s.program.dancers n of
-    Nothing -> pure empty -- note: this should not ever happen
+    Nothing -> do
+      pure $ unsafePerformEffect $ log "modifyDancer: this should not ever happen 1"
+      pure empty
     Just m -> liftEitherParseError $ t m
-  case Array.insertAt n mNew s.program.dancers of
-    Nothing -> pure unit  -- note: this should also not ever happen
+  case Array.updateAt n mNew s.program.dancers of
+    Nothing -> do
+      pure $ unsafePerformEffect $ log "modifyDancer: this should not ever happen 2"
+      pure unit
     Just x -> put $ s { program = s.program { dancers = x } }
   pure $ ValueDancer n mNew
 
@@ -62,10 +68,14 @@ modifyFloor :: Int -> Transformer -> P Value
 modifyFloor n t = do
   s <- get
   mNew <- case Array.index s.program.floors n of
-    Nothing -> pure empty -- note: this should not ever happen
+    Nothing -> do
+      pure $ unsafePerformEffect $ log "modifyFloor: this should not ever happen 1"
+      pure empty
     Just m -> liftEitherParseError $ t m
-  case Array.insertAt n mNew s.program.floors of
-    Nothing -> pure unit  -- note: this should also not ever happen
+  case Array.updateAt n mNew s.program.floors of
+    Nothing -> do
+      pure $ unsafePerformEffect $ log "modifyFloor: this should not ever happen 2"
+      pure unit
     Just x -> put $ s { program = s.program { floors = x } }
   pure $ ValueFloor n mNew
 
