@@ -81,7 +81,7 @@ instance Eq Expression where
 
 instance Show Expression where
   show (LiteralNumber p x) = "LiteralNumber (" <> show p <> ") " <> show x
-  show (LiteralString p x) = "LiteralString (" <> show p <> ") " <> show x
+  show (LiteralString p x) = "(LiteralString (" <> show p <> ") " <> show x <> ")"
   show (LiteralInt p x) = "LiteralInt (" <> show p <> ") " <> show x
   show (LiteralBoolean p x) = "LiteralBoolean (" <> show p <> ") " <> show x
   show (This p x) = "This (" <> show p <> ") " <> show x
@@ -181,18 +181,18 @@ expression'' = do
   choice [
     parens expression,
     try transformer,
-    -- try application,
+    try application,
     try $ LiteralNumber p <$> number,
     try $ LiteralString p <$> stringLiteral,
     try $ LiteralInt p <$> integer,
     try $ LiteralBoolean p <$> boolean,
-    try thisRef,
-    try semiGlobalRef,
     try (Dancer p <$ reserved "dancer"),
     try (Floor p <$ reserved "floor"),
     try (Camera p <$ reserved "camera"),
     try (Osc p <$ reserved "osc"),
-    try (Range p <$ reserved "range")
+    try (Range p <$ reserved "range"),
+    try thisRef,
+    try semiGlobalRef
     ]
 
 application :: P Expression
@@ -216,13 +216,13 @@ argument = do
     try $ LiteralString p <$> stringLiteral,
     try $ LiteralInt p <$> integer,
     try $ LiteralBoolean p <$> boolean,
-    try thisRef,
-    try semiGlobalRef,
     try (Dancer p <$ reserved "dancer"),
     try (Floor p <$ reserved "floor"),
     try (Camera p <$ reserved "camera"),
     try (Osc p <$ reserved "osc"),
-    try (Range p <$ reserved "range")
+    try (Range p <$ reserved "range"),
+    try thisRef,
+    try semiGlobalRef
   ]
 
 transformer :: P Expression
