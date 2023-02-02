@@ -2,18 +2,20 @@ module AST (
   AST,
   Statement(..),
   Expression(..),
-  ast,
-  expressionPosition,
-  emptyAST
+  emptyAST,
+  parseAST,
+  expressionPosition
   ) where
 
-import Prelude (class Show, bind, discard, pure, show, unit, ($), ($>), (<$), (<$>), (<*>), (<>))
+import Prelude
 import Data.List (List(..),(:))
 import Data.Tuple (Tuple(..))
-import Parsing (Position(..),position)
+import Parsing (Position(..),position, ParseError,runParser)
 import Parsing.Combinators (chainl1, choice, lookAhead, try, (<|>), many)
 import Parsing.String (eof)
 import Data.Foldable (foldl)
+import Data.Either (Either)
+
 
 import TokenParser (P, boolean, commaSep, identifier, integer, number, parens, reserved, reservedOp, semiSep, stringLiteral, whiteSpace)
 
@@ -25,28 +27,57 @@ data Statement =
   Action Expression | -- Action doesn't need to record Position since the contained Expression will have the Position
   EmptyStatement Position
 
+instance Eq Statement where
+  eq (Assignment p1 s1 e1) (Assignment p2 s2 e2) = p1 == p2 && s1 == s2 && e1 == e2
+  eq (Action e1) (Action e2) = e1 == e2
+  eq (EmptyStatement p1) (EmptyStatement p2) = p1 == p2
+  eq _ _ = false
+
 instance Show Statement where
   show (Assignment p k e) = "Assignment (" <> show p <> ") " <> show k <> " (" <> show e <> ")"
   show (Action e) = "Action (" <> show e <> ")"
   show (EmptyStatement p) = "EmptyStatement (" <> show p <> ")"
 
 emptyAST :: AST
-emptyAST = EmptyStatement (Position { column: 1, index: 1, line: 1 }) : Nil
+emptyAST = EmptyStatement (Position { column: 1, index: 0, line: 1 }) : Nil
+
+parseAST :: String -> Either ParseError AST
+parseAST x = runParser x ast
 
 data Expression =
+  Dancer Position | Floor Position | Camera Position | Osc Position | Range Position |
   LiteralNumber Position Number |
   LiteralString Position String |
   LiteralInt Position Int |
   LiteralBoolean Position Boolean |
   This Position String | -- eg. this.x would be This "x"
   SemiGlobal Position String | -- eg. x would be SemiGlobal "x"
-  Application Position Expression Expression |
   Transformer Position (List (Tuple String Expression)) |
-  Dancer Position | Floor Position | Camera Position | Osc Position | Range Position |
+  Application Position Expression Expression |
   Sum Position Expression Expression |
   Difference Position Expression Expression |
   Product Position Expression Expression |
   Divide Position Expression Expression
+
+instance Eq Expression where
+  eq (Dancer p1) (Dancer p2) = p1 == p2
+  eq (Floor p1) (Floor p2) = p1 == p2
+  eq (Camera p1) (Camera p2) = p1 == p2
+  eq (Osc p1) (Osc p2) = p1 == p2
+  eq (Range p1) (Range p2) = p1 == p2
+  eq (LiteralNumber p1 x1) (LiteralNumber p2 x2) = p1 == p2 && x1 == x2
+  eq (LiteralString p1 x1) (LiteralString p2 x2) = p1 == p2 && x1 == x2
+  eq (LiteralInt p1 x1) (LiteralInt p2 x2) = p1 == p2 && x1 == x2
+  eq (LiteralBoolean p1 x1) (LiteralBoolean p2 x2) = p1 == p2 && x1 == x2
+  eq (This p1 x1) (This p2 x2) = p1 == p2 && x1 == x2
+  eq (SemiGlobal p1 x1) (SemiGlobal p2 x2) = p1 == p2 && x1 == x2
+  eq (Transformer p1 x1) (Transformer p2 x2) = p1 == p2 && x1 == x2
+  eq (Application p1 x1a x1b) (Application p2 x2a x2b) = p1 == p2 && x1a == x2a && x1b == x2b
+  eq (Sum p1 x1a x1b) (Sum p2 x2a x2b) = p1 == p2 && x1a == x2a && x1b == x2b
+  eq (Difference p1 x1a x1b) (Difference p2 x2a x2b) = p1 == p2 && x1a == x2a && x1b == x2b
+  eq (Product p1 x1a x1b) (Product p2 x2a x2b) = p1 == p2 && x1a == x2a && x1b == x2b
+  eq (Divide p1 x1a x1b) (Divide p2 x2a x2b) = p1 == p2 && x1a == x2a && x1b == x2b
+  eq _ _ = false
 
 instance Show Expression where
   show (LiteralNumber p x) = "LiteralNumber (" <> show p <> ") " <> show x
@@ -150,7 +181,7 @@ expression'' = do
   choice [
     parens expression,
     try transformer,
-    try application,
+    -- try application,
     try $ LiteralNumber p <$> number,
     try $ LiteralString p <$> stringLiteral,
     try $ LiteralInt p <$> integer,
@@ -168,7 +199,7 @@ application :: P Expression
 application = do
   _ <- pure unit
   p <- position
-  f <- expression
+  f <- argument
   firstArg <- argument
   otherArgs <- many argument
   pure $ foldl (Application p) (Application p f firstArg) otherArgs

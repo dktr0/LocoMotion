@@ -29,13 +29,12 @@ import Program
 
 
 parseProgram :: String -> Either String Program
-parseProgram x = lmap showParseError $ runParser x AST.ast >>= (astToProgram >>> runP)
+parseProgram x = lmap showParseError $ AST.parseAST x >>= (astToProgram >>> runP)
 
 parseProgramDebug :: String -> Effect (Either String Program)
 parseProgramDebug x = do
-  -- let y = runParser x AST.ast
-  let y = Right AST.emptyAST
-  log "result of runParser: "
+  let y = AST.parseAST x
+  log "result of parseAST: "
   log $ show y
   case y of
     Right y' -> do
