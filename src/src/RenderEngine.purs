@@ -13,7 +13,7 @@ import Prelude
 import Effect (Effect)
 import Effect.Ref (Ref, new, read, write)
 import Effect.Console (log)
-import Data.Array (length,drop,take,index,insertAt)
+import Data.Array (length,drop,take,index,updateAt,snoc)
 import Data.Foldable (foldM,foldl)
 import Data.Map as Map
 import Data.Maybe
@@ -186,13 +186,14 @@ runDancer :: Int -> ValueMap -> R Unit
 runDancer i vm = do
   s <- get
   updatedDancerState <- runDancerWithState vm (index s.dancers i)
-  modify_ $ \x -> x { dancers = insertAt' i updatedDancerState x.dancers }
+  modify_ $ \x -> x { dancers = replaceAt i updatedDancerState x.dancers }
 
+-- bizarre that something like this function doesn't seem to exist in the PureScript library
+replaceAt :: forall a. Int -> a -> Array a -> Array a
+replaceAt i v a
+  | i >= length a = snoc a v
+  | otherwise = fromMaybe a $ updateAt i v a
 
-insertAt' :: forall a. Int -> a -> Array a -> Array a
-insertAt' i v a = case insertAt i v a of
-  Just a' -> a'
-  Nothing -> a
 
 runFloors :: Array ValueMap -> R Unit
 runFloors xs = do
@@ -209,7 +210,7 @@ runFloor :: Int -> ValueMap -> R Unit
 runFloor i vm = do
   s <- get
   updatedFloorState <- runFloorWithState vm (index s.floors i)
-  modify_ $ \x -> x { floors = insertAt' i updatedFloorState x.floors }
+  modify_ $ \x -> x { floors = replaceAt i updatedFloorState x.floors }
 
 
 runCamera :: ValueMap -> R Unit
