@@ -3,6 +3,9 @@ build:
 	cd src && spago bundle-module
 	npx webpack
 
+test:
+	cd src && spago test
+
 serve:
 	npx http-server -c-1
 

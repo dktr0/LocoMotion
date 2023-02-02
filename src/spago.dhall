@@ -1,6 +1,7 @@
 { name = "LocoMotion"
 , dependencies =
-  [ "arrays"
+  [ "aff"
+  , "arrays"
   , "bifunctors"
   , "console"
   , "datetime"
@@ -22,6 +23,7 @@
   , "purescript-threejs"
   , "rationals"
   , "refs"
+  , "spec"
   , "strings"
   , "transformers"
   , "tuples"
