@@ -145,7 +145,7 @@ playAnimation s n = whenMaybeRef s.model $ \m -> do
           Nothing -> do
             Three.setEffectiveTimeScale newAction 1.0
             Three.playAnything newAction
-            write (Just newAction) s.prevAnimationAction
+        write (Just newAction) s.prevAnimationAction
       Nothing -> log "strange error in LocoMotion: DancerState: playAnimation"
     write n s.prevAnimationIndex
 
