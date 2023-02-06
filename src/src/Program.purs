@@ -4,18 +4,21 @@ import Prelude
 import Value
 import Data.Tuple (Tuple(..))
 import Data.Map (fromFoldable)
+import Data.Maybe (Maybe(..))
 
 type Program = {
   dancers :: Array ValueMap,
   floors :: Array ValueMap,
-  cameraMap :: ValueMap
+  cameraMap :: ValueMap,
+  clearMap :: Maybe ValueMap
   }
 
 defaultProgram :: Program
 defaultProgram = {
   dancers: [],
   floors: [],
-  cameraMap: defaultCamera
+  cameraMap: defaultCamera,
+  clearMap: Nothing
   }
 
 defaultDancer :: ValueMap
@@ -46,4 +49,10 @@ defaultCamera = fromFoldable [
   Tuple "rx" (ValueNumber 0.0),
   Tuple "ry" (ValueNumber 0.0),
   Tuple "rz" (ValueNumber 0.0)
+  ]
+
+defaultClear :: ValueMap
+defaultClear = fromFoldable [
+  Tuple "colour" (ValueInt 0x000000),
+  Tuple "alpha" (ValueNumber 1.0)
   ]

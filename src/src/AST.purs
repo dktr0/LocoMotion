@@ -45,7 +45,7 @@ parseAST :: String -> Either ParseError AST
 parseAST x = runParser x ast
 
 data Expression =
-  Dancer Position | Floor Position | Camera Position | Osc Position | Range Position |
+  Dancer Position | Floor Position | Camera Position | Osc Position | Range Position | Clear Position |
   LiteralNumber Position Number |
   LiteralString Position String |
   LiteralInt Position Int |
@@ -65,6 +65,7 @@ instance Eq Expression where
   eq (Camera p1) (Camera p2) = p1 == p2
   eq (Osc p1) (Osc p2) = p1 == p2
   eq (Range p1) (Range p2) = p1 == p2
+  eq (Clear p1) (Clear p2) = p1 == p2
   eq (LiteralNumber p1 x1) (LiteralNumber p2 x2) = p1 == p2 && x1 == x2
   eq (LiteralString p1 x1) (LiteralString p2 x2) = p1 == p2 && x1 == x2
   eq (LiteralInt p1 x1) (LiteralInt p2 x2) = p1 == p2 && x1 == x2
@@ -93,6 +94,7 @@ instance Show Expression where
   show (Camera p) = "Camera (" <> show p <> ")"
   show (Osc p) = "Osc (" <> show p <> ")"
   show (Range p) = "Range (" <> show p <> ")"
+  show (Clear p) = "Clear (" <> show p <> ")"
   show (Sum p e1 e2) = "Sum (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
   show (Difference p e1 e2) = "Difference (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
   show (Product p e1 e2) = "Product (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
@@ -112,6 +114,7 @@ expressionPosition (Floor p) = p
 expressionPosition (Camera p) = p
 expressionPosition (Osc p) = p
 expressionPosition (Range p) = p
+expressionPosition (Clear p) = p
 expressionPosition (Sum p _ _) = p
 expressionPosition (Difference p _ _) = p
 expressionPosition (Product p _ _) = p
@@ -191,6 +194,7 @@ expression'' = do
     try (Camera p <$ reserved "camera"),
     try (Osc p <$ reserved "osc"),
     try (Range p <$ reserved "range"),
+    try (Clear p <$ reserved "clear"),
     try thisRef,
     try semiGlobalRef
     ]
@@ -221,6 +225,7 @@ argument = do
     try (Camera p <$ reserved "camera"),
     try (Osc p <$ reserved "osc"),
     try (Range p <$ reserved "range"),
+    try (Clear p <$ reserved "clear"),
     try thisRef,
     try semiGlobalRef
   ]

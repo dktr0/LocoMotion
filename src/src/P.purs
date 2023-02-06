@@ -90,3 +90,17 @@ readCamera :: P ValueMap
 readCamera = do
   s <- get
   pure s.program.cameraMap
+
+modifyClear :: Transformer -> P Value
+modifyClear t = do
+  cm <- readClear
+  cm' <- liftEitherParseError $ t cm
+  modify_ $ \s -> s { program = s.program { clearMap = Just cm' } }
+  pure ValueClear
+
+readClear :: P ValueMap
+readClear = do
+  s <- get
+  pure $ case s.program.clearMap of
+    Just x -> x
+    Nothing -> defaultClear

@@ -51,7 +51,7 @@ astToProgram :: AST -> P Program
 astToProgram ast = do
  traverse_ parseStatement ast
  s <- get
- pure { dancers: s.program.dancers, floors: s.program.floors, cameraMap: s.program.cameraMap }
+ pure s.program
 
 parseStatement :: Statement -> P Unit
 parseStatement (AST.Assignment _ k e) = do -- position is currently unused, but it might be used in future if we were checking validity of definition names
@@ -83,9 +83,10 @@ expressionToValue (AST.Application p e1 e2) = applicationToValue p e1 e2
 expressionToValue (AST.Transformer _ xs) = transformerToValue xs
 expressionToValue (AST.Dancer _) = newDancer
 expressionToValue (AST.Floor _) = newFloor
-expressionToValue (AST.Camera _) = pure $ ValueCamera
-expressionToValue (AST.Osc _) = pure $ ValueFunction $ oscFunction
-expressionToValue (AST.Range _) = pure $ ValueFunction $ rangeFunction
+expressionToValue (AST.Camera _) = pure ValueCamera
+expressionToValue (AST.Clear _) = pure ValueClear
+expressionToValue (AST.Osc _) = pure $ ValueFunction oscFunction
+expressionToValue (AST.Range _) = pure $ ValueFunction rangeFunction
 expressionToValue (AST.Sum _ e1 e2) = do
   v1 <- expressionToValue e1
   v2 <- expressionToValue e2
@@ -122,6 +123,9 @@ applicationToValue p eF eX = do
         ValueCamera -> do
           vmX <- readCamera
           applyTransformer tF vmX
+        ValueClear -> do
+          vmX <- readClear
+          applyTransformer tF vmX
         _ -> throwError $ ParseError "invalid argument applied to Transformer" (AST.expressionPosition eX)
     ValueDancer i _ -> do
       case x of
@@ -130,6 +134,9 @@ applicationToValue p eF eX = do
         ValueFloor _ vmX -> modifyDancer i (valueMapToTransformer vmX)
         ValueCamera -> do
           vmX <- readCamera
+          modifyDancer i (valueMapToTransformer vmX)
+        ValueClear -> do
+          vmX <- readClear
           modifyDancer i (valueMapToTransformer vmX)
         _ -> throwError $ ParseError "invalid argument applied to Dancer" (AST.expressionPosition eX)
     ValueFloor i _ -> do
@@ -140,15 +147,30 @@ applicationToValue p eF eX = do
         ValueCamera -> do
           vmX <- readCamera
           modifyFloor i (valueMapToTransformer vmX)
+        ValueClear -> do
+          vmX <- readClear
+          modifyFloor i (valueMapToTransformer vmX)
         _ -> throwError $ ParseError "invalid argument applied to Floor" (AST.expressionPosition eX)
     ValueCamera -> do
       case x of
-        -- modifyCamera :: Transformer -> P Value
         ValueTransformer tX -> modifyCamera tX
         ValueDancer _ vmX -> modifyCamera (valueMapToTransformer vmX)
         ValueFloor _ vmX -> modifyCamera (valueMapToTransformer vmX)
         ValueCamera -> pure ValueCamera
+        ValueClear -> do
+          vmX <- readClear
+          modifyCamera (valueMapToTransformer vmX)
         _ -> throwError $ ParseError "invalid argument applied to Camera" (AST.expressionPosition eX)
+    ValueClear -> do
+      case x of
+        ValueTransformer tX -> modifyClear tX
+        ValueDancer _ vmX -> modifyClear (valueMapToTransformer vmX)
+        ValueFloor _ vmX -> modifyClear (valueMapToTransformer vmX)
+        ValueCamera -> do
+          vmX <- readCamera
+          modifyClear (valueMapToTransformer vmX)
+        ValueClear -> pure ValueClear
+        _ -> throwError $ ParseError "invalid argument applied to Clear" (AST.expressionPosition eX)
     ValueFunction f' -> do
       case f' (AST.expressionPosition eX) x of
         Left pe -> throwError pe

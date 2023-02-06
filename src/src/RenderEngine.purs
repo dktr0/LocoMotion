@@ -77,8 +77,9 @@ launch cvs = do
   camera <- Three.newPerspectiveCamera 45.0 (iWidth/iHeight) 0.1 100.0
   Three.setPosition camera 0.0 1.0 10.0
 
-  renderer <- Three.newWebGLRenderer { antialias: true, canvas: cvs }
+  renderer <- Three.newWebGLRenderer { antialias: true, canvas: cvs, alpha: true }
   Three.setSize renderer iWidth iHeight false
+  Three.setClearColor renderer 0x000000 1.0
 
   tempo <- newTempo (1 % 2)
   let nCycles = 0.0
@@ -94,8 +95,8 @@ launch cvs = do
 
 evaluate :: RenderEngine -> Int -> String -> Effect (Maybe String)
 evaluate re z x = do
-  log "evaluate..."
-  x' <- parseProgramDebug x
+  -- x' <- parseProgramDebug x
+  let x' = parseProgram x
   case x' of
     Right p -> do
       ZoneMap.write z p re.programs
@@ -158,11 +159,26 @@ postAnimate re = do
     rEnv <- read re.renderEnvironment
     Three.setAspect rEnv.camera (iWidth/iHeight)
     Three.setSize rEnv.renderer iWidth iHeight false
+    setClearColor re
     Three.render rEnv.renderer rEnv.scene rEnv.camera
   -- t1 <- nowDateTime
   -- let tDiff = unwrap (diff t1 t0 :: Milliseconds)
   -- log $ "postAnimate " <> show tDiff
 
+
+setClearColor :: RenderEngine -> Effect Unit
+setClearColor re = do
+  zs <- read re.programs -- :: Map Int Program
+  let clearMaps = Map.catMaybes $ map (_.clearMap) zs -- Map Int ValueMap
+  let cm = Map.unions clearMaps
+  let c = case Map.lookup "colour" cm of
+            Just x -> valueToInt x
+            Nothing -> 0x000000
+  let a = case Map.lookup "alpha" cm of
+            Just x -> valueToNumber x
+            Nothing -> 1.0
+  rEnv <- read re.renderEnvironment
+  Three.setClearColor rEnv.renderer c a
 
 runProgram :: RenderEnvironment -> Program -> ZoneState -> Effect ZoneState
 runProgram re prog zoneState = execR re zoneState $ do

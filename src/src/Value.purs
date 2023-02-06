@@ -36,7 +36,8 @@ data Value =
   ValueFunction (Position -> Value -> Either ParseError Value) |
   ValueDancer Int ValueMap |
   ValueFloor Int ValueMap |
-  ValueCamera
+  ValueCamera |
+  ValueClear
 
 instance Show Value where
   show (ValueNumber x) = "ValueNumber " <> show x
@@ -49,6 +50,7 @@ instance Show Value where
   show (ValueDancer i vm) = "ValueDancer " <> show i <> " (" <> show vm <> ")"
   show (ValueFloor i vm) = "ValueFloor " <> show i <> " (" <> show vm <> ")"
   show ValueCamera = "ValueCamera"
+  show ValueClear = "ValueClear"
 
 
 valueToNumber :: Value -> Number
