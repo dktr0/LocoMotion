@@ -61,21 +61,21 @@ launch cvs = do
   scene <- Three.newScene
 
   hemiLight <- Three.newHemisphereLight 0xffffff 0x444444 0.8
-  Three.setPositionOfAnything hemiLight 0.0 20.0 0.0
+  Three.setPosition hemiLight 0.0 20.0 0.0
   Three.addAnythingToScene scene hemiLight
   {- Three.newAmbientLight 0xffffff 0.1 >>= Three.addAnythingToScene scene -}
   dirLight <- Three.newDirectionalLight 0xffffff 0.8
-  Three.setPositionOfAnything dirLight (-1.0) 1.0 10.0
+  Three.setPosition dirLight (-1.0) 1.0 10.0
   Three.addAnythingToScene scene dirLight
 
   {- pgh <- Three.newPolarGridHelper 10.0 8 8 8
-  Three.setPositionOfAnything pgh 0.0 0.0 0.0
+  Three.setPosition pgh 0.0 0.0 0.0
   Three.addAnythingToScene scene pgh -}
 
   iWidth <- Three.windowInnerWidth
   iHeight <- Three.windowInnerHeight
   camera <- Three.newPerspectiveCamera 45.0 (iWidth/iHeight) 0.1 100.0
-  Three.setPositionOfAnything camera 0.0 1.0 10.0
+  Three.setPosition camera 0.0 1.0 10.0
 
   renderer <- Three.newWebGLRenderer { antialias: true, canvas: cvs }
   Three.setSize renderer iWidth iHeight false

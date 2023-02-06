@@ -84,7 +84,7 @@ updateTransforms valueMap s = do
   sz <- realizeNumber "sz" 1.0 valueMap
   size <- realizeNumber "size" 1.0 valueMap
   liftEffect $ whenMaybeRef s.model $ \m -> do
-    Three.setPositionOfAnything m.scene x y z
+    Three.setPosition m.scene x y z
     Three.setRotationOfAnything m.scene rx ry rz
     Three.setScaleOfAnything m.scene (sx*size) (sy*size) (sz*size)
 
