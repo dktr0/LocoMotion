@@ -6,13 +6,15 @@ module R where
 -- in other words, a LocoMotion program is a structure of such render-actions
 -- they have access to a RenderState (State monad) and RenderEnvironment (Reader monad)
 
-import Prelude (bind,($),pure)
+import Prelude (bind,($),pure,mod)
 import Effect (Effect)
 import Control.Monad.State.Trans
 import Control.Monad.Reader.Trans
 import ThreeJS as Three
 import Data.Tempo (Tempo)
 import Effect.Ref (Ref)
+import Data.Array (replicate,updateAt)
+import Data.Maybe (fromMaybe)
 
 import MaybeRef
 import Variable
@@ -42,9 +44,7 @@ defaultZoneState = { dancers: [], floors: [] }
 type DancerState =
   {
   url :: Ref String,
-  model :: MaybeRef Model,
-  prevAnimationIndex :: Ref Int, -- OBSOLETE: will be removed when MixerState refactor complete
-  prevAnimationAction :: MaybeRef Three.AnimationAction -- OBSOLETE: will be removed when MixerState refactor complete
+  model :: MaybeRef Model
   }
 
 type Model = {
@@ -56,6 +56,12 @@ type Model = {
   }
 
 type MixerState = Array Number
+
+intToMixerState :: Int -> Int -> Array Number
+intToMixerState nAnimations n = fromMaybe allZeros $ updateAt n' 1.0 allZeros
+  where
+    n' = mod n nAnimations
+    allZeros = replicate nAnimations 0.0
 
 type FloorState = {
   mesh :: Three.Mesh,

@@ -15,6 +15,7 @@ import ThreeJS as Three
 import Data.Rational
 import Data.Ratio
 import Data.Traversable (traverse,traverse_)
+import Data.FoldableWithIndex (traverseWithIndex_)
 import Data.Map (Map)
 import Control.Monad.Reader.Trans (ask)
 
@@ -22,26 +23,6 @@ import URL
 import Value
 import MaybeRef
 import R
-
-
-
-
--- the state of the animation system is represented as an array of floating point weights
--- this is cached in the Model after update, so that in succeeding frames, the calculated
--- MixerState (calculated from AnimationExpr + "environment") can be compared to determine
--- if any update to the underlying AnimationMixer is required or not.
-
-
-
-{-
-animationExprToMixerState :: AnimationExpr -> Array Three.AnimationAction -> Effect MixerState
-animationExprToMixerState (AnimationIndexInt i) actions = pure $ ... an array where weight of i is 1.0 and all other weights is 0
-animationExprToMixerState (AnimationIndexString s) actions = do
-  i <- ...figure out the int index of the animation indexed by s...
-  pure $ exprToMixerState (AnimationIndexInt i) actions
-animationExprToAnimationMixerState (AnimationMix xs) actions = do
-  ...xs :: (List (Tuple AnimationExpr Variable)) -- example: ["headroll" 0.5, "legroll" (osc 0.5 * 0.2)]
--}
 
 
 runDancerWithState :: ValueMap -> Maybe DancerState -> R DancerState
@@ -59,7 +40,7 @@ loadModelIfNecessary vm Nothing = do
   model <- liftEffect $ new Nothing
   prevAnimationIndex <- liftEffect $ new (-9999)
   prevAnimationAction <- liftEffect $ new Nothing
-  let s = { url, model, prevAnimationIndex, prevAnimationAction }
+  let s = { url, model }
   loadModel urlProg s
   pure s
 loadModelIfNecessary vm (Just s) = do
@@ -93,10 +74,31 @@ updateAnimation :: ValueMap -> DancerState -> R Unit
 updateAnimation valueMap s = do
   env <- ask
   liftEffect $ whenMaybeRef s.model $ \m -> do
-    playAnimation s $ lookupInt 0 "animation" valueMap
-    let dur = lookupNumber 1.0 "dur" valueMap
-    updateAnimationDuration s $ dur * env.cycleDur
+    prevMixerState <- read m.mixerState
+    let newMixerState = intToMixerState (length m.actions) $ lookupInt 0 "animation" valueMap
+    when (prevMixerState /= newMixerState) $ do
+      let dur = lookupNumber 1.0 "dur" valueMap * env.cycleDur
+      -- log $ "prevMixerState /= newMixerState, dur = " <> show dur
+      -- log $ show prevMixerState <> " ... " <> show newMixerState
+      traverseWithIndex_ (updateAnimationAction m dur) newMixerState
+      write newMixerState m.mixerState
     Three.updateAnimationMixer m.mixer env.delta
+
+
+updateAnimationAction :: Model -> Number -> Int -> Number -> Effect Unit
+updateAnimationAction m dur i weight = do
+  case m.actions!!i of
+    Just a -> do
+      case weight of
+        0.0 -> do
+          -- log $ "stopping action" <> show i
+          Three.stop a
+        _ -> do
+          -- log $ "updating action " <> show i <> " with weight " <> show weight <> " and duration " <> show dur
+          Three.setEffectiveTimeScale a 1.0
+          Three.playAnything a
+          Three.setDuration a dur
+    Nothing -> log "strange error in LocoMotion: updateAnimationAction, should not be possible"
 
 
 loadModel :: String -> DancerState -> R Unit
@@ -109,10 +111,6 @@ loadModel url s = do
     Three.addAnything env.scene gltf.scene
     m <- gltfToModel gltf
     write (Just m) s.model
-    animIndex <- read s.prevAnimationIndex
-    case animIndex of
-      (-9999) -> playAnimation s 0
-      x -> playAnimation s x
   pure unit
 
 gltfToModel :: Three.GLTF -> Effect Model
@@ -129,7 +127,7 @@ removeDancer s = do
    liftEffect $ whenMaybeRef s.model $ \m -> Three.removeObject3D env.scene m.scene
 
 
-playAnimation :: DancerState -> Int -> Effect Unit
+{- playAnimation :: DancerState -> Int -> Effect Unit
 playAnimation s n = whenMaybeRef s.model $ \m -> do
   let nActions = length m.actions
   prevN <- read s.prevAnimationIndex
@@ -149,6 +147,6 @@ playAnimation s n = whenMaybeRef s.model $ \m -> do
       Nothing -> log "strange error in LocoMotion: DancerState: playAnimation"
     write n s.prevAnimationIndex
 
-
 updateAnimationDuration :: DancerState -> Number -> Effect Unit
 updateAnimationDuration s dur = whenMaybeRef s.prevAnimationAction $ \a -> Three.setDuration a dur
+-}
