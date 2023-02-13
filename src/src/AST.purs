@@ -242,7 +242,7 @@ transformer = do
 modifier :: P (Tuple String Expression)
 modifier = do
   k <- identifier
-  reservedOp "="
+  (reservedOp "=" <|> reservedOp ":")
   e <- expression
   pure $ Tuple k e
 
