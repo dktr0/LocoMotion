@@ -26,6 +26,7 @@ main = launchAff_ $ runSpec [consoleReporter] do
     it "parses just dancer assigned" $ parseAST "x=dancer" `shouldEqual` (Right (Assignment ((Position { column: 1, index: 0, line: 1 })) "x" (Dancer ((Position { column: 3, index: 2, line: 1 }))) : Nil))
     it "parses an int" $ parseAST "3" `shouldEqual` (Right (Action (LiteralInt ((Position { column: 1, index: 0, line: 1 })) 3) : Nil))
     it "parses a number" $ parseAST "3.5" `shouldEqual` (Right (Action (LiteralNumber ((Position { column: 1, index: 0, line: 1 })) 3.5) : Nil))
+    it "parses a string literal" $ parseAST "\"literal\"" `shouldEqual` (Right (Action ((LiteralString ((Position { column: 1, index: 0, line: 1 })) "literal")) : Nil))
     it "parses an empty transformer" $ parseAST "{}" `shouldEqual` (Right (Action (Transformer ((Position { column: 1, index: 0, line: 1 })) (Nil)) : Nil))
     it "parses a transformer with a URL" $ parseAST "{ url=\"lisa.glb\"}" `shouldEqual` (Right (Action (Transformer ((Position { column: 1, index: 0, line: 1 })) (((Tuple "url" (LiteralString ((Position { column: 7, index: 6, line: 1 })) "lisa.glb")) : Nil))) : Nil))
     it "parses just osc" $ parseAST "osc" `shouldEqual` (Right (Action (Osc ((Position { column: 1, index: 0, line: 1 }))) : Nil))

@@ -73,7 +73,7 @@ updateAnimation valueMap s = do
   env <- ask
   liftEffect $ whenMaybeRef s.model $ \m -> do
     prevMixerState <- read m.mixerState
-    let newMixerState = valueToMixerState (length m.actions) $ lookupValue (ValueInt 0) "animation" valueMap
+    let newMixerState = valueToMixerState m $ lookupValue (ValueInt 0) "animation" valueMap
     when (prevMixerState /= newMixerState) $ do
       let dur = lookupNumber 1.0 "dur" valueMap * env.cycleDur
       -- log $ "prevMixerState /= newMixerState, dur = " <> show dur
@@ -118,10 +118,11 @@ logAnimation i x = log $ " " <> show i <> ": " <> show x.name
 
 gltfToModel :: Three.GLTF -> Effect Model
 gltfToModel gltf = do
+  let clipNames = map (_.name) gltf.animations
   mixer <- Three.newAnimationMixer gltf.scene -- make an animation mixer
   actions <- traverse (Three.clipAction mixer) gltf.animations -- convert all animations to AnimationActions connected to the animation mixer
   mixerState <- new []
-  pure { scene: gltf.scene, clips: gltf.animations, mixer, actions, mixerState }
+  pure { scene: gltf.scene, clips: gltf.animations, clipNames, mixer, actions, mixerState }
 
 
 removeDancer :: DancerState -> R Unit

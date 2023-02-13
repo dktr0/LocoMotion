@@ -13,7 +13,7 @@ import Control.Monad.Reader.Trans
 import ThreeJS as Three
 import Data.Tempo (Tempo)
 import Effect.Ref (Ref)
-import Data.Array (replicate,updateAt)
+import Data.Array (replicate,updateAt,length,elemIndex)
 import Data.Maybe (fromMaybe)
 import Data.Int (floor)
 
@@ -51,6 +51,7 @@ type DancerState =
 type Model = {
   scene :: Three.Scene,
   clips :: Array Three.AnimationClip,
+  clipNames :: Array String,
   mixer :: Three.AnimationMixer,
   actions :: Array Three.AnimationAction,
   mixerState :: Ref MixerState
@@ -58,9 +59,13 @@ type Model = {
 
 type MixerState = Array Number
 
-valueToMixerState :: Int -> Value -> Array Number
-valueToMixerState nAnimations (ValueInt i) = intToMixerState nAnimations i
-valueToMixerState nAnimations (ValueNumber n) = intToMixerState nAnimations (floor n) -- later: could be a crossfade
+valueToMixerState :: Model -> Value -> Array Number
+valueToMixerState m (ValueInt i) = intToMixerState (length m.actions) i
+valueToMixerState m (ValueNumber n) = intToMixerState (length m.actions) (floor n) -- later: could be a crossfade
+valueToMixerState m (ValueString v) = fromMaybe allZeros $ updateAt n' 1.0 allZeros
+  where
+    n' = fromMaybe 0 $ elemIndex v m.clipNames
+    allZeros = replicate (length m.actions) 0.0
 valueToMixerState _ _ = []
 
 intToMixerState :: Int -> Int -> Array Number
