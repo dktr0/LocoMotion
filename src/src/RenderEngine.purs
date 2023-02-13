@@ -100,10 +100,10 @@ evaluate re z x = do
   case x' of
     Right p -> do
       ZoneMap.write z p re.programs
-      log "evaluate completed with no error"
+      -- log "evaluate completed with no error"
       pure Nothing
     Left err -> do
-      log "evaluate completed with error"
+      -- log "evaluate completed with error"
       pure $ Just err
 
 

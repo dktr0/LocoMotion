@@ -38,8 +38,6 @@ loadModelIfNecessary vm Nothing = do
   let urlProg = lookupString "raccoon.glb" "url" vm
   url <- liftEffect $ new urlProg
   model <- liftEffect $ new Nothing
-  prevAnimationIndex <- liftEffect $ new (-9999)
-  prevAnimationAction <- liftEffect $ new Nothing
   let s = { url, model }
   loadModel urlProg s
   pure s
@@ -75,7 +73,7 @@ updateAnimation valueMap s = do
   env <- ask
   liftEffect $ whenMaybeRef s.model $ \m -> do
     prevMixerState <- read m.mixerState
-    let newMixerState = intToMixerState (length m.actions) $ lookupInt 0 "animation" valueMap
+    let newMixerState = valueToMixerState (length m.actions) $ lookupValue (ValueInt 0) "animation" valueMap
     when (prevMixerState /= newMixerState) $ do
       let dur = lookupNumber 1.0 "dur" valueMap * env.cycleDur
       -- log $ "prevMixerState /= newMixerState, dur = " <> show dur
@@ -108,10 +106,15 @@ loadModel url s = do
   let url' = resolveURL url
   _ <- liftEffect $ Three.loadGLTF_DRACO "https://dktr0.github.io/LocoMotion/threejs/" url' $ \gltf -> do
     log $ "model " <> url' <> " loaded with " <> show (length gltf.animations) <> " animations"
+    traverseWithIndex_ logAnimation gltf.animations
     Three.addAnything env.scene gltf.scene
     m <- gltfToModel gltf
     write (Just m) s.model
   pure unit
+
+logAnimation :: Int -> Three.AnimationClip -> Effect Unit
+logAnimation i x = log $ " " <> show i <> ": " <> show x.name
+
 
 gltfToModel :: Three.GLTF -> Effect Model
 gltfToModel gltf = do
@@ -125,28 +128,3 @@ removeDancer :: DancerState -> R Unit
 removeDancer s = do
    env <- ask
    liftEffect $ whenMaybeRef s.model $ \m -> Three.removeObject3D env.scene m.scene
-
-
-{- playAnimation :: DancerState -> Int -> Effect Unit
-playAnimation s n = whenMaybeRef s.model $ \m -> do
-  let nActions = length m.actions
-  prevN <- read s.prevAnimationIndex
-  when ((prevN /= n) && (nActions > 0)) $ do
-    let n' = mod n nActions
-    case m.actions!!n' of
-      Just newAction -> do
-        z <- read s.prevAnimationAction
-        case z of
-          Just oldAction -> do
-            Three.stop oldAction
-            Three.playAnything newAction
-          Nothing -> do
-            Three.setEffectiveTimeScale newAction 1.0
-            Three.playAnything newAction
-        write (Just newAction) s.prevAnimationAction
-      Nothing -> log "strange error in LocoMotion: DancerState: playAnimation"
-    write n s.prevAnimationIndex
-
-updateAnimationDuration :: DancerState -> Number -> Effect Unit
-updateAnimationDuration s dur = whenMaybeRef s.prevAnimationAction $ \a -> Three.setDuration a dur
--}

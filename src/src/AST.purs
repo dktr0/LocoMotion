@@ -14,10 +14,10 @@ import Parsing (Position(..),position, ParseError,runParser)
 import Parsing.Combinators (chainl1, choice, lookAhead, try, (<|>), many)
 import Parsing.String (eof)
 import Data.Foldable (foldl)
-import Data.Either (Either)
+import Data.Either (Either(..))
 
 
-import TokenParser (P, boolean, commaSep, identifier, integer, number, parens, reserved, reservedOp, semiSep, stringLiteral, whiteSpace)
+import TokenParser (P, boolean, commaSep, identifier, integer, number, parens, reserved, reservedOp, semiSep, stringLiteral, whiteSpace, naturalOrFloat)
 
 
 type AST = List Statement
@@ -185,9 +185,8 @@ expression'' = do
     parens expression,
     try transformer,
     try application,
-    try $ LiteralNumber p <$> number,
+    try intOrNumber,
     try $ LiteralString p <$> stringLiteral,
-    try $ LiteralInt p <$> integer,
     try $ LiteralBoolean p <$> boolean,
     try (Dancer p <$ reserved "dancer"),
     try (Floor p <$ reserved "floor"),
@@ -216,9 +215,8 @@ argument = do
   choice [
     parens expression,
     try transformer,
-    try $ LiteralNumber p <$> number,
+    try intOrNumber,
     try $ LiteralString p <$> stringLiteral,
-    try $ LiteralInt p <$> integer,
     try $ LiteralBoolean p <$> boolean,
     try (Dancer p <$ reserved "dancer"),
     try (Floor p <$ reserved "floor"),
@@ -229,6 +227,14 @@ argument = do
     try thisRef,
     try semiGlobalRef
   ]
+
+intOrNumber :: P Expression
+intOrNumber = do
+  p <- position
+  x <- naturalOrFloat
+  case x of
+    Left i -> pure $ LiteralInt p i
+    Right f -> pure $ LiteralNumber p f
 
 transformer :: P Expression
 transformer = do

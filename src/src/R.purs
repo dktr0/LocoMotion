@@ -15,6 +15,7 @@ import Data.Tempo (Tempo)
 import Effect.Ref (Ref)
 import Data.Array (replicate,updateAt)
 import Data.Maybe (fromMaybe)
+import Data.Int (floor)
 
 import MaybeRef
 import Variable
@@ -56,6 +57,11 @@ type Model = {
   }
 
 type MixerState = Array Number
+
+valueToMixerState :: Int -> Value -> Array Number
+valueToMixerState nAnimations (ValueInt i) = intToMixerState nAnimations i
+valueToMixerState nAnimations (ValueNumber n) = intToMixerState nAnimations (floor n) -- later: could be a crossfade
+valueToMixerState _ _ = []
 
 intToMixerState :: Int -> Int -> Array Number
 intToMixerState nAnimations n = fromMaybe allZeros $ updateAt n' 1.0 allZeros
