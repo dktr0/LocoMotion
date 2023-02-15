@@ -11,7 +11,7 @@ import Prelude
 import Data.List (List(..),(:))
 import Data.Tuple (Tuple(..))
 import Parsing (Position(..),position, ParseError,runParser)
-import Parsing.Combinators (chainl1, choice, lookAhead, try, (<|>), many)
+import Parsing.Combinators (chainl1, choice, lookAhead, try, (<|>), many, option)
 import Parsing.String (eof)
 import Data.Foldable (foldl)
 import Data.Either (Either(..))
@@ -231,10 +231,11 @@ argument = do
 intOrNumber :: P Expression
 intOrNumber = do
   p <- position
+  isPositive <- option true (false <$ reservedOp "-")
   x <- naturalOrFloat
   case x of
-    Left i -> pure $ LiteralInt p i
-    Right f -> pure $ LiteralNumber p f
+    Left i -> if isPositive then (pure $ LiteralInt p i) else (pure $ LiteralInt p (i*(-1)))
+    Right f -> if isPositive then (pure $ LiteralNumber p f) else (pure $ LiteralNumber p (f*(-1.0)))
 
 transformer :: P Expression
 transformer = do
