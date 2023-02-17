@@ -6,7 +6,7 @@ module Value where
 -- implicitly cast it to any of the other types in particular circumstances where the
 -- Value is consumed.
 
-import Prelude (identity, ($), class Show, show, (/=), class Semiring, class Ring, (/), (+), (-), (*), pure, (<>), bind, discard, (>>=), map, unit)
+import Prelude
 import Data.Int (toNumber,floor)
 import Data.Map (Map, lookup, insert, fromFoldable, empty, union)
 import Data.Array as Array
@@ -40,15 +40,15 @@ data Value =
   ValueClear
 
 instance Show Value where
-  show (ValueNumber x) = "ValueNumber " <> show x
-  show (ValueString x) = "ValueString " <> show x
-  show (ValueInt x) = "ValueInt " <> show x
-  show (ValueBoolean x) = "ValueBoolean " <> show x
-  show (ValueVariable x) = "ValueVariable..."
+  show (ValueNumber x) = "(ValueNumber " <> show x <> ")"
+  show (ValueString x) = "(ValueString " <> show x <> ")"
+  show (ValueInt x) = "(ValueInt " <> show x <> ")"
+  show (ValueBoolean x) = "(ValueBoolean " <> show x <> ")"
+  show (ValueVariable x) = "(ValueVariable " <> show x <> ")"
   show (ValueTransformer _) = "ValueTransformer..."
-  show (ValueFunction _) = "ValueTransformer... "
-  show (ValueDancer i vm) = "ValueDancer " <> show i <> " (" <> show vm <> ")"
-  show (ValueFloor i vm) = "ValueFloor " <> show i <> " (" <> show vm <> ")"
+  show (ValueFunction _) = "ValueFunction... "
+  show (ValueDancer i vm) = "(ValueDancer " <> show i <> " (" <> show vm <> "))"
+  show (ValueFloor i vm) = "(ValueFloor " <> show i <> " (" <> show vm <> "))"
   show ValueCamera = "ValueCamera"
   show ValueClear = "ValueClear"
 
@@ -82,11 +82,11 @@ valueToBoolean (ValueBoolean x) = x
 valueToBoolean _ = false
 
 valueToVariable :: Value -> Variable
-valueToVariable (ValueNumber x) = constantVariable x
-valueToVariable (ValueInt x) = constantVariable $ toNumber x
-valueToVariable (ValueBoolean true) = constantVariable 1.0
+valueToVariable (ValueNumber x) = ConstantVariable x
+valueToVariable (ValueInt x) = ConstantVariable $ toNumber x
+valueToVariable (ValueBoolean true) = ConstantVariable 1.0
 valueToVariable (ValueVariable x) = x
-valueToVariable _ = constantVariable 0.0
+valueToVariable _ = ConstantVariable 0.0
 
 valueToTransformer :: Value -> Transformer
 valueToTransformer (ValueTransformer x) = x
@@ -95,19 +95,37 @@ valueToTransformer (ValueTransformer x) = x
 valueToTransformer _ = pure
 
 instance Semiring Value where
-  add (ValueNumber x) y = ValueNumber $ x + valueToNumber y
-  add x (ValueNumber y) = ValueNumber $ valueToNumber x + y
-  add x y = ValueInt $ valueToInt x + valueToInt y
   zero = ValueInt 0
-  mul (ValueNumber x) y = ValueNumber $ x * valueToNumber y
-  mul x (ValueNumber y) = ValueNumber $ valueToNumber x * y
-  mul x y = ValueInt $ valueToInt x * valueToInt y
   one = ValueInt 1
+  add (ValueVariable x) (ValueVariable y) = ValueVariable $ x + y
+  add (ValueVariable x) y = ValueVariable $ x + (ConstantVariable $ valueToNumber y)
+  add x (ValueVariable y) = ValueVariable $ (ConstantVariable $ valueToNumber x) + y
+  add (ValueInt x) (ValueInt y) = ValueInt $ x + y
+  add x y = ValueNumber $ valueToNumber x + valueToNumber y
+  mul (ValueVariable x) (ValueVariable y) = ValueVariable $ x * y
+  mul (ValueVariable x) y = ValueVariable $ x * (ConstantVariable $ valueToNumber y)
+  mul x (ValueVariable y) = ValueVariable $ (ConstantVariable $ valueToNumber x) * y
+  mul (ValueInt x) (ValueInt y) = ValueInt $ x * y
+  mul x y = ValueNumber $ valueToNumber x * valueToNumber y
 
 instance Ring Value where
-  sub (ValueNumber x) y = ValueNumber $ x - valueToNumber y
-  sub x (ValueNumber y) = ValueNumber $ valueToNumber x - y
-  sub x y = ValueInt $ valueToInt x - valueToInt y
+  sub (ValueVariable x) (ValueVariable y) = ValueVariable $ x - y
+  sub (ValueVariable x) y = ValueVariable $ x - (ConstantVariable $ valueToNumber y)
+  sub x (ValueVariable y) = ValueVariable $ (ConstantVariable $ valueToNumber x) - y
+  sub (ValueInt x) (ValueInt y) = ValueInt $ x - y
+  sub x y = ValueNumber $ valueToNumber x - valueToNumber y
+
+instance Eq Value where
+  eq (ValueNumber x) (ValueNumber y) = x == y
+  eq (ValueString x) (ValueString y) = x == y
+  eq (ValueInt x) (ValueInt y) = x == y
+  eq (ValueBoolean x) (ValueBoolean y) = x == y
+  eq (ValueVariable x) (ValueVariable y) = x == y
+  eq (ValueDancer i1 x) (ValueDancer i2 y) = i1 == i2 && x == y
+  eq (ValueFloor i1 x) (ValueFloor i2 y) = i1 == i2 && x == y
+  eq ValueCamera ValueCamera = true
+  eq ValueClear ValueClear = true
+  eq _ _ = false
 
 divideValues :: Value -> Value -> Value
 divideValues x y = ValueNumber $ f (valueToNumber x) (valueToNumber y)

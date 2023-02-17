@@ -180,14 +180,14 @@ applicationToValue p eF eX = do
 -- Miscellaneous functions
 
 oscFunction :: Position -> Value -> Either ParseError Value
-oscFunction _ (ValueVariable (Variable f)) = pure $ ValueVariable $ Variable $ \nCycles -> sin $ f nCycles * nCycles * 2.0 * pi
-oscFunction _ (ValueNumber f) = pure $ ValueVariable $ Variable $ \nCycles -> sin $ f * nCycles * 2.0 * pi
-oscFunction p (ValueInt f) = oscFunction p (ValueNumber $ toNumber f)
+oscFunction _ (ValueVariable f) = pure $ ValueVariable $ Osc f
+oscFunction _ (ValueNumber f) = pure $ ValueVariable $ Osc $ ConstantVariable f
+oscFunction _ (ValueInt f) = pure $ ValueVariable $ Osc $ ConstantVariable $ toNumber f
 oscFunction p _ = throwError $ ParseError "argument to osc must be Variable/Number/Int" p
 
 rangeFunction :: Position -> Value -> Either ParseError Value
 rangeFunction _ r1 = pure $ ValueFunction (\_ r2 -> pure $ ValueFunction (\_ x -> pure $ ValueVariable $ f (valueToVariable r1) (valueToVariable r2) (valueToVariable x)))
-  where f (Variable r1') (Variable r2') (Variable x') = Variable $ \nCycles -> (x' nCycles * 0.5 + 0.5) * (r2' nCycles - r1' nCycles) + r1' nCycles
+  where f r1' r2' x' = (x' * ConstantVariable 0.5 + ConstantVariable 0.5) * (r2' - r1') + r1'
 
 
 -- Transformers
