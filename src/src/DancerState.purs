@@ -29,8 +29,9 @@ import R
 runDancerWithState :: ValueMap -> Maybe DancerState -> R DancerState
 runDancerWithState vm maybeDancerState = do
   s <- loadModelIfNecessary vm maybeDancerState
-  updateTransforms vm s
-  updateAnimation vm s
+  whenMaybeRef s.model $ \m -> do
+    updateTransforms vm m.scene
+    updateAnimation vm s
   pure s
 
 
@@ -49,27 +50,6 @@ loadModelIfNecessary vm (Just s) = do
     removeDancer s
     loadModel urlProg s
   pure s
-
-
-updateTransforms :: ValueMap -> DancerState -> R Unit
-updateTransforms valueMap s = do
-  x <- realizeNumber "x" 0.0 valueMap
-  y <- realizeNumber "y" 0.0 valueMap
-  z <- realizeNumber "z" 0.0 valueMap
-  rx <- realizeNumber "rx" 0.0 valueMap
-  ry <- realizeNumber "ry" 0.0 valueMap
-  rz <- realizeNumber "rz" 0.0 valueMap
-  let rx' = rx*pi/180.0
-  let ry' = ry*pi/180.0
-  let rz' = rz*pi/180.0
-  sx <- realizeNumber "sx" 1.0 valueMap
-  sy <- realizeNumber "sy" 1.0 valueMap
-  sz <- realizeNumber "sz" 1.0 valueMap
-  size <- realizeNumber "size" 1.0 valueMap
-  liftEffect $ whenMaybeRef s.model $ \m -> do
-    Three.setPosition m.scene x y z
-    Three.setRotation m.scene rx' ry' rz'
-    Three.setScaleOfAnything m.scene (sx*size) (sy*size) (sz*size)
 
 
 updateAnimation :: ValueMap -> DancerState -> R Unit

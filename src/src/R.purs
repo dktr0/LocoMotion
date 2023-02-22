@@ -6,16 +6,20 @@ module R where
 -- in other words, a LocoMotion program is a structure of such render-actions
 -- they have access to a RenderState (State monad) and RenderEnvironment (Reader monad)
 
-import Prelude (bind,($),pure,mod)
+import Prelude
 import Effect (Effect)
+import Effect.Console (log)
+import Effect.Class (liftEffect)
 import Control.Monad.State.Trans
 import Control.Monad.Reader.Trans
 import ThreeJS as Three
 import Data.Tempo (Tempo)
 import Effect.Ref (Ref)
 import Data.Array (replicate,updateAt,length,elemIndex)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe,isJust)
 import Data.Int (floor)
+import Data.Map as Map
+import Data.Number (pi)
 
 import MaybeRef
 import Variable
@@ -97,3 +101,47 @@ realizeNumber k def valueMap = do
       env <- ask
       pure $ realizeVariable env.nCycles x
     _ -> pure $ valueToNumber v
+
+
+updateTransforms :: forall a. Three.Object3D a => ValueMap -> a -> R Unit
+updateTransforms vm a = do
+  -- position
+  x <- realizeNumber "x" 0.0 vm
+  y <- realizeNumber "y" 0.0 vm
+  z <- realizeNumber "z" 0.0 vm
+  liftEffect $ Three.setPosition a x y z
+  -- scale
+  sx <- realizeNumber "sx" 1.0 vm
+  sy <- realizeNumber "sy" 1.0 vm
+  sz <- realizeNumber "sz" 1.0 vm
+  size <- realizeNumber "size" 1.0 vm
+  liftEffect $ Three.setScaleOfAnything a (sx*size) (sy*size) (sz*size)
+  -- rotation (and lookAt behaviour)
+  let mlx = Map.lookup "lx" vm
+  let mly = Map.lookup "ly" vm
+  let mlz = Map.lookup "lz" vm
+  case isJust mlx || isJust mly || isJust mlz of
+    true -> do
+      lx <- realizeNumber "lx" 0.0 vm
+      ly <- realizeNumber "ly" 0.0 vm
+      lz <- realizeNumber "lz" 0.0 vm
+      -- liftEffect $ log $ "lx ly lz " <> show lx <> " " <> show ly <> " " <> show lz
+      rxDelta <- realizeNumber "rx" 0.0 vm
+      ryDelta <- realizeNumber "ry" 0.0 vm
+      rzDelta <- realizeNumber "rz" 0.0 vm
+      liftEffect $ Three.lookAt a lx ly lz
+      rx0 <- liftEffect $ Three.getRotationX a
+      ry0 <- liftEffect $ Three.getRotationY a
+      rz0 <- liftEffect $ Three.getRotationZ a
+      let rx = rx0+(rxDelta*pi/180.0)
+      let ry = ry0+(ryDelta*pi/180.0)
+      let rz = rz0+(rzDelta*pi/180.0)
+      liftEffect $ Three.setRotation a rx ry rz
+    false -> do
+      rx <- realizeNumber "rx" 0.0 vm
+      ry <- realizeNumber "ry" 0.0 vm
+      rz <- realizeNumber "rz" 0.0 vm
+      let rx' = rx*pi/180.0
+      let ry' = ry*pi/180.0
+      let rz' = rz*pi/180.0
+      liftEffect $ Three.setRotation a rx' ry' rz'
