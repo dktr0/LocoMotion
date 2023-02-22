@@ -5,6 +5,7 @@ module DancerState (
   where
 
 import Prelude
+import Data.Number (pi)
 import Data.Array
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
@@ -58,13 +59,16 @@ updateTransforms valueMap s = do
   rx <- realizeNumber "rx" 0.0 valueMap
   ry <- realizeNumber "ry" 0.0 valueMap
   rz <- realizeNumber "rz" 0.0 valueMap
+  let rx' = rx*pi/180.0
+  let ry' = ry*pi/180.0
+  let rz' = rz*pi/180.0
   sx <- realizeNumber "sx" 1.0 valueMap
   sy <- realizeNumber "sy" 1.0 valueMap
   sz <- realizeNumber "sz" 1.0 valueMap
   size <- realizeNumber "size" 1.0 valueMap
   liftEffect $ whenMaybeRef s.model $ \m -> do
     Three.setPosition m.scene x y z
-    Three.setRotationOfAnything m.scene rx ry rz
+    Three.setRotation m.scene rx' ry' rz'
     Three.setScaleOfAnything m.scene (sx*size) (sy*size) (sz*size)
 
 

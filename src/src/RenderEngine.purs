@@ -15,6 +15,7 @@ import Effect.Ref (Ref, new, read, write)
 import Effect.Console (log)
 import Data.Array (length,drop,take,index,updateAt,snoc)
 import Data.Foldable (foldM,foldl)
+import Data.Number (pi)
 import Data.Map as Map
 import Data.Maybe
 import Data.Either
@@ -235,9 +236,33 @@ runCamera vm = do
   setCameraProperty "x" 0.0 vm (Three.setPositionX re.camera)
   setCameraProperty "y" 1.0 vm (Three.setPositionY re.camera)
   setCameraProperty "z" 10.0 vm (Three.setPositionZ re.camera)
-  setCameraProperty "rx" 0.0 vm (Three.setRotationX re.camera)
-  setCameraProperty "ry" 0.0 vm (Three.setRotationY re.camera)
-  setCameraProperty "rz" 0.0 vm (Three.setRotationZ re.camera)
+  let mlx = Map.lookup "lx" vm
+  let mly = Map.lookup "ly" vm
+  let mlz = Map.lookup "lz" vm
+  case isJust mlx || isJust mly || isJust mlz of
+    true -> do
+      lx <- realizeNumber "lx" 0.0 vm
+      ly <- realizeNumber "ly" 0.0 vm
+      lz <- realizeNumber "lz" 0.0 vm
+      rxDelta <- realizeNumber "rx" 0.0 vm
+      ryDelta <- realizeNumber "rx" 0.0 vm
+      rzDelta <- realizeNumber "rx" 0.0 vm
+      liftEffect $ Three.lookAt re.camera lx ly lz
+      rx0 <- liftEffect $ Three.getRotationX re.camera
+      ry0 <- liftEffect $ Three.getRotationY re.camera
+      rz0 <- liftEffect $ Three.getRotationZ re.camera
+      let rx = rx0+(rxDelta*pi/180.0)
+      let ry = ry0+(ryDelta*pi/180.0)
+      let rz = rz0+(rzDelta*pi/180.0)
+      liftEffect $ Three.setRotation re.camera rx ry rz
+    false -> do
+      rx <- realizeNumber "rx" 0.0 vm
+      ry <- realizeNumber "rx" 0.0 vm
+      rz <- realizeNumber "rx" 0.0 vm
+      let rx' = rx*pi/180.0
+      let ry' = ry*pi/180.0
+      let rz' = rz*pi/180.0
+      liftEffect $ Three.setRotation re.camera rx' ry' rz'
 
 setCameraProperty :: String -> Number -> ValueMap -> (Number -> Effect Unit) -> R Unit
 setCameraProperty k d vm f = do
