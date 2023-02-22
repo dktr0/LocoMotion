@@ -54,7 +54,8 @@ type Model = {
   clipNames :: Array String,
   mixer :: Three.AnimationMixer,
   actions :: Array Three.AnimationAction,
-  mixerState :: Ref MixerState
+  mixerState :: Ref MixerState,
+  durState :: Ref Number
   }
 
 type MixerState = Array Number
