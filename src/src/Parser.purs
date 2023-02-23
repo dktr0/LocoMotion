@@ -87,6 +87,12 @@ expressionToValue (AST.Camera _) = pure ValueCamera
 expressionToValue (AST.Clear _) = pure ValueClear
 expressionToValue (AST.Osc _) = pure $ ValueFunction oscFunction
 expressionToValue (AST.Range _) = pure $ ValueFunction rangeFunction
+expressionToValue (AST.Ambient p) = throwError $ ParseError "placeholder" p
+expressionToValue (AST.Directional p) = throwError $ ParseError "placeholder" p
+expressionToValue (AST.Hemisphere p) = throwError $ ParseError "placeholder" p
+expressionToValue (AST.Point p) = throwError $ ParseError "placeholder" p
+expressionToValue (AST.RectArea p) = throwError $ ParseError "placeholder" p
+expressionToValue (AST.Spot p) = throwError $ ParseError "placeholder" p
 expressionToValue (AST.Sum _ e1 e2) = do
   v1 <- expressionToValue e1
   v2 <- expressionToValue e2

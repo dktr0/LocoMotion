@@ -46,6 +46,8 @@ parseAST x = runParser x ast
 
 data Expression =
   Dancer Position | Floor Position | Camera Position | Osc Position | Range Position | Clear Position |
+  Ambient Position | Directional Position | Hemisphere Position |
+  Point Position | RectArea Position | Spot Position |
   LiteralNumber Position Number |
   LiteralString Position String |
   LiteralInt Position Int |
@@ -66,6 +68,12 @@ instance Eq Expression where
   eq (Osc p1) (Osc p2) = p1 == p2
   eq (Range p1) (Range p2) = p1 == p2
   eq (Clear p1) (Clear p2) = p1 == p2
+  eq (Ambient p1) (Ambient p2) = p1 == p2
+  eq (Directional p1) (Directional p2) = p1 == p2
+  eq (Hemisphere p1) (Hemisphere p2) = p1 == p2
+  eq (Point p1) (Point p2) = p1 == p2
+  eq (RectArea p1) (RectArea p2) = p1 == p2
+  eq (Spot p1) (Spot p2) = p1 == p2
   eq (LiteralNumber p1 x1) (LiteralNumber p2 x2) = p1 == p2 && x1 == x2
   eq (LiteralString p1 x1) (LiteralString p2 x2) = p1 == p2 && x1 == x2
   eq (LiteralInt p1 x1) (LiteralInt p2 x2) = p1 == p2 && x1 == x2
@@ -95,6 +103,12 @@ instance Show Expression where
   show (Osc p) = "Osc (" <> show p <> ")"
   show (Range p) = "Range (" <> show p <> ")"
   show (Clear p) = "Clear (" <> show p <> ")"
+  show (Ambient p) = "Ambient (" <> show p <> ")"
+  show (Directional p) = "Directional (" <> show p <> ")"
+  show (Hemisphere p) = "Hemisphere (" <> show p <> ")"
+  show (Point p) = "Point (" <> show p <> ")"
+  show (RectArea p) = "RectArea (" <> show p <> ")"
+  show (Spot p) = "Spot (" <> show p <> ")"
   show (Sum p e1 e2) = "Sum (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
   show (Difference p e1 e2) = "Difference (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
   show (Product p e1 e2) = "Product (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
@@ -115,6 +129,12 @@ expressionPosition (Camera p) = p
 expressionPosition (Osc p) = p
 expressionPosition (Range p) = p
 expressionPosition (Clear p) = p
+expressionPosition (Ambient p) = p
+expressionPosition (Directional p) = p
+expressionPosition (Hemisphere p) = p
+expressionPosition (Point p) = p
+expressionPosition (RectArea p) = p
+expressionPosition (Spot p) = p
 expressionPosition (Sum p _ _) = p
 expressionPosition (Difference p _ _) = p
 expressionPosition (Product p _ _) = p
@@ -180,22 +200,9 @@ multiplicationDivision = do
 expression'' :: P Expression
 expression'' = do
   _ <- pure unit
-  p <- position
   choice [
-    parens expression,
-    try transformer,
     try application,
-    try intOrNumber,
-    try $ LiteralString p <$> stringLiteral,
-    try $ LiteralBoolean p <$> boolean,
-    try (Dancer p <$ reserved "dancer"),
-    try (Floor p <$ reserved "floor"),
-    try (Camera p <$ reserved "camera"),
-    try (Osc p <$ reserved "osc"),
-    try (Range p <$ reserved "range"),
-    try (Clear p <$ reserved "clear"),
-    try thisRef,
-    try semiGlobalRef
+    argument
     ]
 
 application :: P Expression
@@ -207,7 +214,6 @@ application = do
   otherArgs <- many argument
   pure $ foldl (Application p) (Application p f firstArg) otherArgs
 
--- note: this is the same as expression'' minus the direct pathway for Application
 argument :: P Expression
 argument = do
   _ <- pure unit
@@ -224,8 +230,14 @@ argument = do
     try (Osc p <$ reserved "osc"),
     try (Range p <$ reserved "range"),
     try (Clear p <$ reserved "clear"),
+    try (Ambient p <$ reserved "ambient"),
+    try (Directional p <$ reserved "directional"),
+    try (Hemisphere p <$ reserved "hemisphere"),
+    try (Point p <$ reserved "point"),
+    try (RectArea p <$ reserved "rectarea"),
+    try (Spot p <$ reserved "spot"),
     try thisRef,
-    try semiGlobalRef
+    semiGlobalRef
   ]
 
 intOrNumber :: P Expression
