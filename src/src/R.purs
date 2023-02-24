@@ -24,6 +24,9 @@ import Data.Number (pi)
 import MaybeRef
 import Variable
 import Value
+import ElementType
+import Dancer
+import Floor
 
 
 type RenderEnvironment = {
@@ -38,56 +41,18 @@ type RenderEnvironment = {
 
 
 type ZoneState = {
-  dancers :: Array DancerState,
-  floors :: Array FloorState
+  elements :: Array Element
   }
 
 defaultZoneState :: ZoneState
-defaultZoneState = { dancers: [], floors: [] }
+defaultZoneState = { elements: [] }
 
-
-type DancerState =
-  {
-  url :: Ref String,
-  model :: MaybeRef Model
-  }
-
-type Model = {
-  scene :: Three.Scene,
-  clips :: Array Three.AnimationClip,
-  clipNames :: Array String,
-  mixer :: Three.AnimationMixer,
-  actions :: Array Three.AnimationAction,
-  mixerState :: Ref MixerState,
-  durState :: Ref Number
-  }
-
-type MixerState = Array Number
-
-valueToMixerState :: Model -> Value -> Array Number
-valueToMixerState m (ValueInt i) = intToMixerState (length m.actions) i
-valueToMixerState m (ValueNumber n) = intToMixerState (length m.actions) (floor n) -- later: could be a crossfade
-valueToMixerState m (ValueString v) = fromMaybe allZeros $ updateAt n' 1.0 allZeros
-  where
-    n' = fromMaybe 0 $ elemIndex v m.clipNames
-    allZeros = replicate (length m.actions) 0.0
-valueToMixerState _ _ = []
-
-intToMixerState :: Int -> Int -> Array Number
-intToMixerState nAnimations n = fromMaybe allZeros $ updateAt n' 1.0 allZeros
-  where
-    n' = mod n nAnimations
-    allZeros = replicate nAnimations 0.0
-
-type FloorState = {
-  mesh :: Three.Mesh,
-  material :: Three.MeshPhongMaterial
-  }
 
 type R a = StateT ZoneState (ReaderT RenderEnvironment Effect) a
 
 execR :: forall a. RenderEnvironment -> ZoneState -> R a -> Effect ZoneState
 execR rEnv zState r = runReaderT (execStateT r zState) rEnv
+
 
 -- looks up the specified entry in the value map
 -- if not found, then the provided default is returned
@@ -145,3 +110,23 @@ updateTransforms vm a = do
       let ry' = ry*pi/180.0
       let rz' = rz*pi/180.0
       liftEffect $ Three.setRotation a rx' ry' rz'
+
+data Element =
+  ElementDancer Dancer |
+  ElementFloor Floor |
+  ElementAmbient Ambient |
+  ElementDirectional Directional |
+  ElementHemisphere Hemisphere |
+  ElementPoint Point |
+  ElementRectArea RectArea |
+  ElementSpot Spot
+
+elementType :: Element -> ElementType
+elementType (ElementDancer _) = Dancer
+elementType (ElementFloor _) = Floor
+elementType (ElementAmbient _) = Ambient
+elementType (ElementDirectional _) = Directional
+elementType (ElementHemisphere _) = Hemisphere
+elementType (ElementPoint _) = Point
+elementType (ElementRectArea _) = RectArea
+elementType (ElementSpot _) = Spot

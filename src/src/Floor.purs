@@ -1,4 +1,4 @@
-module FloorState (
+module Floor (
   runFloorWithState,
   removeFloor
   ) where
@@ -16,6 +16,11 @@ import Value
 import R
 
 
+type FloorState = {
+  mesh :: Three.Mesh,
+  material :: Three.MeshPhongMaterial
+  }
+  
 runFloorWithState :: ValueMap -> Maybe FloorState -> R FloorState
 runFloorWithState vm Nothing = do
   x <- newFloor

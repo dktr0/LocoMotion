@@ -1,8 +1,4 @@
-module DancerState (
-  runDancerWithState,
-  removeDancer
-  )
-  where
+module Dancer (Dancer,newDancer,updateDancer,removeDancer) where
 
 import Prelude
 import Data.Number (pi)
@@ -25,34 +21,43 @@ import Value
 import MaybeRef
 import R
 
+type Dancer =
+  {
+  url :: Ref String,
+  model :: MaybeRef Model
+  }
 
-runDancerWithState :: ValueMap -> Maybe DancerState -> R DancerState
-runDancerWithState vm maybeDancerState = do
-  s <- loadModelIfNecessary vm maybeDancerState
-  whenMaybeRef s.model $ \m -> do
+newDancer :: R Dancer
+newDancer = liftEffect $ do
+  url <- new ""
+  model <- new Nothing
+
+updateDancer :: ValueMap -> Dancer -> R Dancer
+updateDancer vm x = do
+  y <- updateModel vm x
+  whenMaybeRef y.model $ \m -> do
     updateTransforms vm m.scene
-    updateAnimation vm s
+    updateAnimation vm y
   pure s
 
+removeDancer :: Dancer -> R Unit
+removeDancer d = do
+   env <- ask
+   liftEffect $ whenMaybeRef d.model $ \m -> Three.removeObject3D env.scene m.scene
 
-loadModelIfNecessary :: ValueMap -> Maybe DancerState -> R DancerState
-loadModelIfNecessary vm Nothing = do
+
+
+updateModel :: ValueMap -> Dancer -> R Dancer
+updateModel vm d = do
   let urlProg = lookupString "raccoon.glb" "url" vm
-  url <- liftEffect $ new urlProg
-  model <- liftEffect $ new Nothing
-  let s = { url, model }
-  loadModel urlProg s
-  pure s
-loadModelIfNecessary vm (Just s) = do
-  let urlProg = lookupString "raccoon.glb" "url" vm
-  urlState <- liftEffect $ read s.url
+  urlState <- liftEffect $ read d.url
   when (urlProg /= urlState) $ do
-    removeDancer s
-    loadModel urlProg s
-  pure s
+    removeDancer d
+    loadModel urlProg d
+  pure d
 
 
-updateAnimation :: ValueMap -> DancerState -> R Unit
+updateAnimation :: ValueMap -> Dancer -> R Unit
 updateAnimation valueMap s = do
   env <- ask
   liftEffect $ whenMaybeRef s.model $ \m -> do
@@ -85,7 +90,7 @@ updateAnimationAction m dur i weight = do
     Nothing -> log "strange error in LocoMotion: updateAnimationAction, should not be possible"
 
 
-loadModel :: String -> DancerState -> R Unit
+loadModel :: String -> Dancer -> R Unit
 loadModel url s = do
   env <- ask
   liftEffect $ write url s.url
@@ -111,8 +116,29 @@ gltfToModel gltf = do
   durState <- new (-999.0)
   pure { scene: gltf.scene, clips: gltf.animations, clipNames, mixer, actions, mixerState, durState }
 
+type Model = {
+  scene :: Three.Scene,
+  clips :: Array Three.AnimationClip,
+  clipNames :: Array String,
+  mixer :: Three.AnimationMixer,
+  actions :: Array Three.AnimationAction,
+  mixerState :: Ref MixerState,
+  durState :: Ref Number
+  }
 
-removeDancer :: DancerState -> R Unit
-removeDancer s = do
-   env <- ask
-   liftEffect $ whenMaybeRef s.model $ \m -> Three.removeObject3D env.scene m.scene
+type MixerState = Array Number
+
+valueToMixerState :: Model -> Value -> Array Number
+valueToMixerState m (ValueInt i) = intToMixerState (length m.actions) i
+valueToMixerState m (ValueNumber n) = intToMixerState (length m.actions) (floor n) -- later: could be a crossfade
+valueToMixerState m (ValueString v) = fromMaybe allZeros $ updateAt n' 1.0 allZeros
+  where
+    n' = fromMaybe 0 $ elemIndex v m.clipNames
+    allZeros = replicate (length m.actions) 0.0
+valueToMixerState _ _ = []
+
+intToMixerState :: Int -> Int -> Array Number
+intToMixerState nAnimations n = fromMaybe allZeros $ updateAt n' 1.0 allZeros
+  where
+    n' = mod n nAnimations
+    allZeros = replicate nAnimations 0.0

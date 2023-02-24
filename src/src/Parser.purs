@@ -81,18 +81,11 @@ expressionToValue (AST.SemiGlobal p k) = do
     Just v -> pure v
 expressionToValue (AST.Application p e1 e2) = applicationToValue p e1 e2
 expressionToValue (AST.Transformer _ xs) = transformerToValue xs
-expressionToValue (AST.Dancer _) = newDancer
-expressionToValue (AST.Floor _) = newFloor
+expressionToValue (AST.Element _ t) = newElement t
 expressionToValue (AST.Camera _) = pure ValueCamera
 expressionToValue (AST.Clear _) = pure ValueClear
 expressionToValue (AST.Osc _) = pure $ ValueFunction oscFunction
 expressionToValue (AST.Range _) = pure $ ValueFunction rangeFunction
-expressionToValue (AST.Ambient p) = throwError $ ParseError "placeholder" p
-expressionToValue (AST.Directional p) = throwError $ ParseError "placeholder" p
-expressionToValue (AST.Hemisphere p) = throwError $ ParseError "placeholder" p
-expressionToValue (AST.Point p) = throwError $ ParseError "placeholder" p
-expressionToValue (AST.RectArea p) = throwError $ ParseError "placeholder" p
-expressionToValue (AST.Spot p) = throwError $ ParseError "placeholder" p
 expressionToValue (AST.Sum _ e1 e2) = do
   v1 <- expressionToValue e1
   v2 <- expressionToValue e2
@@ -110,6 +103,7 @@ expressionToValue (AST.Divide _ e1 e2) = do
   v2 <- expressionToValue e2
   pure $ divideValues v1 v2
 
+newElement ::
 
 applicationToValue :: Position -> Expression -> Expression -> P Value
 applicationToValue p eF eX = do

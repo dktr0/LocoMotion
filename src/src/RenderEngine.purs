@@ -40,8 +40,6 @@ import Effect.Class (liftEffect)
 
 import Value
 import Parser
-import DancerState
-import FloorState
 import ZoneMap (Zone,ZoneMap)
 import ZoneMap as ZoneMap
 import R
@@ -234,3 +232,37 @@ runCamera :: ValueMap -> R Unit
 runCamera vm = do
   re <- ask
   updateTransforms vm re.camera
+
+
+runElement :: ElementType -> ValueMap -> Maybe Element -> R Element
+runElement t vm Nothing = do
+  e <- createElement t
+  updateElement vm e
+runElement t vm (Just e) = do
+  case t == elementType e of
+    True -> updateElement vm e
+    False -> do
+      removeElement e
+      e' <- createElement t
+      updateElement vm e'
+
+createElement :: ElementType -> R ObjectState
+createElement Dancer = ElementDancer <$> newDancer
+createElement Floor = ElementFloor <$> newFloor
+createElement Ambient = ElementAmbient <$> newAmbient
+createElement _ = ElementAmbient <$> newAmbient -- placeholder until we've done the other 5 lights
+-- createElement Directional = ElementDirectional <$> newDirectional
+-- createElement Hemisphere = HemisphereState <$> newHemisphere
+-- createElement Point = PointState <$> newPoint
+-- createElement RectArea = RectAreaState <$> newRectArea
+-- createElement Spot = SpotState <$> newSpot
+
+updateElement :: ValueMap -> ObjectState -> R ObjectState
+updateElement vm (ElementDancer x) = updateDancer vm x
+updateElement vm (ElementFloor x) = updateFloor vm x
+updateElement vm (ElementAmbient x) = updateAmbient vm x
+
+removeElement :: Element -> R Unit
+removeElement (ElementDancer x) = removeDancer x
+removeElement (ElementFloor x) = removeFloor x
+removeElement (ElementAmbient x) = removeAmbient x

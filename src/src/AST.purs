@@ -18,7 +18,7 @@ import Data.Either (Either(..))
 
 
 import TokenParser (P, boolean, commaSep, identifier, integer, number, parens, reserved, reservedOp, semiSep, stringLiteral, whiteSpace, naturalOrFloat)
-
+import ElementType
 
 type AST = List Statement
 
@@ -45,9 +45,8 @@ parseAST :: String -> Either ParseError AST
 parseAST x = runParser x ast
 
 data Expression =
-  Dancer Position | Floor Position | Camera Position | Osc Position | Range Position | Clear Position |
-  Ambient Position | Directional Position | Hemisphere Position |
-  Point Position | RectArea Position | Spot Position |
+  Element Position ElementType |
+  Camera Position | Osc Position | Range Position | Clear Position |
   LiteralNumber Position Number |
   LiteralString Position String |
   LiteralInt Position Int |
@@ -62,18 +61,11 @@ data Expression =
   Divide Position Expression Expression
 
 instance Eq Expression where
-  eq (Dancer p1) (Dancer p2) = p1 == p2
-  eq (Floor p1) (Floor p2) = p1 == p2
+  eq (Element p1 t1) (Element p2 t2) = p1 == p2 && t1 == t2
   eq (Camera p1) (Camera p2) = p1 == p2
   eq (Osc p1) (Osc p2) = p1 == p2
   eq (Range p1) (Range p2) = p1 == p2
   eq (Clear p1) (Clear p2) = p1 == p2
-  eq (Ambient p1) (Ambient p2) = p1 == p2
-  eq (Directional p1) (Directional p2) = p1 == p2
-  eq (Hemisphere p1) (Hemisphere p2) = p1 == p2
-  eq (Point p1) (Point p2) = p1 == p2
-  eq (RectArea p1) (RectArea p2) = p1 == p2
-  eq (Spot p1) (Spot p2) = p1 == p2
   eq (LiteralNumber p1 x1) (LiteralNumber p2 x2) = p1 == p2 && x1 == x2
   eq (LiteralString p1 x1) (LiteralString p2 x2) = p1 == p2 && x1 == x2
   eq (LiteralInt p1 x1) (LiteralInt p2 x2) = p1 == p2 && x1 == x2
@@ -97,18 +89,11 @@ instance Show Expression where
   show (SemiGlobal p x) = "SemiGlobal (" <> show p <> ") " <> show x
   show (Application p e1 e2) = "Application (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
   show (Transformer p x) = "Transformer (" <> show p <> ") (" <> show x <> ")"
-  show (Dancer p) = "Dancer (" <> show p <> ")"
-  show (Floor p) = "Floor (" <> show p <> ")"
+  show (Element p t) = "(Element " <> show t <> "(" <> show p <> "))"
   show (Camera p) = "Camera (" <> show p <> ")"
   show (Osc p) = "Osc (" <> show p <> ")"
   show (Range p) = "Range (" <> show p <> ")"
   show (Clear p) = "Clear (" <> show p <> ")"
-  show (Ambient p) = "Ambient (" <> show p <> ")"
-  show (Directional p) = "Directional (" <> show p <> ")"
-  show (Hemisphere p) = "Hemisphere (" <> show p <> ")"
-  show (Point p) = "Point (" <> show p <> ")"
-  show (RectArea p) = "RectArea (" <> show p <> ")"
-  show (Spot p) = "Spot (" <> show p <> ")"
   show (Sum p e1 e2) = "Sum (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
   show (Difference p e1 e2) = "Difference (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
   show (Product p e1 e2) = "Product (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
@@ -123,18 +108,11 @@ expressionPosition (This p _) = p
 expressionPosition (SemiGlobal p _) = p
 expressionPosition (Application p _ _) = p
 expressionPosition (Transformer p _) = p
-expressionPosition (Dancer p) = p
-expressionPosition (Floor p) = p
+expressionPosition (Element p _) = p
 expressionPosition (Camera p) = p
 expressionPosition (Osc p) = p
 expressionPosition (Range p) = p
 expressionPosition (Clear p) = p
-expressionPosition (Ambient p) = p
-expressionPosition (Directional p) = p
-expressionPosition (Hemisphere p) = p
-expressionPosition (Point p) = p
-expressionPosition (RectArea p) = p
-expressionPosition (Spot p) = p
 expressionPosition (Sum p _ _) = p
 expressionPosition (Difference p _ _) = p
 expressionPosition (Product p _ _) = p
@@ -224,18 +202,18 @@ argument = do
     try intOrNumber,
     try $ LiteralString p <$> stringLiteral,
     try $ LiteralBoolean p <$> boolean,
-    try (Dancer p <$ reserved "dancer"),
-    try (Floor p <$ reserved "floor"),
+    try (Element p Dancer <$ reserved "dancer"),
+    try (Element p Floor <$ reserved "floor"),
+    try (Element p Ambient <$ reserved "ambient"),
+    try (Element p Directional <$ reserved "directional"),
+    try (Element p Hemisphere <$ reserved "hemisphere"),
+    try (Element p Point <$ reserved "point"),
+    try (Element p RectArea <$ reserved "rectarea"),
+    try (Element p Spot <$ reserved "spot"),
     try (Camera p <$ reserved "camera"),
     try (Osc p <$ reserved "osc"),
     try (Range p <$ reserved "range"),
     try (Clear p <$ reserved "clear"),
-    try (Ambient p <$ reserved "ambient"),
-    try (Directional p <$ reserved "directional"),
-    try (Hemisphere p <$ reserved "hemisphere"),
-    try (Point p <$ reserved "point"),
-    try (RectArea p <$ reserved "rectarea"),
-    try (Spot p <$ reserved "spot"),
     try thisRef,
     semiGlobalRef
   ]
