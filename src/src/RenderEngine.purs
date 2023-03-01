@@ -47,6 +47,7 @@ import Program
 import ElementType
 import Dancer
 import Floor
+import Lights
 
 type RenderEngine =
   {
@@ -62,17 +63,14 @@ launch cvs = do
   log "LocoMotion: launch..."
   scene <- Three.newScene
 
-  hemiLight <- Three.newHemisphereLight 0xffffff 0x444444 0.8
-  Three.setPosition hemiLight 0.0 20.0 0.0
-  Three.addAnythingToScene scene hemiLight
-  {- Three.newAmbientLight 0xffffff 0.1 >>= Three.addAnythingToScene scene -}
-  dirLight <- Three.newDirectionalLight 0xffffff 0.8
-  Three.setPosition dirLight (-1.0) 1.0 10.0
-  Three.addAnythingToScene scene dirLight
-
-  {- pgh <- Three.newPolarGridHelper 10.0 8 8 8
-  Three.setPosition pgh 0.0 0.0 0.0
-  Three.addAnythingToScene scene pgh -}
+  -- hemiLight <- Three.newHemisphereLight 0xffffff 0x444444 0.8
+  -- Three.setPosition hemiLight 0.0 20.0 0.0
+  -- Three.addAnything scene hemiLight
+  ambLight <- Three.newAmbientLight 0xffffff 0.1
+  Three.addAnything scene ambLight
+  -- dirLight <- Three.newDirectionalLight 0xffffff 0.8
+  -- Three.setPosition dirLight (-1.0) 1.0 10.0
+  -- Three.addAnything scene dirLight
 
   iWidth <- Three.windowInnerWidth
   iHeight <- Three.windowInnerHeight
@@ -230,8 +228,8 @@ runElement i (Tuple t vm) = do
 createElement :: ElementType -> R Element
 createElement Dancer = ElementDancer <$> newDancer
 createElement Floor = ElementFloor <$> newFloor
-createElement _ = ElementFloor <$> newFloor -- placeholder until we've done the other 5 lights
--- createElement Ambient = ElementAmbient <$> newAmbient
+createElement Ambient = ElementAmbient <$> newAmbient
+createElement _ = ElementAmbient <$> newAmbient -- placeholder until we've done the other 5 lights
 -- createElement Directional = ElementDirectional <$> newDirectional
 -- createElement Hemisphere = HemisphereState <$> newHemisphere
 -- createElement Point = PointState <$> newPoint
@@ -241,11 +239,11 @@ createElement _ = ElementFloor <$> newFloor -- placeholder until we've done the 
 updateElement :: ValueMap -> Element -> R Element
 updateElement vm (ElementDancer x) = updateDancer vm x >>= (pure <<< ElementDancer)
 updateElement vm (ElementFloor x) = updateFloor vm x >>= (pure <<< ElementFloor)
--- updateElement vm (ElementAmbient x) = updateAmbient vm x
+updateElement vm (ElementAmbient x) = updateAmbient vm x >>= (pure <<< ElementAmbient)
 updateElement _ x = pure x -- placeholder
 
 removeElement :: Element -> R Unit
 removeElement (ElementDancer x) = removeDancer x
 removeElement (ElementFloor x) = removeFloor x
--- removeElement (ElementAmbient x) = removeAmbient x
+removeElement (ElementAmbient x) = removeAmbient x
 removeElement _ = pure unit -- placeholder

@@ -14,6 +14,7 @@ import R
 
 newFloor :: R Floor
 newFloor = do
+  liftEffect $ log "newFloor"
   geometry <- liftEffect $ Three.newPlaneGeometry 100.0 100.0 1 1
   material <- liftEffect $ Three.newMeshPhongMaterial { depthWrite: false }
   mesh <- liftEffect $ Three.newMesh geometry material
@@ -24,6 +25,7 @@ newFloor = do
 
 updateFloor :: ValueMap -> Floor -> R Floor
 updateFloor vm fs = do
+  liftEffect $ log "updateFloor"
   let colour = lookupInt 0x888888 "colour" vm
   let shadows = lookupBoolean true "shadows" vm
   liftEffect $ Three.setColorInt fs.material colour
@@ -31,4 +33,6 @@ updateFloor vm fs = do
   pure fs
 
 removeFloor :: Floor -> R Unit
-removeFloor fState = liftEffect $ Three.removeFromParent fState.mesh
+removeFloor fState = do
+  liftEffect $ log "removeFloor"
+  liftEffect $ Three.removeFromParent fState.mesh

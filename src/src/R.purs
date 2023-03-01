@@ -113,7 +113,7 @@ updateTransforms vm a = do
 data Element =
   ElementDancer Dancer |
   ElementFloor Floor |
-  ElementAmbient -- |
+  ElementAmbient Ambient
   -- ElementDirectional Directional |
   -- ElementHemisphere Hemisphere |
   -- ElementPoint Point |
@@ -123,7 +123,7 @@ data Element =
 elementType :: Element -> ElementType
 elementType (ElementDancer _) = Dancer
 elementType (ElementFloor _) = Floor
-elementType ElementAmbient = Ambient
+elementType (ElementAmbient _) = Ambient
 -- elementType (ElementDirectional _) = Directional
 -- elementType (ElementHemisphere _) = Hemisphere
 -- elementType (ElementPoint _) = Point
@@ -139,4 +139,8 @@ type Dancer =
 type Floor = {
   mesh :: Three.Mesh,
   material :: Three.MeshPhongMaterial
+  }
+
+type Ambient = {
+  ambientLight :: Three.AmbientLight
   }
