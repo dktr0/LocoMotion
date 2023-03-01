@@ -25,8 +25,7 @@ import MaybeRef
 import Variable
 import Value
 import ElementType
-import Dancer
-import Floor
+import Model
 
 
 type RenderEnvironment = {
@@ -114,19 +113,30 @@ updateTransforms vm a = do
 data Element =
   ElementDancer Dancer |
   ElementFloor Floor |
-  ElementAmbient Ambient |
-  ElementDirectional Directional |
-  ElementHemisphere Hemisphere |
-  ElementPoint Point |
-  ElementRectArea RectArea |
-  ElementSpot Spot
+  ElementAmbient -- |
+  -- ElementDirectional Directional |
+  -- ElementHemisphere Hemisphere |
+  -- ElementPoint Point |
+  -- ElementRectArea RectArea |
+  -- ElementSpot Spot
 
 elementType :: Element -> ElementType
 elementType (ElementDancer _) = Dancer
 elementType (ElementFloor _) = Floor
-elementType (ElementAmbient _) = Ambient
-elementType (ElementDirectional _) = Directional
-elementType (ElementHemisphere _) = Hemisphere
-elementType (ElementPoint _) = Point
-elementType (ElementRectArea _) = RectArea
-elementType (ElementSpot _) = Spot
+elementType ElementAmbient = Ambient
+-- elementType (ElementDirectional _) = Directional
+-- elementType (ElementHemisphere _) = Hemisphere
+-- elementType (ElementPoint _) = Point
+-- elementType (ElementRectArea _) = RectArea
+-- elementType (ElementSpot _) = Spot
+
+type Dancer =
+  {
+  url :: Ref String,
+  model :: MaybeRef Model
+  }
+
+type Floor = {
+  mesh :: Three.Mesh,
+  material :: Three.MeshPhongMaterial
+  }

@@ -12,10 +12,12 @@ import Data.Array as Array
 import Control.Monad.State.Trans
 import Parsing (ParseError(..),Position)
 import Control.Monad.Error.Class (throwError)
+import Data.Tuple (Tuple(..))
 
 
 import Value
 import Program
+import ElementType
 
 type PState = {
   semiMap :: ValueMap,
@@ -35,49 +37,29 @@ liftEitherParseError :: forall a. Either ParseError a -> P a
 liftEitherParseError (Left pe) = throwError pe
 liftEitherParseError (Right a) = pure a
 
-newDancer :: P Value
-newDancer = do
-  let vm = defaultDancer
-  s <- modify $ \s -> s { program = s.program { dancers = Array.snoc s.program.dancers vm } }
-  let n = Array.length s.program.dancers - 1
-  pure $ ValueDancer n vm
+newElement :: ElementType -> ValueMap -> P Value
+newElement t vm = do
+  let e = Tuple t vm
+  s <- modify $ \s -> s { program = s.program { elements = Array.snoc s.program.elements e } }
+  let n = Array.length s.program.elements - 1
+  pure $ ValueElement t n vm
 
-modifyDancer :: Int -> Transformer -> P Value
-modifyDancer n t = do
+modifyElement :: Int -> Transformer -> P Value
+modifyElement n t = do
   s <- get
-  mNew <- case Array.index s.program.dancers n of
+  Tuple eType newVm <- case Array.index s.program.elements n of
     Nothing -> do
-      pure $ unsafePerformEffect $ log "modifyDancer: this should not ever happen 1"
-      pure empty
-    Just m -> liftEitherParseError $ t m
-  case Array.updateAt n mNew s.program.dancers of
+      pure $ unsafePerformEffect $ log "modifyElement: this should not ever happen 1"
+      pure $ Tuple Dancer empty -- note: Dancer is meaningless
+    Just (Tuple eType vm) -> do
+      newVm <- liftEitherParseError $ t vm
+      pure $ Tuple eType newVm
+  case Array.updateAt n (Tuple eType newVm) s.program.elements of
     Nothing -> do
-      pure $ unsafePerformEffect $ log "modifyDancer: this should not ever happen 2"
+      pure $ unsafePerformEffect $ log "modifyElement: this should not ever happen 2"
       pure unit
-    Just x -> put $ s { program = s.program { dancers = x } }
-  pure $ ValueDancer n mNew
-
-newFloor :: P Value
-newFloor = do
-  let vm = defaultFloor
-  s <- modify $ \s -> s { program = s.program { floors = Array.snoc s.program.floors vm } }
-  let n = Array.length s.program.floors - 1
-  pure $ ValueFloor n vm
-
-modifyFloor :: Int -> Transformer -> P Value
-modifyFloor n t = do
-  s <- get
-  mNew <- case Array.index s.program.floors n of
-    Nothing -> do
-      pure $ unsafePerformEffect $ log "modifyFloor: this should not ever happen 1"
-      pure empty
-    Just m -> liftEitherParseError $ t m
-  case Array.updateAt n mNew s.program.floors of
-    Nothing -> do
-      pure $ unsafePerformEffect $ log "modifyFloor: this should not ever happen 2"
-      pure unit
-    Just x -> put $ s { program = s.program { floors = x } }
-  pure $ ValueFloor n mNew
+    Just x -> put $ s { program = s.program { elements = x } }
+  pure $ ValueElement eType n newVm
 
 modifyCamera :: Transformer -> P Value
 modifyCamera t = do

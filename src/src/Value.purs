@@ -35,7 +35,7 @@ data Value =
   ValueVariable Variable | -- x = osc 1.0;
   ValueTransformer Transformer | -- x = { ry = this.ry + osc 1.0 };
   ValueFunction (Position -> Value -> Either ParseError Value) |
-  ValueElement Int ValueMap |
+  ValueElement ElementType Int ValueMap |
   ValueCamera |
   ValueClear
 
@@ -47,7 +47,7 @@ instance Show Value where
   show (ValueVariable x) = "(ValueVariable " <> show x <> ")"
   show (ValueTransformer _) = "ValueTransformer..."
   show (ValueFunction _) = "ValueFunction... "
-  show (ValueElement i vm) = "(ValueElement " <> show i <> " (" <> show vm <> "))"
+  show (ValueElement t i vm) = "(ValueElement " <> show t <> " " <> show i <> " (" <> show vm <> "))"
   show ValueCamera = "ValueCamera"
   show ValueClear = "ValueClear"
 
@@ -118,7 +118,7 @@ instance Eq Value where
   eq (ValueInt x) (ValueInt y) = x == y
   eq (ValueBoolean x) (ValueBoolean y) = x == y
   eq (ValueVariable x) (ValueVariable y) = x == y
-  eq (ValueElement i1 x) (ValueElement i2 y) = i1 == i2 && x == y
+  eq (ValueElement t1 i1 x) (ValueElement t2 i2 y) = t1 == t2 && i1 == i2 && x == y
   eq ValueCamera ValueCamera = true
   eq ValueClear ValueClear = true
   eq _ _ = false

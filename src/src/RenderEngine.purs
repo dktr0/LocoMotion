@@ -44,6 +44,9 @@ import ZoneMap (Zone,ZoneMap)
 import ZoneMap as ZoneMap
 import R
 import Program
+import ElementType
+import Dancer
+import Floor
 
 type RenderEngine =
   {
@@ -181,27 +184,19 @@ setClearColor re = do
 
 runProgram :: RenderEnvironment -> Program -> ZoneState -> Effect ZoneState
 runProgram re prog zoneState = execR re zoneState $ do
-  runDancers prog.dancers
-  runFloors prog.floors
+  runElements prog.elements
   runCamera prog.cameraMap
 
 
-runDancers :: Array ValueMap -> R Unit
-runDancers xs = do
-  -- run/update active dancers
-  _ <- traverseWithIndex runDancer xs
-  let nDancers = length xs
-  -- remove any deleted dancers
+runElements :: Array (Tuple ElementType ValueMap) -> R Unit
+runElements xs = do
+  _ <- traverseWithIndex runElement xs
+  let nElements = length xs
+  -- remove any deleted elements
   s <- get
-  traverse_ removeDancer $ drop nDancers s.dancers
-  modify_ $ \x -> x { dancers = take nDancers x.dancers }
+  traverse_ removeElement $ drop nElements s.elements
+  modify_ $ \x -> x { elements = take nElements x.elements }
 
-
-runDancer :: Int -> ValueMap -> R Unit
-runDancer i vm = do
-  s <- get
-  updatedDancerState <- runDancerWithState vm (index s.dancers i)
-  modify_ $ \x -> x { dancers = replaceAt i updatedDancerState x.dancers }
 
 -- bizarre that something like this function doesn't seem to exist in the PureScript library
 replaceAt :: forall a. Int -> a -> Array a -> Array a
@@ -210,59 +205,47 @@ replaceAt i v a
   | otherwise = fromMaybe a $ updateAt i v a
 
 
-runFloors :: Array ValueMap -> R Unit
-runFloors xs = do
-  -- run/update active dancers
-  _ <- traverseWithIndex runFloor xs
-  let nFloors = length xs
-  -- remove any deleted floors
-  s <- get
-  traverse_ removeFloor $ drop nFloors s.floors
-  modify_ $ \x -> x { floors = take nFloors x.floors }
-
-
-runFloor :: Int -> ValueMap -> R Unit
-runFloor i vm = do
-  s <- get
-  updatedFloorState <- runFloorWithState vm (index s.floors i)
-  modify_ $ \x -> x { floors = replaceAt i updatedFloorState x.floors }
-
-
 runCamera :: ValueMap -> R Unit
 runCamera vm = do
   re <- ask
   updateTransforms vm re.camera
 
 
-runElement :: ElementType -> ValueMap -> Maybe Element -> R Element
-runElement t vm Nothing = do
-  e <- createElement t
-  updateElement vm e
-runElement t vm (Just e) = do
-  case t == elementType e of
-    True -> updateElement vm e
-    False -> do
-      removeElement e
-      e' <- createElement t
-      updateElement vm e'
+runElement :: Int -> Tuple ElementType ValueMap -> R Unit
+runElement i (Tuple t vm) = do
+  s <- get
+  newE <- case index s.elements i of
+    Nothing -> do
+      e <- createElement t
+      updateElement vm e
+    Just e -> do
+      case t == elementType e of
+        true -> updateElement vm e
+        false -> do
+          removeElement e
+          e' <- createElement t
+          updateElement vm e'
+  modify_ $ \x -> x { elements = replaceAt i newE x.elements }
 
-createElement :: ElementType -> R ObjectState
+createElement :: ElementType -> R Element
 createElement Dancer = ElementDancer <$> newDancer
 createElement Floor = ElementFloor <$> newFloor
-createElement Ambient = ElementAmbient <$> newAmbient
-createElement _ = ElementAmbient <$> newAmbient -- placeholder until we've done the other 5 lights
+createElement _ = ElementFloor <$> newFloor -- placeholder until we've done the other 5 lights
+-- createElement Ambient = ElementAmbient <$> newAmbient
 -- createElement Directional = ElementDirectional <$> newDirectional
 -- createElement Hemisphere = HemisphereState <$> newHemisphere
 -- createElement Point = PointState <$> newPoint
 -- createElement RectArea = RectAreaState <$> newRectArea
 -- createElement Spot = SpotState <$> newSpot
 
-updateElement :: ValueMap -> ObjectState -> R ObjectState
-updateElement vm (ElementDancer x) = updateDancer vm x
-updateElement vm (ElementFloor x) = updateFloor vm x
-updateElement vm (ElementAmbient x) = updateAmbient vm x
+updateElement :: ValueMap -> Element -> R Element
+updateElement vm (ElementDancer x) = updateDancer vm x >>= (pure <<< ElementDancer)
+updateElement vm (ElementFloor x) = updateFloor vm x >>= (pure <<< ElementFloor)
+-- updateElement vm (ElementAmbient x) = updateAmbient vm x
+updateElement _ x = pure x -- placeholder
 
 removeElement :: Element -> R Unit
 removeElement (ElementDancer x) = removeDancer x
 removeElement (ElementFloor x) = removeFloor x
-removeElement (ElementAmbient x) = removeAmbient x
+-- removeElement (ElementAmbient x) = removeAmbient x
+removeElement _ = pure unit -- placeholder

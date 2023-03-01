@@ -26,7 +26,7 @@ import AST as AST
 import R (R)
 import P
 import Program
-
+import ElementType
 
 parseProgram :: String -> Either String Program
 parseProgram x = lmap showParseError $ AST.parseAST x >>= (astToProgram >>> runP)
@@ -81,7 +81,10 @@ expressionToValue (AST.SemiGlobal p k) = do
     Just v -> pure v
 expressionToValue (AST.Application p e1 e2) = applicationToValue p e1 e2
 expressionToValue (AST.Transformer _ xs) = transformerToValue xs
-expressionToValue (AST.Element _ t) = newElement t
+expressionToValue (AST.Element _ Dancer) = newElement Dancer defaultDancer
+expressionToValue (AST.Element _ Floor) = newElement Floor defaultFloor
+expressionToValue (AST.Element _ Ambient) = newElement Ambient empty
+expressionToValue (AST.Element p t) = throwError $ ParseError ("element type " <> show t <> " not supported yet") p
 expressionToValue (AST.Camera _) = pure ValueCamera
 expressionToValue (AST.Clear _) = pure ValueClear
 expressionToValue (AST.Osc _) = pure $ ValueFunction oscFunction
@@ -103,8 +106,6 @@ expressionToValue (AST.Divide _ e1 e2) = do
   v2 <- expressionToValue e2
   pure $ divideValues v1 v2
 
-newElement ::
-
 applicationToValue :: Position -> Expression -> Expression -> P Value
 applicationToValue p eF eX = do
   f <- expressionToValue eF
@@ -118,8 +119,7 @@ applicationToValue p eF eX = do
     ValueTransformer tF -> do
       case x of
         ValueTransformer tX -> pure $ ValueTransformer $ appendTransformers tF tX
-        ValueDancer _ vmX -> applyTransformer tF vmX
-        ValueFloor _ vmX -> applyTransformer tF vmX
+        ValueElement _ _ vmX -> applyTransformer tF vmX
         ValueCamera -> do
           vmX <- readCamera
           applyTransformer tF vmX
@@ -127,35 +127,21 @@ applicationToValue p eF eX = do
           vmX <- readClear
           applyTransformer tF vmX
         _ -> throwError $ ParseError "invalid argument applied to Transformer" (AST.expressionPosition eX)
-    ValueDancer i _ -> do
+    ValueElement _ i _ -> do
       case x of
-        ValueTransformer tX -> modifyDancer i tX
-        ValueDancer _ vmX -> modifyDancer i (valueMapToTransformer vmX)
-        ValueFloor _ vmX -> modifyDancer i (valueMapToTransformer vmX)
+        ValueTransformer tX -> modifyElement i tX
+        ValueElement _ _ vmX -> modifyElement i (valueMapToTransformer vmX)
         ValueCamera -> do
           vmX <- readCamera
-          modifyDancer i (valueMapToTransformer vmX)
+          modifyElement i (valueMapToTransformer vmX)
         ValueClear -> do
           vmX <- readClear
-          modifyDancer i (valueMapToTransformer vmX)
+          modifyElement i (valueMapToTransformer vmX)
         _ -> throwError $ ParseError "invalid argument applied to Dancer" (AST.expressionPosition eX)
-    ValueFloor i _ -> do
-      case x of
-        ValueTransformer tX -> modifyFloor i tX
-        ValueDancer _ vmX -> modifyFloor i (valueMapToTransformer vmX)
-        ValueFloor _ vmX -> modifyFloor i (valueMapToTransformer vmX)
-        ValueCamera -> do
-          vmX <- readCamera
-          modifyFloor i (valueMapToTransformer vmX)
-        ValueClear -> do
-          vmX <- readClear
-          modifyFloor i (valueMapToTransformer vmX)
-        _ -> throwError $ ParseError "invalid argument applied to Floor" (AST.expressionPosition eX)
     ValueCamera -> do
       case x of
         ValueTransformer tX -> modifyCamera tX
-        ValueDancer _ vmX -> modifyCamera (valueMapToTransformer vmX)
-        ValueFloor _ vmX -> modifyCamera (valueMapToTransformer vmX)
+        ValueElement _ _ vmX -> modifyCamera (valueMapToTransformer vmX)
         ValueCamera -> pure ValueCamera
         ValueClear -> do
           vmX <- readClear
@@ -164,8 +150,7 @@ applicationToValue p eF eX = do
     ValueClear -> do
       case x of
         ValueTransformer tX -> modifyClear tX
-        ValueDancer _ vmX -> modifyClear (valueMapToTransformer vmX)
-        ValueFloor _ vmX -> modifyClear (valueMapToTransformer vmX)
+        ValueElement _ _ vmX -> modifyClear (valueMapToTransformer vmX)
         ValueCamera -> do
           vmX <- readCamera
           modifyClear (valueMapToTransformer vmX)

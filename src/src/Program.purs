@@ -1,22 +1,24 @@
 module Program where
 
 import Prelude
-import Value
 import Data.Tuple (Tuple(..))
 import Data.Map (fromFoldable)
 import Data.Maybe (Maybe(..))
 
+import ElementType
+import Value
+
 type Program = {
-  dancers :: Array ValueMap,
-  floors :: Array ValueMap,
+  elements :: Array ProgramElement,
   cameraMap :: ValueMap,
   clearMap :: Maybe ValueMap
   }
 
+type ProgramElement = Tuple ElementType ValueMap
+
 defaultProgram :: Program
 defaultProgram = {
-  dancers: [],
-  floors: [],
+  elements: [],
   cameraMap: defaultCamera,
   clearMap: Nothing
   }

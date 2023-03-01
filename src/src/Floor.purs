@@ -1,7 +1,4 @@
-module Floor (
-  runFloorWithState,
-  removeFloor
-  ) where
+module Floor (newFloor,updateFloor,removeFloor) where
 
 import Prelude
 import ThreeJS as Three
@@ -15,19 +12,7 @@ import Data.Maybe (Maybe(..))
 import Value
 import R
 
-
-type FloorState = {
-  mesh :: Three.Mesh,
-  material :: Three.MeshPhongMaterial
-  }
-  
-runFloorWithState :: ValueMap -> Maybe FloorState -> R FloorState
-runFloorWithState vm Nothing = do
-  x <- newFloor
-  runFloor vm x
-runFloorWithState vm (Just x) = runFloor vm x
-
-newFloor :: R FloorState
+newFloor :: R Floor
 newFloor = do
   geometry <- liftEffect $ Three.newPlaneGeometry 100.0 100.0 1 1
   material <- liftEffect $ Three.newMeshPhongMaterial { depthWrite: false }
@@ -37,13 +22,13 @@ newFloor = do
   liftEffect $ Three.addAnything env.scene mesh
   pure { mesh, material }
 
-runFloor :: ValueMap -> FloorState -> R FloorState
-runFloor vm fs = do
+updateFloor :: ValueMap -> Floor -> R Floor
+updateFloor vm fs = do
   let colour = lookupInt 0x888888 "colour" vm
   let shadows = lookupBoolean true "shadows" vm
   liftEffect $ Three.setColorInt fs.material colour
   liftEffect $ Three.setReceiveShadow fs.mesh shadows
   pure fs
 
-removeFloor :: FloorState -> R Unit
+removeFloor :: Floor -> R Unit
 removeFloor fState = liftEffect $ Three.removeFromParent fState.mesh
