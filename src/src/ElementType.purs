@@ -20,3 +20,12 @@ derive instance Eq ElementType
 
 instance Show ElementType where
   show = genericShow
+
+isLight :: ElementType -> Boolean
+isLight Ambient = true
+isLight Directional = true
+isLight Hemisphere = true
+isLight Point = true
+isLight RectArea = true
+isLight Spot = true
+isLight _ = false

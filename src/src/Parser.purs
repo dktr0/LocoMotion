@@ -8,10 +8,11 @@ import Data.Int (toNumber)
 import Data.Map (insert,empty,lookup,Map(..))
 import Data.Map (fromFoldable) as Map
 import Data.List (List, foldl, mapMaybe, fromFoldable)
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple(..),fst)
 import Data.Either (Either)
 import Data.Maybe (Maybe(..))
 import Data.Either (Either(..))
+import Data.Foldable (elem)
 import Parsing (Position(..),ParseError(..),runParser)
 import Data.Traversable (traverse_,traverse,sequence)
 import Control.Monad.Error.Class (throwError)
@@ -51,7 +52,10 @@ astToProgram :: AST -> P Program
 astToProgram ast = do
  traverse_ parseStatement ast
  s <- get
- pure s.program
+ pure $ setCustomLightsFlag s.program
+
+setCustomLightsFlag :: Program -> Program
+setCustomLightsFlag p = p { hasCustomLights = elem true $ map (isLight <<< fst) p.elements }
 
 parseStatement :: Statement -> P Unit
 parseStatement (AST.Assignment _ k e) = do -- position is currently unused, but it might be used in future if we were checking validity of definition names

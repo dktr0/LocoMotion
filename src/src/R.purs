@@ -32,6 +32,7 @@ type RenderEnvironment = {
   scene :: Three.Scene,
   camera :: Three.PerspectiveCamera,
   renderer :: Three.Renderer,
+  defaultLight :: Three.AmbientLight,
   tempo :: Tempo,
   nCycles :: Number,
   cycleDur :: Number,

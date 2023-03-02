@@ -14,7 +14,7 @@ import Effect (Effect)
 import Effect.Ref (Ref, new, read, write)
 import Effect.Console (log)
 import Data.Array (length,drop,take,index,updateAt,snoc)
-import Data.Foldable (foldM,foldl)
+import Data.Foldable (foldM,foldl,elem)
 import Data.Number (pi)
 import Data.Map as Map
 import Data.Maybe
@@ -63,14 +63,8 @@ launch cvs = do
   log "LocoMotion: launch..."
   scene <- Three.newScene
 
-  -- hemiLight <- Three.newHemisphereLight 0xffffff 0x444444 0.8
-  -- Three.setPosition hemiLight 0.0 20.0 0.0
-  -- Three.addAnything scene hemiLight
-  ambLight <- Three.newAmbientLight 0xffffff 0.1
-  Three.addAnything scene ambLight
-  -- dirLight <- Three.newDirectionalLight 0xffffff 0.8
-  -- Three.setPosition dirLight (-1.0) 1.0 10.0
-  -- Three.addAnything scene dirLight
+  defaultLight <- Three.newAmbientLight 0xffffff 0.0
+  Three.addAnything scene defaultLight
 
   iWidth <- Three.windowInnerWidth
   iHeight <- Three.windowInnerHeight
@@ -85,7 +79,7 @@ launch cvs = do
   let nCycles = 0.0
   let cycleDur = 2.0
   let delta = 0.0
-  renderEnvironment <- new { scene, camera, renderer, tempo, nCycles, cycleDur, delta }
+  renderEnvironment <- new { scene, camera, renderer, defaultLight, tempo, nCycles, cycleDur, delta }
   programs <- ZoneMap.new
   zoneStates <- ZoneMap.new
   prevTNow <- nowDateTime >>= new
@@ -154,6 +148,7 @@ postAnimate re = do
   -- t0 <- nowDateTime
   n <- ZoneMap.count re.zoneStates
   when (n > 0) $ do
+    handleDefaultLighting re
     iWidth <- Three.windowInnerWidth
     iHeight <- Three.windowInnerHeight
     rEnv <- read re.renderEnvironment
@@ -164,6 +159,14 @@ postAnimate re = do
   -- t1 <- nowDateTime
   -- let tDiff = unwrap (diff t1 t0 :: Milliseconds)
   -- log $ "postAnimate " <> show tDiff
+
+handleDefaultLighting :: RenderEngine -> Effect Unit
+handleDefaultLighting re = do
+  env <- read re.renderEnvironment
+  allPrograms <- read re.programs
+  let anyCustomLights = elem true $ map _.hasCustomLights allPrograms
+  let intensity = if anyCustomLights then 0.0 else 1.0
+  Three.setLightIntensity env.defaultLight intensity
 
 
 setClearColor :: RenderEngine -> Effect Unit

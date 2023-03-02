@@ -11,7 +11,8 @@ import Value
 type Program = {
   elements :: Array ProgramElement,
   cameraMap :: ValueMap,
-  clearMap :: Maybe ValueMap
+  clearMap :: Maybe ValueMap,
+  hasCustomLights :: Boolean
   }
 
 type ProgramElement = Tuple ElementType ValueMap
@@ -20,7 +21,8 @@ defaultProgram :: Program
 defaultProgram = {
   elements: [],
   cameraMap: defaultCamera,
-  clearMap: Nothing
+  clearMap: Nothing,
+  hasCustomLights: false
   }
 
 defaultDancer :: ValueMap
