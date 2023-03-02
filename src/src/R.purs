@@ -114,22 +114,22 @@ updateTransforms vm a = do
 data Element =
   ElementDancer Dancer |
   ElementFloor Floor |
-  ElementAmbient Ambient
-  -- ElementDirectional Directional |
-  -- ElementHemisphere Hemisphere |
-  -- ElementPoint Point |
-  -- ElementRectArea RectArea |
-  -- ElementSpot Spot
+  ElementAmbient Ambient |
+  ElementDirectional Directional |
+  ElementHemisphere Hemisphere |
+  ElementPoint Point |
+  ElementRectArea RectArea |
+  ElementSpot Spot
 
 elementType :: Element -> ElementType
 elementType (ElementDancer _) = Dancer
 elementType (ElementFloor _) = Floor
 elementType (ElementAmbient _) = Ambient
--- elementType (ElementDirectional _) = Directional
--- elementType (ElementHemisphere _) = Hemisphere
--- elementType (ElementPoint _) = Point
--- elementType (ElementRectArea _) = RectArea
--- elementType (ElementSpot _) = Spot
+elementType (ElementDirectional _) = Directional
+elementType (ElementHemisphere _) = Hemisphere
+elementType (ElementPoint _) = Point
+elementType (ElementRectArea _) = RectArea
+elementType (ElementSpot _) = Spot
 
 type Dancer =
   {
@@ -144,4 +144,24 @@ type Floor = {
 
 type Ambient = {
   ambientLight :: Three.AmbientLight
+  }
+
+type Directional = {
+  directionalLight :: Three.DirectionalLight
+  }
+
+type Hemisphere = {
+  hemisphereLight :: Three.HemisphereLight
+  }
+
+type Point = {
+  pointLight :: Three.PointLight
+  }
+
+type RectArea = {
+  rectAreaLight :: Three.RectAreaLight
+  }
+
+type Spot = {
+  spotLight :: Three.SpotLight
   }

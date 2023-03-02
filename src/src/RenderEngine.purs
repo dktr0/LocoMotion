@@ -232,21 +232,28 @@ createElement :: ElementType -> R Element
 createElement Dancer = ElementDancer <$> newDancer
 createElement Floor = ElementFloor <$> newFloor
 createElement Ambient = ElementAmbient <$> newAmbient
-createElement _ = ElementAmbient <$> newAmbient -- placeholder until we've done the other 5 lights
--- createElement Directional = ElementDirectional <$> newDirectional
--- createElement Hemisphere = HemisphereState <$> newHemisphere
--- createElement Point = PointState <$> newPoint
--- createElement RectArea = RectAreaState <$> newRectArea
--- createElement Spot = SpotState <$> newSpot
+createElement Directional = ElementDirectional <$> newDirectional
+createElement Hemisphere = ElementHemisphere <$> newHemisphere
+createElement Point = ElementPoint <$> newPoint
+createElement RectArea = ElementRectArea <$> newRectArea
+createElement Spot = ElementSpot <$> newSpot
 
 updateElement :: ValueMap -> Element -> R Element
 updateElement vm (ElementDancer x) = updateDancer vm x >>= (pure <<< ElementDancer)
 updateElement vm (ElementFloor x) = updateFloor vm x >>= (pure <<< ElementFloor)
 updateElement vm (ElementAmbient x) = updateAmbient vm x >>= (pure <<< ElementAmbient)
-updateElement _ x = pure x -- placeholder
+updateElement vm (ElementDirectional x) = updateDirectional vm x >>= (pure <<< ElementDirectional)
+updateElement vm (ElementHemisphere x) = updateHemisphere vm x >>= (pure <<< ElementHemisphere)
+updateElement vm (ElementPoint x) = updatePoint vm x >>= (pure <<< ElementPoint)
+updateElement vm (ElementRectArea x) = updateRectArea vm x >>= (pure <<< ElementRectArea)
+updateElement vm (ElementSpot x) = updateSpot vm x >>= (pure <<< ElementSpot)
 
 removeElement :: Element -> R Unit
 removeElement (ElementDancer x) = removeDancer x
 removeElement (ElementFloor x) = removeFloor x
 removeElement (ElementAmbient x) = removeAmbient x
-removeElement _ = pure unit -- placeholder
+removeElement (ElementDirectional x) = removeDirectional x
+removeElement (ElementHemisphere x) = removeHemisphere x
+removeElement (ElementPoint x) = removePoint x
+removeElement (ElementRectArea x) = removeRectArea x
+removeElement (ElementSpot x) = removeSpot x

@@ -1,6 +1,11 @@
 module Lights
   (
-  newAmbient,updateAmbient,removeAmbient
+  newAmbient,updateAmbient,removeAmbient,
+  newDirectional,updateDirectional,removeDirectional,
+  newHemisphere,updateHemisphere,removeHemisphere,
+  newPoint,updatePoint,removePoint,
+  newRectArea,updateRectArea,removeRectArea,
+  newSpot,updateSpot,removeSpot
   )
   where
 
@@ -9,6 +14,7 @@ import ThreeJS as Three
 import Control.Monad.Reader.Trans (ask)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
+import Data.Number (pi)
 
 import R
 import Value
@@ -24,11 +30,127 @@ newAmbient = do
 
 updateAmbient :: ValueMap -> Ambient -> R Ambient
 updateAmbient vm x = do
-  let colour = lookupInt 0xffffff "colour" vm
-  intensity <- realizeNumber "intensity" 1.0 vm
-  liftEffect $ Three.setColorInt x.ambientLight colour
-  liftEffect $ Three.setLightIntensity x.ambientLight intensity
+  updateColourAndIntensity vm x.ambientLight
   pure x
 
 removeAmbient :: Ambient -> R Unit
 removeAmbient x = liftEffect $ Three.removeFromParent x.ambientLight
+
+
+updateColourAndIntensity :: forall a. Three.Light a => ValueMap -> a -> R Unit
+updateColourAndIntensity vm a = do
+  let colour = lookupInt 0xffffff "colour" vm
+  intensity <- realizeNumber "intensity" 1.0 vm
+  liftEffect $ Three.setColorInt a colour
+  liftEffect $ Three.setLightIntensity a intensity
+
+
+newDirectional :: R Directional
+newDirectional = do
+  env <- ask
+  liftEffect $ do
+    directionalLight <- Three.newDirectionalLight 0x000000 0.0
+    Three.addAnything env.scene directionalLight
+    pure { directionalLight }
+
+updateDirectional :: ValueMap -> Directional -> R Directional
+updateDirectional vm x = do
+  updateColourAndIntensity vm x.directionalLight
+  updateTransforms vm x.directionalLight
+  pure x
+
+removeDirectional :: Directional -> R Unit
+removeDirectional x = liftEffect $ Three.removeFromParent x.directionalLight
+
+
+newHemisphere :: R Hemisphere
+newHemisphere = do
+  env <- ask
+  liftEffect $ do
+    hemisphereLight <- Three.newHemisphereLight 0x000000 0xffffff 0.0
+    Three.addAnything env.scene hemisphereLight
+    pure { hemisphereLight }
+
+updateHemisphere :: ValueMap -> Hemisphere -> R Hemisphere
+updateHemisphere vm x = do
+  let groundColour = lookupInt 0xffffff "ground" vm
+  liftEffect $ Three.setGroundColor x.hemisphereLight groundColour
+  updateColourAndIntensity vm x.hemisphereLight
+  updateTransforms vm x.hemisphereLight
+  pure x
+
+removeHemisphere :: Hemisphere -> R Unit
+removeHemisphere x = liftEffect $ Three.removeFromParent x.hemisphereLight
+
+
+newPoint :: R Point
+newPoint = do
+  env <- ask
+  liftEffect $ do
+    pointLight <- Three.newPointLight 0x000000 0.0 0.0 2.0
+    Three.addAnything env.scene pointLight
+    pure { pointLight }
+
+updatePoint :: ValueMap -> Point -> R Point
+updatePoint vm x = do
+  distance <- realizeNumber "distance" 0.0 vm
+  decay <- realizeNumber "decay" 2.0 vm
+  liftEffect $ do
+    Three.setDistance x.pointLight distance
+    Three.setDecay x.pointLight decay
+  updateColourAndIntensity vm x.pointLight
+  updateTransforms vm x.pointLight
+  pure x
+
+removePoint :: Point -> R Unit
+removePoint x = liftEffect $ Three.removeFromParent x.pointLight
+
+
+newRectArea :: R RectArea
+newRectArea = do
+  env <- ask
+  liftEffect $ do
+    rectAreaLight <- Three.newRectAreaLight 0x000000 0.0 10.0 10.0
+    Three.addAnything env.scene rectAreaLight
+    pure { rectAreaLight }
+
+updateRectArea :: ValueMap -> RectArea -> R RectArea
+updateRectArea vm x = do
+  width <- realizeNumber "width" 10.0 vm
+  height <- realizeNumber "height" 10.0 vm
+  liftEffect $ do
+    Three.setWidth x.rectAreaLight width
+    Three.setHeight x.rectAreaLight height
+  updateColourAndIntensity vm x.rectAreaLight
+  updateTransforms vm x.rectAreaLight
+  pure x
+
+removeRectArea :: RectArea -> R Unit
+removeRectArea x = liftEffect $ Three.removeFromParent x.rectAreaLight
+
+
+newSpot :: R Spot
+newSpot = do
+  env <- ask
+  liftEffect $ do
+    spotLight <- Three.newSpotLight 0xffffff 0.0 0.0 (pi/2.0) 0.0 0.0
+    Three.addAnything env.scene spotLight
+    pure { spotLight }
+
+updateSpot :: ValueMap -> Spot -> R Spot
+updateSpot vm x = do
+  distance <- realizeNumber "distance" 0.0 vm
+  angle <- realizeNumber "angle" (pi/2.0) vm
+  penumbra <- realizeNumber "penumbra" 0.0 vm
+  decay <- realizeNumber "decay" 0.0 vm
+  liftEffect $ do
+    Three.setDistance x.spotLight distance
+    Three.setAngle x.spotLight angle
+    Three.setPenumbra x.spotLight penumbra
+    Three.setDecay x.spotLight decay
+  updateColourAndIntensity vm x.spotLight
+  updateTransforms vm x.spotLight
+  pure x
+
+removeSpot :: Spot -> R Unit
+removeSpot x = liftEffect $ Three.removeFromParent x.spotLight
