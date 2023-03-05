@@ -51,16 +51,28 @@ newDirectional = do
   liftEffect $ do
     directionalLight <- Three.newDirectionalLight 0x000000 0.0
     Three.addAnything env.scene directionalLight
-    pure { directionalLight }
+    virtualTarget <- Three.newObject3D
+    Three.addAnything env.scene virtualTarget
+    Three.setTarget directionalLight virtualTarget
+    pure { directionalLight, virtualTarget }
 
 updateDirectional :: ValueMap -> Directional -> R Directional
 updateDirectional vm x = do
   updateColourAndIntensity vm x.directionalLight
-  updateTransforms vm x.directionalLight
+  updatePosition vm x.directionalLight
+  updateVirtualTarget vm x.virtualTarget
   pure x
 
 removeDirectional :: Directional -> R Unit
 removeDirectional x = liftEffect $ Three.removeFromParent x.directionalLight
+
+
+updateVirtualTarget :: forall t. Three.Object3D' t => ValueMap -> t -> R Unit
+updateVirtualTarget vm t = do
+  lx <- realizeNumber "lx" 0.0 vm
+  ly <- realizeNumber "ly" 0.0 vm
+  lz <- realizeNumber "lz" 0.0 vm
+  liftEffect $ Three.setPosition t lx ly lz
 
 
 newHemisphere :: R Hemisphere
@@ -76,7 +88,7 @@ updateHemisphere vm x = do
   let groundColour = lookupInt 0xffffff "ground" vm
   liftEffect $ Three.setGroundColor x.hemisphereLight groundColour
   updateColourAndIntensity vm x.hemisphereLight
-  updateTransforms vm x.hemisphereLight
+  updatePosition vm x.hemisphereLight
   pure x
 
 removeHemisphere :: Hemisphere -> R Unit
@@ -99,7 +111,7 @@ updatePoint vm x = do
     Three.setDistance x.pointLight distance
     Three.setDecay x.pointLight decay
   updateColourAndIntensity vm x.pointLight
-  updateTransforms vm x.pointLight
+  updatePosition vm x.pointLight
   pure x
 
 removePoint :: Point -> R Unit
@@ -122,7 +134,9 @@ updateRectArea vm x = do
     Three.setWidth x.rectAreaLight width
     Three.setHeight x.rectAreaLight height
   updateColourAndIntensity vm x.rectAreaLight
-  updateTransforms vm x.rectAreaLight
+  updatePosition vm x.rectAreaLight
+  updateScale vm x.rectAreaLight
+  updateRotation vm x.rectAreaLight
   pure x
 
 removeRectArea :: RectArea -> R Unit
@@ -135,7 +149,10 @@ newSpot = do
   liftEffect $ do
     spotLight <- Three.newSpotLight 0xffffff 0.0 0.0 (pi/2.0) 0.0 0.0
     Three.addAnything env.scene spotLight
-    pure { spotLight }
+    virtualTarget <- Three.newObject3D
+    Three.addAnything env.scene virtualTarget
+    Three.setTarget spotLight virtualTarget
+    pure { spotLight, virtualTarget }
 
 updateSpot :: ValueMap -> Spot -> R Spot
 updateSpot vm x = do
@@ -149,7 +166,8 @@ updateSpot vm x = do
     Three.setPenumbra x.spotLight penumbra
     Three.setDecay x.spotLight decay
   updateColourAndIntensity vm x.spotLight
-  updateTransforms vm x.spotLight
+  updatePosition vm x.spotLight
+  updateVirtualTarget vm x.virtualTarget
   pure x
 
 removeSpot :: Spot -> R Unit

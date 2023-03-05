@@ -209,7 +209,9 @@ replaceAt i v a
 runCamera :: ValueMap -> R Unit
 runCamera vm = do
   re <- ask
-  updateTransforms vm re.camera
+  updatePosition vm re.camera
+  updateScale vm re.camera
+  updateRotation vm re.camera
 
 
 runElement :: Int -> Tuple ElementType ValueMap -> R Unit

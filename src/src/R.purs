@@ -68,20 +68,23 @@ realizeNumber k def valueMap = do
     _ -> pure $ valueToNumber v
 
 
-updateTransforms :: forall a. Three.Object3D a => ValueMap -> a -> R Unit
-updateTransforms vm a = do
-  -- position
+updatePosition :: forall a. Three.Object3D' a => ValueMap -> a -> R Unit
+updatePosition vm a = do
   x <- realizeNumber "x" 0.0 vm
   y <- realizeNumber "y" 0.0 vm
   z <- realizeNumber "z" 0.0 vm
   liftEffect $ Three.setPosition a x y z
-  -- scale
+
+updateScale :: forall a. Three.Object3D' a => ValueMap -> a -> R Unit
+updateScale vm a = do
   sx <- realizeNumber "sx" 1.0 vm
   sy <- realizeNumber "sy" 1.0 vm
   sz <- realizeNumber "sz" 1.0 vm
   size <- realizeNumber "size" 1.0 vm
   liftEffect $ Three.setScaleOfAnything a (sx*size) (sy*size) (sz*size)
-  -- rotation (and lookAt behaviour)
+
+updateRotation :: forall a. Three.Object3D' a => ValueMap -> a -> R Unit
+updateRotation vm a = do
   let mlx = Map.lookup "lx" vm
   let mly = Map.lookup "ly" vm
   let mlz = Map.lookup "lz" vm
@@ -110,6 +113,7 @@ updateTransforms vm a = do
       let ry' = ry*pi/180.0
       let rz' = rz*pi/180.0
       liftEffect $ Three.setRotation a rx' ry' rz'
+
 
 data Element =
   ElementDancer Dancer |
@@ -147,7 +151,8 @@ type Ambient = {
   }
 
 type Directional = {
-  directionalLight :: Three.DirectionalLight
+  directionalLight :: Three.DirectionalLight,
+  virtualTarget :: Three.Object3D
   }
 
 type Hemisphere = {
@@ -163,5 +168,6 @@ type RectArea = {
   }
 
 type Spot = {
-  spotLight :: Three.SpotLight
+  spotLight :: Three.SpotLight,
+  virtualTarget :: Three.Object3D
   }

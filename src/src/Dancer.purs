@@ -32,7 +32,9 @@ updateDancer :: ValueMap -> Dancer -> R Dancer
 updateDancer vm x = do
   y <- updateModel vm x
   whenMaybeRef y.model $ \m -> do
-    updateTransforms vm m.scene
+    updatePosition vm m.scene
+    updateScale vm m.scene
+    updateRotation vm m.scene
     updateAnimation vm y
   pure x
 
