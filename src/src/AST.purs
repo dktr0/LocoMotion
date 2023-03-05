@@ -203,7 +203,7 @@ argument = do
     try $ LiteralString p <$> stringLiteral,
     try $ LiteralBoolean p <$> boolean,
     try (Element p Dancer <$ reserved "dancer"),
-    try (Element p Floor <$ reserved "floor"),
+    try (Element p Plane <$ reserved "plane"),
     try (Element p Ambient <$ reserved "ambient"),
     try (Element p Directional <$ reserved "directional"),
     try (Element p Hemisphere <$ reserved "hemisphere"),
@@ -241,7 +241,11 @@ modifier = do
   k <- identifier
   (reservedOp "=" <|> reservedOp ":")
   e <- expression
-  pure $ Tuple k e
+  pure $ Tuple (translateModifierIdentifiers k) e
+
+translateModifierIdentifiers :: String -> String
+translateModifierIdentifiers "color" = "colour"
+translateModifierIdentifiers x = x
 
 thisRef :: P Expression
 thisRef = do

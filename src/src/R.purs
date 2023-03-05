@@ -117,7 +117,7 @@ updateRotation vm a = do
 
 data Element =
   ElementDancer Dancer |
-  ElementFloor Floor |
+  ElementPlane Plane |
   ElementAmbient Ambient |
   ElementDirectional Directional |
   ElementHemisphere Hemisphere |
@@ -127,7 +127,7 @@ data Element =
 
 elementType :: Element -> ElementType
 elementType (ElementDancer _) = Dancer
-elementType (ElementFloor _) = Floor
+elementType (ElementPlane _) = Plane
 elementType (ElementAmbient _) = Ambient
 elementType (ElementDirectional _) = Directional
 elementType (ElementHemisphere _) = Hemisphere
@@ -141,7 +141,7 @@ type Dancer =
   model :: MaybeRef Model
   }
 
-type Floor = {
+type Plane = {
   mesh :: Three.Mesh,
   material :: Three.MeshPhongMaterial
   }

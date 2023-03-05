@@ -35,7 +35,7 @@ boolean = choice [
 
 tokenParser :: GenTokenParser String Identity
 tokenParser = makeTokenParser $ LanguageDef (unGenLanguageDef emptyDef) {
-  reservedNames = ["dancer","camera","floor","osc","range","clear","ambient","directional","hemisphere","point","rectarea","spot"],
+  reservedNames = ["dancer","camera","plane","osc","range","clear","ambient","directional","hemisphere","point","rectarea","spot"],
   reservedOpNames = [";","=","*","+","-","/"],
   commentStart = "{-",
   commentEnd = "-}",

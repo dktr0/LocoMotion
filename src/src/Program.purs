@@ -39,8 +39,8 @@ defaultDancer = fromFoldable [
   Tuple "size" (ValueNumber 1.0)
   ]
 
-defaultFloor :: ValueMap
-defaultFloor = fromFoldable [
+defaultPlane :: ValueMap
+defaultPlane = fromFoldable [
   Tuple "colour" (ValueInt 0x888888),
   Tuple "shadows" (ValueBoolean true)
   ]

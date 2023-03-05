@@ -1,4 +1,4 @@
-module Floor (newFloor,updateFloor,removeFloor) where
+module Plane (newPlane,updatePlane,removePlane) where
 
 import Prelude
 import ThreeJS as Three
@@ -12,27 +12,25 @@ import Data.Maybe (Maybe(..))
 import Value
 import R
 
-newFloor :: R Floor
-newFloor = do
-  liftEffect $ log "newFloor"
-  geometry <- liftEffect $ Three.newPlaneGeometry 100.0 100.0 1 1
+newPlane :: R Plane
+newPlane = do
+  geometry <- liftEffect $ Three.newPlaneGeometry 1.0 1.0 1 1
   material <- liftEffect $ Three.newMeshPhongMaterial { depthWrite: false }
   mesh <- liftEffect $ Three.newMesh geometry material
-  liftEffect $ Three.setRotationX mesh 4.71238898 -- 3/2 x PI
   env <- ask
   liftEffect $ Three.addAnything env.scene mesh
   pure { mesh, material }
 
-updateFloor :: ValueMap -> Floor -> R Floor
-updateFloor vm fs = do
-  liftEffect $ log "updateFloor"
+updatePlane :: ValueMap -> Plane -> R Plane
+updatePlane vm fs = do
   let colour = lookupInt 0x888888 "colour" vm
   let shadows = lookupBoolean true "shadows" vm
   liftEffect $ Three.setColorInt fs.material colour
   liftEffect $ Three.setReceiveShadow fs.mesh shadows
+  updatePosition vm fs.mesh
+  updateScale vm fs.mesh
+  updateRotation vm fs.mesh
   pure fs
 
-removeFloor :: Floor -> R Unit
-removeFloor fState = do
-  liftEffect $ log "removeFloor"
-  liftEffect $ Three.removeFromParent fState.mesh
+removePlane :: Plane -> R Unit
+removePlane fState = liftEffect $ Three.removeFromParent fState.mesh

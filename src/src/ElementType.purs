@@ -6,7 +6,7 @@ import Data.Show.Generic
 
 data ElementType =
   Dancer |
-  Floor |
+  Plane |
   Ambient |
   Directional |
   Hemisphere |

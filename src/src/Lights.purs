@@ -64,7 +64,9 @@ updateDirectional vm x = do
   pure x
 
 removeDirectional :: Directional -> R Unit
-removeDirectional x = liftEffect $ Three.removeFromParent x.directionalLight
+removeDirectional x = liftEffect $ do
+  Three.removeFromParent x.directionalLight
+  Three.removeFromParent x.virtualTarget
 
 
 updateVirtualTarget :: forall t. Three.Object3D' t => ValueMap -> t -> R Unit
@@ -157,12 +159,12 @@ newSpot = do
 updateSpot :: ValueMap -> Spot -> R Spot
 updateSpot vm x = do
   distance <- realizeNumber "distance" 0.0 vm
-  angle <- realizeNumber "angle" (pi/2.0) vm
+  angle <- realizeNumber "angle" 90.0 vm
   penumbra <- realizeNumber "penumbra" 0.0 vm
   decay <- realizeNumber "decay" 0.0 vm
   liftEffect $ do
     Three.setDistance x.spotLight distance
-    Three.setAngle x.spotLight angle
+    Three.setAngle x.spotLight $ angle * pi / 180.0
     Three.setPenumbra x.spotLight penumbra
     Three.setDecay x.spotLight decay
   updateColourAndIntensity vm x.spotLight
@@ -171,4 +173,6 @@ updateSpot vm x = do
   pure x
 
 removeSpot :: Spot -> R Unit
-removeSpot x = liftEffect $ Three.removeFromParent x.spotLight
+removeSpot x = liftEffect $ do
+  Three.removeFromParent x.spotLight
+  Three.removeFromParent x.virtualTarget
