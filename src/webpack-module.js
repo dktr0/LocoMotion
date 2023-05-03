@@ -27,3 +27,7 @@ LocoMotion.prototype.animateZone = function(zone) {
 LocoMotion.prototype.postAnimate = function() {
   return L.postAnimate(this.lm)();
 }
+
+export function exoLang(canvas) {
+  return new LocoMotion(canvas);
+}
