@@ -6188,7 +6188,7 @@ var updateAnimationAction = function(m) {
           return log2("strange error in LocoMotion: updateAnimationAction, should not be possible");
         }
         ;
-        throw new Error("Failed pattern match at Dancer (line 77, column 3 - line 88, column 96): " + [v.constructor.name]);
+        throw new Error("Failed pattern match at Dancer (line 99, column 3 - line 110, column 96): " + [v.constructor.name]);
       };
     };
   };

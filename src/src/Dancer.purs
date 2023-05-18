@@ -1,9 +1,10 @@
 module Dancer (newDancer,updateDancer,removeDancer) where
 
 import Prelude
-import Data.Number (pi)
+import Data.Number (pi,floor)
+import Data.Int (toNumber,round)
 import Data.Array
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..),fromMaybe)
 import Effect (Effect)
 import Effect.Ref (Ref, new, read, write)
 import Effect.Console (log)
@@ -15,6 +16,8 @@ import Data.Traversable (traverse,traverse_)
 import Data.FoldableWithIndex (traverseWithIndex_)
 import Data.Map (Map)
 import Control.Monad.Reader.Trans (ask)
+import Data.Newtype (unwrap)
+import Data.DateTime.Instant (unInstant,fromDateTime)
 
 import URL
 import Value
@@ -53,6 +56,25 @@ updateModel vm d = do
     removeDancer d
     loadModel urlProg d
   pure d
+
+
+randomModel :: Int -> Int -> R String
+randomModel zone increment = do
+  env <- ask 
+  let secs = (unwrap $ unInstant $ fromDateTime $ env.tempo.time) / 1000.0
+  let nModels = length models
+  let nBase = round $ (secs - floor secs) * toNumber nModels
+  let n = mod (nBase + zone + increment) nModels
+  pure $ fromMaybe "raccoon.glb" $ index models n
+
+
+models :: Array String
+models = [
+  "Alan.glb","benny.glb","cactus.glb","Daffy.glb","dylan_moss_scuffed.glb","Lily.glb",
+  "lisa.glb","NatureGirl.glb","StoneFigure.glb","Willy.glb","Woman-NLA.glb",
+  "ant.glb","Branch.glb","crackman.glb","Diver.glb","ethan_mesh_smooth.glb","fossegrim.glb",
+  "leafy.glb","Lisa.glb","mark.glb","Oak.glb","raccoon.glb","wireman.glb","woodman.glb"
+  ]
 
 
 updateAnimation :: ValueMap -> Dancer -> R Unit
