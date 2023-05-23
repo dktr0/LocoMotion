@@ -6248,7 +6248,7 @@ var newDancer = /* @__PURE__ */ liftEffect(/* @__PURE__ */ monadEffectState(/* @
     model
   };
 });
-var models = ["Alan.glb", "benny.glb", "cactus.glb", "Daffy.glb", "dylan_moss_scuffed.glb", "Lily.glb", "lisa.glb", "NatureGirl.glb", "StoneFigure.glb", "Willy.glb", "Woman-NLA.glb", "ant.glb", "Branch.glb", "crackman.glb", "Diver.glb", "ethan_mesh_smooth.glb", "fossegrim.glb", "leafy.glb", "Lisa.glb", "mark.glb", "Oak.glb", "raccoon.glb", "wireman.glb", "woodman.glb"];
+var models = ["cactus.glb", "Daffy.glb", "Lily.glb", "NatureGirl.glb", "StoneFigure.glb", "Willy.glb", "Woman-NLA.glb", "ant.glb", "Branch.glb", "crackman.glb", "Diver.glb", "fossegrim.glb", "leafy.glb", "Oak.glb", "raccoon.glb", "wireman.glb"];
 var randomModel = function(zone) {
   return function(increment) {
     return bind(bindStateT(monadReaderT(monadEffect)))(ask(monadAskStateT(monadAskReaderT(monadEffect))))(function(env) {

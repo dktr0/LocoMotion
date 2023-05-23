@@ -77,10 +77,10 @@ randomModel zone increment = do
 
 models :: Array String
 models = [
-  "benny.glb","cactus.glb","Daffy.glb","dylan_moss_scuffed.glb","Lily.glb",
-  "lisa.glb","NatureGirl.glb","StoneFigure.glb","Willy.glb","Woman-NLA.glb",
-  "ant.glb","Branch.glb","crackman.glb","Diver.glb","ethan_mesh_smooth.glb","fossegrim.glb",
-  "leafy.glb","Lisa.glb","mark.glb","Oak.glb","raccoon.glb","wireman.glb","woodman.glb"
+  "cactus.glb","Daffy.glb","Lily.glb",
+  "NatureGirl.glb","StoneFigure.glb","Willy.glb","Woman-NLA.glb",
+  "ant.glb","Branch.glb","crackman.glb","Diver.glb","fossegrim.glb",
+  "leafy.glb","Oak.glb","raccoon.glb","wireman.glb"
   ]
 
 
