@@ -1962,6 +1962,7 @@ var pow = function(n) {
     return Math.pow(n, p);
   };
 };
+var round = Math.round;
 var sin = Math.sin;
 
 // output/Data.Number/index.js
@@ -1989,6 +1990,9 @@ var unsafeClamp = function(x) {
   }
   ;
   throw new Error("Failed pattern match at Data.Int (line 72, column 1 - line 72, column 29): " + [x.constructor.name]);
+};
+var round2 = function($23) {
+  return unsafeClamp(round($23));
 };
 var floor2 = function($25) {
   return unsafeClamp(floor($25));
@@ -2365,6 +2369,16 @@ var diff = function(dictDuration) {
 };
 
 // output/Data.DateTime.Instant/foreign.js
+var createDateTime = function(y, m, d, h, mi, s, ms) {
+  var dateTime = new Date(Date.UTC(y, m, d, h, mi, s, ms));
+  if (y >= 0 && y < 100) {
+    dateTime.setUTCFullYear(y);
+  }
+  return dateTime;
+};
+function fromDateTimeImpl(y, mo, d, h, mi, s, ms) {
+  return createDateTime(y, mo - 1, d, h, mi, s, ms).getTime();
+}
 function toDateTimeImpl(ctor) {
   return function(instant2) {
     var dt = new Date(instant2);
@@ -2373,6 +2387,9 @@ function toDateTimeImpl(ctor) {
 }
 
 // output/Data.DateTime.Instant/index.js
+var unInstant = function(v) {
+  return v;
+};
 var toDateTime = /* @__PURE__ */ function() {
   var mkDateTime = function(y) {
     return function(mo) {
@@ -2401,6 +2418,9 @@ var instant = function(v) {
   }
   ;
   throw new Error("Failed pattern match at Data.DateTime.Instant (line 44, column 1 - line 44, column 41): " + [v.constructor.name]);
+};
+var fromDateTime = function(v) {
+  return fromDateTimeImpl(year(v.value0), fromEnum(boundedEnumMonth)(month(v.value0)), day(v.value0), hour(v.value1), minute(v.value1), second(v.value1), millisecond(v.value1));
 };
 
 // output/Data.Ratio/index.js
@@ -6188,7 +6208,7 @@ var updateAnimationAction = function(m) {
           return log2("strange error in LocoMotion: updateAnimationAction, should not be possible");
         }
         ;
-        throw new Error("Failed pattern match at Dancer (line 99, column 3 - line 110, column 96): " + [v.constructor.name]);
+        throw new Error("Failed pattern match at Dancer (line 106, column 3 - line 117, column 96): " + [v.constructor.name]);
       };
     };
   };
@@ -6228,6 +6248,18 @@ var newDancer = /* @__PURE__ */ liftEffect(/* @__PURE__ */ monadEffectState(/* @
     model
   };
 });
+var models = ["Alan.glb", "benny.glb", "cactus.glb", "Daffy.glb", "dylan_moss_scuffed.glb", "Lily.glb", "lisa.glb", "NatureGirl.glb", "StoneFigure.glb", "Willy.glb", "Woman-NLA.glb", "ant.glb", "Branch.glb", "crackman.glb", "Diver.glb", "ethan_mesh_smooth.glb", "fossegrim.glb", "leafy.glb", "Lisa.glb", "mark.glb", "Oak.glb", "raccoon.glb", "wireman.glb", "woodman.glb"];
+var randomModel = function(zone) {
+  return function(increment) {
+    return bind(bindStateT(monadReaderT(monadEffect)))(ask(monadAskStateT(monadAskReaderT(monadEffect))))(function(env) {
+      var secs = unwrap()(unInstant(fromDateTime(env.tempo.time))) / 1e3;
+      var nModels = length(models);
+      var nBase = round2((secs - floor(secs)) * toNumber(nModels));
+      var n = mod(euclideanRingInt)((nBase + zone | 0) + increment | 0)(nModels);
+      return pure(applicativeStateT(monadReaderT(monadEffect)))(fromMaybe("raccoon.glb")(index(models)(n)));
+    });
+  };
+};
 var logAnimation = function(i) {
   return function(x) {
     return log2(" " + (show(showInt)(i) + (": " + show(showString)(x.name))));
@@ -6253,33 +6285,48 @@ var loadModel = function(url) {
     });
   };
 };
-var updateModel = function(vm) {
-  return function(d) {
-    var urlProg = lookupString("raccoon.glb")("url")(vm);
-    return bind(bindStateT(monadReaderT(monadEffect)))(liftEffect(monadEffectState(monadEffectReader(monadEffectEffect)))(read(d.url)))(function(urlState) {
-      return discard(discardUnit)(bindStateT(monadReaderT(monadEffect)))(when(applicativeStateT(monadReaderT(monadEffect)))(urlProg !== urlState)(discard(discardUnit)(bindStateT(monadReaderT(monadEffect)))(removeDancer(d))(function() {
-        return loadModel(urlProg)(d);
-      })))(function() {
-        return pure(applicativeStateT(monadReaderT(monadEffect)))(d);
-      });
-    });
+var calculateModelURL = function(zone) {
+  return function(vm) {
+    var v = lookupString("")("url")(vm);
+    if (v === "") {
+      return randomModel(zone)(0);
+    }
+    ;
+    return pure(applicativeStateT(monadReaderT(monadEffect)))(v);
   };
 };
-var updateDancer = function(vm) {
-  return function(x) {
-    return bind(bindStateT(monadReaderT(monadEffect)))(updateModel(vm)(x))(function(y) {
-      return discard(discardUnit)(bindStateT(monadReaderT(monadEffect)))(whenMaybeRef(monadEffectState(monadEffectReader(monadEffectEffect)))(y.model)(function(m) {
-        return discard(discardUnit)(bindStateT(monadReaderT(monadEffect)))(updatePosition()(vm)(m.scene))(function() {
-          return discard(discardUnit)(bindStateT(monadReaderT(monadEffect)))(updateScale()(vm)(m.scene))(function() {
-            return discard(discardUnit)(bindStateT(monadReaderT(monadEffect)))(updateRotation()(vm)(m.scene))(function() {
-              return updateAnimation(vm)(y);
-            });
+var updateModel = function(zone) {
+  return function(vm) {
+    return function(d) {
+      return bind(bindStateT(monadReaderT(monadEffect)))(calculateModelURL(zone)(vm))(function(urlProg) {
+        return bind(bindStateT(monadReaderT(monadEffect)))(liftEffect(monadEffectState(monadEffectReader(monadEffectEffect)))(read(d.url)))(function(urlState) {
+          return discard(discardUnit)(bindStateT(monadReaderT(monadEffect)))(when(applicativeStateT(monadReaderT(monadEffect)))(urlProg !== urlState)(discard(discardUnit)(bindStateT(monadReaderT(monadEffect)))(removeDancer(d))(function() {
+            return loadModel(urlProg)(d);
+          })))(function() {
+            return pure(applicativeStateT(monadReaderT(monadEffect)))(d);
           });
         });
-      }))(function() {
-        return pure(applicativeStateT(monadReaderT(monadEffect)))(x);
       });
-    });
+    };
+  };
+};
+var updateDancer = function(zone) {
+  return function(vm) {
+    return function(x) {
+      return bind(bindStateT(monadReaderT(monadEffect)))(updateModel(zone)(vm)(x))(function(y) {
+        return discard(discardUnit)(bindStateT(monadReaderT(monadEffect)))(whenMaybeRef(monadEffectState(monadEffectReader(monadEffectEffect)))(y.model)(function(m) {
+          return discard(discardUnit)(bindStateT(monadReaderT(monadEffect)))(updatePosition()(vm)(m.scene))(function() {
+            return discard(discardUnit)(bindStateT(monadReaderT(monadEffect)))(updateScale()(vm)(m.scene))(function() {
+              return discard(discardUnit)(bindStateT(monadReaderT(monadEffect)))(updateRotation()(vm)(m.scene))(function() {
+                return updateAnimation(vm)(y);
+              });
+            });
+          });
+        }))(function() {
+          return pure(applicativeStateT(monadReaderT(monadEffect)))(x);
+        });
+      });
+    };
   };
 };
 
@@ -30421,81 +30468,83 @@ var count = function(m) {
 };
 
 // output/RenderEngine/index.js
-var updateElement = function(vm) {
-  return function(v) {
-    if (v instanceof ElementDancer) {
-      return bind(bindStateT(monadReaderT(monadEffect)))(updateDancer(vm)(v.value0))(function() {
-        var $61 = pure(applicativeStateT(monadReaderT(monadEffect)));
-        return function($62) {
-          return $61(ElementDancer.create($62));
-        };
-      }());
-    }
-    ;
-    if (v instanceof ElementPlane) {
-      return bind(bindStateT(monadReaderT(monadEffect)))(updatePlane(vm)(v.value0))(function() {
-        var $63 = pure(applicativeStateT(monadReaderT(monadEffect)));
-        return function($64) {
-          return $63(ElementPlane.create($64));
-        };
-      }());
-    }
-    ;
-    if (v instanceof ElementAmbient) {
-      return bind(bindStateT(monadReaderT(monadEffect)))(updateAmbient(vm)(v.value0))(function() {
-        var $65 = pure(applicativeStateT(monadReaderT(monadEffect)));
-        return function($66) {
-          return $65(ElementAmbient.create($66));
-        };
-      }());
-    }
-    ;
-    if (v instanceof ElementDirectional) {
-      return bind(bindStateT(monadReaderT(monadEffect)))(updateDirectional(vm)(v.value0))(function() {
-        var $67 = pure(applicativeStateT(monadReaderT(monadEffect)));
-        return function($68) {
-          return $67(ElementDirectional.create($68));
-        };
-      }());
-    }
-    ;
-    if (v instanceof ElementHemisphere) {
-      return bind(bindStateT(monadReaderT(monadEffect)))(updateHemisphere(vm)(v.value0))(function() {
-        var $69 = pure(applicativeStateT(monadReaderT(monadEffect)));
-        return function($70) {
-          return $69(ElementHemisphere.create($70));
-        };
-      }());
-    }
-    ;
-    if (v instanceof ElementPoint) {
-      return bind(bindStateT(monadReaderT(monadEffect)))(updatePoint(vm)(v.value0))(function() {
-        var $71 = pure(applicativeStateT(monadReaderT(monadEffect)));
-        return function($72) {
-          return $71(ElementPoint.create($72));
-        };
-      }());
-    }
-    ;
-    if (v instanceof ElementRectArea) {
-      return bind(bindStateT(monadReaderT(monadEffect)))(updateRectArea(vm)(v.value0))(function() {
-        var $73 = pure(applicativeStateT(monadReaderT(monadEffect)));
-        return function($74) {
-          return $73(ElementRectArea.create($74));
-        };
-      }());
-    }
-    ;
-    if (v instanceof ElementSpot) {
-      return bind(bindStateT(monadReaderT(monadEffect)))(updateSpot(vm)(v.value0))(function() {
-        var $75 = pure(applicativeStateT(monadReaderT(monadEffect)));
-        return function($76) {
-          return $75(ElementSpot.create($76));
-        };
-      }());
-    }
-    ;
-    throw new Error("Failed pattern match at RenderEngine (line 243, column 1 - line 243, column 50): " + [vm.constructor.name, v.constructor.name]);
+var updateElement = function(v) {
+  return function(vm) {
+    return function(v1) {
+      if (v1 instanceof ElementDancer) {
+        return bind(bindStateT(monadReaderT(monadEffect)))(updateDancer(v)(vm)(v1.value0))(function() {
+          var $64 = pure(applicativeStateT(monadReaderT(monadEffect)));
+          return function($65) {
+            return $64(ElementDancer.create($65));
+          };
+        }());
+      }
+      ;
+      if (v1 instanceof ElementPlane) {
+        return bind(bindStateT(monadReaderT(monadEffect)))(updatePlane(vm)(v1.value0))(function() {
+          var $66 = pure(applicativeStateT(monadReaderT(monadEffect)));
+          return function($67) {
+            return $66(ElementPlane.create($67));
+          };
+        }());
+      }
+      ;
+      if (v1 instanceof ElementAmbient) {
+        return bind(bindStateT(monadReaderT(monadEffect)))(updateAmbient(vm)(v1.value0))(function() {
+          var $68 = pure(applicativeStateT(monadReaderT(monadEffect)));
+          return function($69) {
+            return $68(ElementAmbient.create($69));
+          };
+        }());
+      }
+      ;
+      if (v1 instanceof ElementDirectional) {
+        return bind(bindStateT(monadReaderT(monadEffect)))(updateDirectional(vm)(v1.value0))(function() {
+          var $70 = pure(applicativeStateT(monadReaderT(monadEffect)));
+          return function($71) {
+            return $70(ElementDirectional.create($71));
+          };
+        }());
+      }
+      ;
+      if (v1 instanceof ElementHemisphere) {
+        return bind(bindStateT(monadReaderT(monadEffect)))(updateHemisphere(vm)(v1.value0))(function() {
+          var $72 = pure(applicativeStateT(monadReaderT(monadEffect)));
+          return function($73) {
+            return $72(ElementHemisphere.create($73));
+          };
+        }());
+      }
+      ;
+      if (v1 instanceof ElementPoint) {
+        return bind(bindStateT(monadReaderT(monadEffect)))(updatePoint(vm)(v1.value0))(function() {
+          var $74 = pure(applicativeStateT(monadReaderT(monadEffect)));
+          return function($75) {
+            return $74(ElementPoint.create($75));
+          };
+        }());
+      }
+      ;
+      if (v1 instanceof ElementRectArea) {
+        return bind(bindStateT(monadReaderT(monadEffect)))(updateRectArea(vm)(v1.value0))(function() {
+          var $76 = pure(applicativeStateT(monadReaderT(monadEffect)));
+          return function($77) {
+            return $76(ElementRectArea.create($77));
+          };
+        }());
+      }
+      ;
+      if (v1 instanceof ElementSpot) {
+        return bind(bindStateT(monadReaderT(monadEffect)))(updateSpot(vm)(v1.value0))(function() {
+          var $78 = pure(applicativeStateT(monadReaderT(monadEffect)));
+          return function($79) {
+            return $78(ElementSpot.create($79));
+          };
+        }());
+      }
+      ;
+      throw new Error("Failed pattern match at RenderEngine (line 243, column 1 - line 243, column 57): " + [v.constructor.name, vm.constructor.name, v1.constructor.name]);
+    };
   };
 };
 var setClearColor2 = function(re) {
@@ -30737,79 +30786,85 @@ var createElement2 = function(v) {
   ;
   throw new Error("Failed pattern match at RenderEngine (line 233, column 1 - line 233, column 42): " + [v.constructor.name]);
 };
-var runElement = function(i) {
-  return function(v) {
-    return bind(bindStateT(monadReaderT(monadEffect)))(get(monadStateStateT(monadReaderT(monadEffect))))(function(s) {
-      return bind(bindStateT(monadReaderT(monadEffect)))(function() {
-        var v1 = index(s.elements)(i);
-        if (v1 instanceof Nothing) {
-          return bind(bindStateT(monadReaderT(monadEffect)))(createElement2(v.value0))(function(e) {
-            return updateElement(v.value1)(e);
-          });
-        }
-        ;
-        if (v1 instanceof Just) {
-          var v2 = eq(eqElementType)(v.value0)(elementType(v1.value0));
-          if (v2) {
-            return updateElement(v.value1)(v1.value0);
-          }
-          ;
-          if (!v2) {
-            return discard(discardUnit)(bindStateT(monadReaderT(monadEffect)))(removeElement(v1.value0))(function() {
-              return bind(bindStateT(monadReaderT(monadEffect)))(createElement2(v.value0))(function(e$prime) {
-                return updateElement(v.value1)(e$prime);
-              });
+var runElement = function(zone) {
+  return function(i) {
+    return function(v) {
+      return bind(bindStateT(monadReaderT(monadEffect)))(get(monadStateStateT(monadReaderT(monadEffect))))(function(s) {
+        return bind(bindStateT(monadReaderT(monadEffect)))(function() {
+          var v1 = index(s.elements)(i);
+          if (v1 instanceof Nothing) {
+            return bind(bindStateT(monadReaderT(monadEffect)))(createElement2(v.value0))(function(e) {
+              return updateElement(zone)(v.value1)(e);
             });
           }
           ;
-          throw new Error("Failed pattern match at RenderEngine (line 225, column 7 - line 230, column 30): " + [v2.constructor.name]);
-        }
-        ;
-        throw new Error("Failed pattern match at RenderEngine (line 220, column 11 - line 230, column 30): " + [v1.constructor.name]);
-      }())(function(newE) {
-        return modify_(monadStateStateT(monadReaderT(monadEffect)))(function(x) {
-          var $49 = {};
-          for (var $50 in x) {
-            if ({}.hasOwnProperty.call(x, $50)) {
-              $49[$50] = x[$50];
+          if (v1 instanceof Just) {
+            var v2 = eq(eqElementType)(v.value0)(elementType(v1.value0));
+            if (v2) {
+              return updateElement(zone)(v.value1)(v1.value0);
             }
             ;
+            if (!v2) {
+              return discard(discardUnit)(bindStateT(monadReaderT(monadEffect)))(removeElement(v1.value0))(function() {
+                return bind(bindStateT(monadReaderT(monadEffect)))(createElement2(v.value0))(function(e$prime) {
+                  return updateElement(zone)(v.value1)(e$prime);
+                });
+              });
+            }
+            ;
+            throw new Error("Failed pattern match at RenderEngine (line 225, column 7 - line 230, column 35): " + [v2.constructor.name]);
           }
           ;
-          $49.elements = replaceAt(i)(newE)(x.elements);
-          return $49;
+          throw new Error("Failed pattern match at RenderEngine (line 220, column 11 - line 230, column 35): " + [v1.constructor.name]);
+        }())(function(newE) {
+          return modify_(monadStateStateT(monadReaderT(monadEffect)))(function(x) {
+            var $52 = {};
+            for (var $53 in x) {
+              if ({}.hasOwnProperty.call(x, $53)) {
+                $52[$53] = x[$53];
+              }
+              ;
+            }
+            ;
+            $52.elements = replaceAt(i)(newE)(x.elements);
+            return $52;
+          });
+        });
+      });
+    };
+  };
+};
+var runElements = function(zone) {
+  return function(xs) {
+    return bind(bindStateT(monadReaderT(monadEffect)))(traverseWithIndex(traversableWithIndexArray)(applicativeStateT(monadReaderT(monadEffect)))(runElement(zone))(xs))(function() {
+      var nElements = length(xs);
+      return bind(bindStateT(monadReaderT(monadEffect)))(get(monadStateStateT(monadReaderT(monadEffect))))(function(s) {
+        return discard(discardUnit)(bindStateT(monadReaderT(monadEffect)))(traverse_(applicativeStateT(monadReaderT(monadEffect)))(foldableArray)(removeElement)(drop(nElements)(s.elements)))(function() {
+          return modify_(monadStateStateT(monadReaderT(monadEffect)))(function(x) {
+            var $57 = {};
+            for (var $58 in x) {
+              if ({}.hasOwnProperty.call(x, $58)) {
+                $57[$58] = x[$58];
+              }
+              ;
+            }
+            ;
+            $57.elements = take(nElements)(x.elements);
+            return $57;
+          });
         });
       });
     });
   };
 };
-var runElements = function(xs) {
-  return bind(bindStateT(monadReaderT(monadEffect)))(traverseWithIndex(traversableWithIndexArray)(applicativeStateT(monadReaderT(monadEffect)))(runElement)(xs))(function() {
-    var nElements = length(xs);
-    return bind(bindStateT(monadReaderT(monadEffect)))(get(monadStateStateT(monadReaderT(monadEffect))))(function(s) {
-      return discard(discardUnit)(bindStateT(monadReaderT(monadEffect)))(traverse_(applicativeStateT(monadReaderT(monadEffect)))(foldableArray)(removeElement)(drop(nElements)(s.elements)))(function() {
-        return modify_(monadStateStateT(monadReaderT(monadEffect)))(function(x) {
-          var $54 = {};
-          for (var $55 in x) {
-            if ({}.hasOwnProperty.call(x, $55)) {
-              $54[$55] = x[$55];
-            }
-            ;
-          }
-          ;
-          $54.elements = take(nElements)(x.elements);
-          return $54;
-        });
-      });
-    });
-  });
-};
-var runProgram = function(re) {
-  return function(prog) {
-    return function(zoneState) {
-      return execR(re)(zoneState)(discard(discardUnit)(bindStateT(monadReaderT(monadEffect)))(runElements(prog.elements))(function() {
-        return runCamera(prog.cameraMap);
-      }));
+var runProgram = function(zone) {
+  return function(re) {
+    return function(prog) {
+      return function(zoneState) {
+        return execR(re)(zoneState)(discard(discardUnit)(bindStateT(monadReaderT(monadEffect)))(runElements(zone)(prog.elements))(function() {
+          return runCamera(prog.cameraMap);
+        }));
+      };
     };
   };
 };
@@ -30845,7 +30900,7 @@ var animateZone = function(re) {
           throw new Error("Failed pattern match at RenderEngine (line 135, column 23 - line 137, column 52): " + [y.constructor.name]);
         }();
         var rEnv = read(re.renderEnvironment)();
-        var zoneState$prime = runProgram(rEnv)(x.value0)(zoneState)();
+        var zoneState$prime = runProgram(z)(rEnv)(x.value0)(zoneState)();
         return write3(z)(zoneState$prime)(re.zoneStates)();
       }
       ;

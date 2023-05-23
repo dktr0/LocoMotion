@@ -31,9 +31,9 @@ newDancer = liftEffect $ do
   model <- new Nothing
   pure { url, model }
 
-updateDancer :: ValueMap -> Dancer -> R Dancer
-updateDancer vm x = do
-  y <- updateModel vm x
+updateDancer :: Int -> ValueMap -> Dancer -> R Dancer
+updateDancer zone vm x = do
+  y <- updateModel zone vm x
   whenMaybeRef y.model $ \m -> do
     updatePosition vm m.scene
     updateScale vm m.scene
@@ -48,15 +48,22 @@ removeDancer d = do
 
 
 
-updateModel :: ValueMap -> Dancer -> R Dancer
-updateModel vm d = do
-  let urlProg = lookupString "raccoon.glb" "url" vm
+updateModel :: Int -> ValueMap -> Dancer -> R Dancer
+updateModel zone vm d = do
+  urlProg <- calculateModelURL zone vm
   urlState <- liftEffect $ read d.url
   when (urlProg /= urlState) $ do
     removeDancer d
     loadModel urlProg d
   pure d
+  
 
+calculateModelURL :: Int -> ValueMap -> R String
+calculateModelURL zone vm = 
+  case lookupString "" "url" vm of 
+    "" -> randomModel zone 0
+    x -> pure x
+    
 
 randomModel :: Int -> Int -> R String
 randomModel zone increment = do
@@ -70,7 +77,7 @@ randomModel zone increment = do
 
 models :: Array String
 models = [
-  "Alan.glb","benny.glb","cactus.glb","Daffy.glb","dylan_moss_scuffed.glb","Lily.glb",
+  "benny.glb","cactus.glb","Daffy.glb","dylan_moss_scuffed.glb","Lily.glb",
   "lisa.glb","NatureGirl.glb","StoneFigure.glb","Willy.glb","Woman-NLA.glb",
   "ant.glb","Branch.glb","crackman.glb","Diver.glb","ethan_mesh_smooth.glb","fossegrim.glb",
   "leafy.glb","Lisa.glb","mark.glb","Oak.glb","raccoon.glb","wireman.glb","woodman.glb"

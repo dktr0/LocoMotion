@@ -136,7 +136,7 @@ animateZone re z = do
                         Just y' -> y'
                         Nothing -> defaultZoneState
       rEnv <- read re.renderEnvironment
-      zoneState' <- runProgram rEnv prog zoneState
+      zoneState' <- runProgram z rEnv prog zoneState
       ZoneMap.write z zoneState' re.zoneStates
   -- t1 <- nowDateTime
   -- let tDiff = unwrap (diff t1 t0 :: Milliseconds)
@@ -183,15 +183,15 @@ setClearColor re = do
   rEnv <- read re.renderEnvironment
   Three.setClearColor rEnv.renderer c a
 
-runProgram :: RenderEnvironment -> Program -> ZoneState -> Effect ZoneState
-runProgram re prog zoneState = execR re zoneState $ do
-  runElements prog.elements
+runProgram :: Int -> RenderEnvironment -> Program -> ZoneState -> Effect ZoneState
+runProgram zone re prog zoneState = execR re zoneState $ do
+  runElements zone prog.elements
   runCamera prog.cameraMap
 
 
-runElements :: Array (Tuple ElementType ValueMap) -> R Unit
-runElements xs = do
-  _ <- traverseWithIndex runElement xs
+runElements :: Int -> Array (Tuple ElementType ValueMap) -> R Unit
+runElements zone xs = do
+  _ <- traverseWithIndex (runElement zone) xs
   let nElements = length xs
   -- remove any deleted elements
   s <- get
@@ -214,20 +214,20 @@ runCamera vm = do
   updateRotation vm re.camera
 
 
-runElement :: Int -> Tuple ElementType ValueMap -> R Unit
-runElement i (Tuple t vm) = do
+runElement :: Int -> Int -> Tuple ElementType ValueMap -> R Unit
+runElement zone i (Tuple t vm) = do
   s <- get
   newE <- case index s.elements i of
     Nothing -> do
       e <- createElement t
-      updateElement vm e
+      updateElement zone vm e
     Just e -> do
       case t == elementType e of
-        true -> updateElement vm e
+        true -> updateElement zone vm e
         false -> do
           removeElement e
           e' <- createElement t
-          updateElement vm e'
+          updateElement zone vm e'
   modify_ $ \x -> x { elements = replaceAt i newE x.elements }
 
 createElement :: ElementType -> R Element
@@ -240,15 +240,15 @@ createElement Point = ElementPoint <$> newPoint
 createElement RectArea = ElementRectArea <$> newRectArea
 createElement Spot = ElementSpot <$> newSpot
 
-updateElement :: ValueMap -> Element -> R Element
-updateElement vm (ElementDancer x) = updateDancer vm x >>= (pure <<< ElementDancer)
-updateElement vm (ElementPlane x) = updatePlane vm x >>= (pure <<< ElementPlane)
-updateElement vm (ElementAmbient x) = updateAmbient vm x >>= (pure <<< ElementAmbient)
-updateElement vm (ElementDirectional x) = updateDirectional vm x >>= (pure <<< ElementDirectional)
-updateElement vm (ElementHemisphere x) = updateHemisphere vm x >>= (pure <<< ElementHemisphere)
-updateElement vm (ElementPoint x) = updatePoint vm x >>= (pure <<< ElementPoint)
-updateElement vm (ElementRectArea x) = updateRectArea vm x >>= (pure <<< ElementRectArea)
-updateElement vm (ElementSpot x) = updateSpot vm x >>= (pure <<< ElementSpot)
+updateElement :: Int -> ValueMap -> Element -> R Element
+updateElement zone vm (ElementDancer x) = updateDancer zone vm x >>= (pure <<< ElementDancer)
+updateElement _ vm (ElementPlane x) = updatePlane vm x >>= (pure <<< ElementPlane)
+updateElement _ vm (ElementAmbient x) = updateAmbient vm x >>= (pure <<< ElementAmbient)
+updateElement _ vm (ElementDirectional x) = updateDirectional vm x >>= (pure <<< ElementDirectional)
+updateElement _ vm (ElementHemisphere x) = updateHemisphere vm x >>= (pure <<< ElementHemisphere)
+updateElement _ vm (ElementPoint x) = updatePoint vm x >>= (pure <<< ElementPoint)
+updateElement _ vm (ElementRectArea x) = updateRectArea vm x >>= (pure <<< ElementRectArea)
+updateElement _ vm (ElementSpot x) = updateSpot vm x >>= (pure <<< ElementSpot)
 
 removeElement :: Element -> R Unit
 removeElement (ElementDancer x) = removeDancer x
