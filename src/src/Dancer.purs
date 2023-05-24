@@ -14,7 +14,7 @@ import Data.Rational
 import Data.Ratio
 import Data.Traversable (traverse,traverse_)
 import Data.FoldableWithIndex (traverseWithIndex_)
-import Data.Map (Map)
+import Data.Map (Map,lookup)
 import Control.Monad.Reader.Trans (ask)
 import Data.Newtype (unwrap)
 import Data.DateTime.Instant (unInstant,fromDateTime)
@@ -38,7 +38,7 @@ updateDancer zone vm x = do
     updatePosition vm m.scene
     updateScale vm m.scene
     updateRotation vm m.scene
-    updateAnimation vm y
+    updateAnimation zone vm y
   pure x
 
 removeDancer :: Dancer -> R Unit
@@ -84,22 +84,38 @@ models = [
   ]
 
 
-updateAnimation :: ValueMap -> Dancer -> R Unit
-updateAnimation valueMap s = do
-  env <- ask
-  liftEffect $ whenMaybeRef s.model $ \m -> do
-    prevMixerState <- read m.mixerState
-    let newMixerState = valueToMixerState m $ lookupValue (ValueInt 0) "animation" valueMap
-    prevDurState <- read m.durState
-    let dur = lookupNumber 1.0 "dur" valueMap * env.cycleDur
-    when (prevMixerState /= newMixerState || prevDurState /= dur) $ do
+updateAnimation :: Int -> ValueMap -> Dancer -> R Unit
+updateAnimation zone vm s = whenMaybeRef s.model $ \m -> do
+    env <- ask
+    prevMixerState <- liftEffect $ read m.mixerState
+    let nAnims = length m.actions
+    animationValue <- calculateAnimation zone nAnims vm
+    let newMixerState = valueToMixerState m animationValue
+    prevDurState <- liftEffect $ read m.durState
+    let dur = lookupNumber 1.0 "dur" vm * env.cycleDur
+    when (prevMixerState /= newMixerState || prevDurState /= dur) $ liftEffect $ do
       -- log $ "prevMixerState /= newMixerState, dur = " <> show dur
       -- log $ show prevMixerState <> " ... " <> show newMixerState
       traverseWithIndex_ (updateAnimationAction m dur) newMixerState
       write newMixerState m.mixerState
       write dur m.durState
-    Three.updateAnimationMixer m.mixer env.delta
+    liftEffect $ Three.updateAnimationMixer m.mixer env.delta
 
+calculateAnimation :: Int -> Int -> ValueMap -> R Value
+calculateAnimation zone nAnims vm = 
+  case lookup "animation" vm of
+    Nothing -> randomAnimation zone 0 nAnims
+    Just v -> pure v
+
+randomAnimation :: Int -> Int -> Int -> R Value
+randomAnimation zone increment nAnims = do
+  env <- ask 
+  let nModels = length models
+  let secs = (unwrap $ unInstant $ fromDateTime $ env.tempo.time) / (1000.0 * toNumber nModels)
+  let nBase = round $ (secs - floor secs) * toNumber nAnims
+  let n = mod (nBase + zone + increment) nAnims
+  pure $ ValueInt n
+  
 
 updateAnimationAction :: Model -> Number -> Int -> Number -> Effect Unit
 updateAnimationAction m dur i weight = do

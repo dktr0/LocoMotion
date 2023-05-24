@@ -3445,141 +3445,6 @@ var foldMapWithIndex = function(dict) {
   return dict.foldMapWithIndex;
 };
 
-// output/Effect.Console/foreign.js
-var log2 = function(s) {
-  return function() {
-    console.log(s);
-  };
-};
-
-// output/MaybeRef/index.js
-var whenMaybeRef = function(dictMonadEffect) {
-  return function(mRef) {
-    return function(f) {
-      return bind(dictMonadEffect.Monad0().Bind1())(liftEffect(dictMonadEffect)(read(mRef)))(function(m) {
-        if (m instanceof Just) {
-          return f(m.value0);
-        }
-        ;
-        if (m instanceof Nothing) {
-          return pure(dictMonadEffect.Monad0().Applicative0())(unit);
-        }
-        ;
-        throw new Error("Failed pattern match at MaybeRef (line 15, column 3 - line 17, column 25): " + [m.constructor.name]);
-      });
-    };
-  };
-};
-
-// output/ThreeJS/foreign.js
-var newObject3D = () => new THREE.Object3D();
-var newScene = () => new THREE.Scene();
-var newPerspectiveCamera = (fov) => (aspect) => (near) => (far) => () => new THREE.PerspectiveCamera(fov, aspect, near, far);
-var setAspect = (pCamera) => (aspect) => () => pCamera.aspect = aspect;
-var newWebGLRenderer = (params) => () => new THREE.WebGLRenderer(params);
-var render = (renderer) => (scene) => (camera) => () => renderer.render(scene, camera);
-var setSize = (renderer) => (w) => (h) => (updateStyle) => () => renderer.setSize(w, h, updateStyle);
-var setClearColor = (renderer) => (c) => (a) => () => renderer.setClearColor(c, a);
-var newGLTFLoader = () => new THREE.GLTFLoader();
-var loadGLTF1 = (loader) => (url) => (cb) => () => loader.load(url, (x) => cb(x)());
-var newDRACOLoader = () => new THREE.DRACOLoader();
-var setDecoderPath = (dracoLoader) => (modulePath) => () => dracoLoader.setDecoderPath(modulePath);
-var setDRACOLoader = (gltfLoader) => (dracoLoader) => () => gltfLoader.setDRACOLoader(dracoLoader);
-var newPlaneGeometry = (width) => (height) => (widthSegments) => (heightSegments) => () => new THREE.PlaneGeometry(width, height, widthSegments, heightSegments);
-var newMesh = (geometry) => (material) => () => new THREE.Mesh(geometry, material);
-var setReceiveShadow = (mesh) => (boolean) => () => mesh.receiveShadow = boolean;
-var setColorInt = (thing) => (color) => () => thing.color = new THREE.Color(color);
-var addAnything = (a) => (b) => () => a.add(b);
-var removeObject3D = (parent) => (child) => () => parent.remove(child);
-var removeFromParent = (obj3D) => () => obj3D.removeFromParent();
-var setScaleOfAnything = (thing) => (x) => (y) => (z) => () => thing.scale.set(x, y, z);
-var playAnything = (thing) => () => thing.play();
-var newHemisphereLight = (skyColor) => (groundColor) => (intensity) => () => new THREE.HemisphereLight(skyColor, groundColor, intensity);
-var setGroundColor = (x) => (y) => () => x.groundColor = new THREE.Color(y);
-var newAmbientLight = (rgb) => (intensity) => () => new THREE.AmbientLight(rgb, intensity);
-var newDirectionalLight = (rgb) => (intensity) => () => new THREE.DirectionalLight(rgb, intensity);
-var newPointLight = (rgb) => (intensity) => (distance) => (decay) => () => new THREE.PointLight(rgb, intensity, distance, decay);
-var newRectAreaLight = (rgb) => (intensity) => (width) => (height) => () => new THREE.RectAreaLight(rgb, intensity, width, height);
-var setWidth = (x) => (y) => () => x.width = y;
-var setHeight = (x) => (y) => () => x.height = y;
-var newSpotLight = (rgb) => (intensity) => (distance) => (angle) => (penumbra) => (decay) => () => new THREE.SpotLight(rgb, intensity, distance, angle, penumbra, decay);
-var setAngle = (x) => (y) => () => x.angle = y;
-var setPenumbra = (x) => (y) => () => x.penumbra = y;
-var windowInnerWidth = () => window.innerWidth;
-var windowInnerHeight = () => window.innerHeight;
-var newAnimationMixer = (object3D) => () => new THREE.AnimationMixer(object3D);
-var updateAnimationMixer = (mixer) => (delta) => () => mixer.update(delta);
-var clipAction = (animationMixer) => (clip) => () => animationMixer.clipAction(clip);
-var setEffectiveTimeScale = (animationAction) => (t) => () => animationAction.setEffectiveTimeScale(t);
-var setDuration = (animationAction) => (durationInSeconds) => () => animationAction.setDuration(durationInSeconds);
-var stop = (animationAction) => () => animationAction.stop();
-var newMeshPhongMaterial = (parameters) => () => new THREE.MeshPhongMaterial(parameters);
-var clampToEdgeWrapping = THREE.ClampToEdgeWrapping;
-var repeatWrapping = THREE.RepeatWrapping;
-var mirroredRepeatWrapping = THREE.MirroredRepeatWrapping;
-var nearestFilter = THREE.NearestFilter;
-var linearFilter = THREE.LinearFilter;
-
-// output/ThreeJS.Unsafe/foreign.js
-var lookAt = (thing) => (x) => (y) => (z) => () => thing.lookAt(x, y, z);
-var setPosition = (thing) => (x) => (y) => (z) => () => thing.position.set(x, y, z);
-var getRotationX = (thing) => () => thing.rotation.x;
-var getRotationY = (thing) => () => thing.rotation.y;
-var getRotationZ = (thing) => () => thing.rotation.z;
-var setRotation = (thing) => (x) => (y) => (z) => () => thing.rotation.set(x, y, z);
-var setLightIntensity = (l) => (x) => () => l.intensity = x;
-var setDistance = (x) => (y) => () => x.distance = y;
-var setDecay = (x) => (y) => () => x.decay = y;
-var setTarget = (a) => (t) => () => a.target = t;
-
-// output/ThreeJS/index.js
-var setTarget2 = function() {
-  return function() {
-    return setTarget;
-  };
-};
-var setRotation2 = function() {
-  return setRotation;
-};
-var setPosition2 = function() {
-  return setPosition;
-};
-var setLightIntensity2 = function() {
-  return setLightIntensity;
-};
-var setDistance2 = function() {
-  return setDistance;
-};
-var setDecay2 = function() {
-  return setDecay;
-};
-var lookAt2 = function() {
-  return lookAt;
-};
-var loadGLTF_DRACO = function(pathToDracoModules) {
-  return function(url) {
-    return function(cb) {
-      return function __do2() {
-        var gltfLoader = newGLTFLoader();
-        var dracoLoader = newDRACOLoader();
-        setDecoderPath(dracoLoader)(pathToDracoModules)();
-        setDRACOLoader(gltfLoader)(dracoLoader)();
-        loadGLTF1(gltfLoader)(url)(cb)();
-        return gltfLoader;
-      };
-    };
-  };
-};
-var getRotationZ2 = function() {
-  return getRotationZ;
-};
-var getRotationY2 = function() {
-  return getRotationY;
-};
-var getRotationX2 = function() {
-  return getRotationX;
-};
-
 // output/Data.TraversableWithIndex/index.js
 var traverseWithIndexDefault = function(dictTraversableWithIndex) {
   return function(dictApplicative) {
@@ -4915,6 +4780,141 @@ var unions = function(dictOrd) {
   };
 };
 
+// output/Effect.Console/foreign.js
+var log2 = function(s) {
+  return function() {
+    console.log(s);
+  };
+};
+
+// output/MaybeRef/index.js
+var whenMaybeRef = function(dictMonadEffect) {
+  return function(mRef) {
+    return function(f) {
+      return bind(dictMonadEffect.Monad0().Bind1())(liftEffect(dictMonadEffect)(read(mRef)))(function(m) {
+        if (m instanceof Just) {
+          return f(m.value0);
+        }
+        ;
+        if (m instanceof Nothing) {
+          return pure(dictMonadEffect.Monad0().Applicative0())(unit);
+        }
+        ;
+        throw new Error("Failed pattern match at MaybeRef (line 15, column 3 - line 17, column 25): " + [m.constructor.name]);
+      });
+    };
+  };
+};
+
+// output/ThreeJS/foreign.js
+var newObject3D = () => new THREE.Object3D();
+var newScene = () => new THREE.Scene();
+var newPerspectiveCamera = (fov) => (aspect) => (near) => (far) => () => new THREE.PerspectiveCamera(fov, aspect, near, far);
+var setAspect = (pCamera) => (aspect) => () => pCamera.aspect = aspect;
+var newWebGLRenderer = (params) => () => new THREE.WebGLRenderer(params);
+var render = (renderer) => (scene) => (camera) => () => renderer.render(scene, camera);
+var setSize = (renderer) => (w) => (h) => (updateStyle) => () => renderer.setSize(w, h, updateStyle);
+var setClearColor = (renderer) => (c) => (a) => () => renderer.setClearColor(c, a);
+var newGLTFLoader = () => new THREE.GLTFLoader();
+var loadGLTF1 = (loader) => (url) => (cb) => () => loader.load(url, (x) => cb(x)());
+var newDRACOLoader = () => new THREE.DRACOLoader();
+var setDecoderPath = (dracoLoader) => (modulePath) => () => dracoLoader.setDecoderPath(modulePath);
+var setDRACOLoader = (gltfLoader) => (dracoLoader) => () => gltfLoader.setDRACOLoader(dracoLoader);
+var newPlaneGeometry = (width) => (height) => (widthSegments) => (heightSegments) => () => new THREE.PlaneGeometry(width, height, widthSegments, heightSegments);
+var newMesh = (geometry) => (material) => () => new THREE.Mesh(geometry, material);
+var setReceiveShadow = (mesh) => (boolean) => () => mesh.receiveShadow = boolean;
+var setColorInt = (thing) => (color) => () => thing.color = new THREE.Color(color);
+var addAnything = (a) => (b) => () => a.add(b);
+var removeObject3D = (parent) => (child) => () => parent.remove(child);
+var removeFromParent = (obj3D) => () => obj3D.removeFromParent();
+var setScaleOfAnything = (thing) => (x) => (y) => (z) => () => thing.scale.set(x, y, z);
+var playAnything = (thing) => () => thing.play();
+var newHemisphereLight = (skyColor) => (groundColor) => (intensity) => () => new THREE.HemisphereLight(skyColor, groundColor, intensity);
+var setGroundColor = (x) => (y) => () => x.groundColor = new THREE.Color(y);
+var newAmbientLight = (rgb) => (intensity) => () => new THREE.AmbientLight(rgb, intensity);
+var newDirectionalLight = (rgb) => (intensity) => () => new THREE.DirectionalLight(rgb, intensity);
+var newPointLight = (rgb) => (intensity) => (distance) => (decay) => () => new THREE.PointLight(rgb, intensity, distance, decay);
+var newRectAreaLight = (rgb) => (intensity) => (width) => (height) => () => new THREE.RectAreaLight(rgb, intensity, width, height);
+var setWidth = (x) => (y) => () => x.width = y;
+var setHeight = (x) => (y) => () => x.height = y;
+var newSpotLight = (rgb) => (intensity) => (distance) => (angle) => (penumbra) => (decay) => () => new THREE.SpotLight(rgb, intensity, distance, angle, penumbra, decay);
+var setAngle = (x) => (y) => () => x.angle = y;
+var setPenumbra = (x) => (y) => () => x.penumbra = y;
+var windowInnerWidth = () => window.innerWidth;
+var windowInnerHeight = () => window.innerHeight;
+var newAnimationMixer = (object3D) => () => new THREE.AnimationMixer(object3D);
+var updateAnimationMixer = (mixer) => (delta) => () => mixer.update(delta);
+var clipAction = (animationMixer) => (clip) => () => animationMixer.clipAction(clip);
+var setEffectiveTimeScale = (animationAction) => (t) => () => animationAction.setEffectiveTimeScale(t);
+var setDuration = (animationAction) => (durationInSeconds) => () => animationAction.setDuration(durationInSeconds);
+var stop = (animationAction) => () => animationAction.stop();
+var newMeshPhongMaterial = (parameters) => () => new THREE.MeshPhongMaterial(parameters);
+var clampToEdgeWrapping = THREE.ClampToEdgeWrapping;
+var repeatWrapping = THREE.RepeatWrapping;
+var mirroredRepeatWrapping = THREE.MirroredRepeatWrapping;
+var nearestFilter = THREE.NearestFilter;
+var linearFilter = THREE.LinearFilter;
+
+// output/ThreeJS.Unsafe/foreign.js
+var lookAt = (thing) => (x) => (y) => (z) => () => thing.lookAt(x, y, z);
+var setPosition = (thing) => (x) => (y) => (z) => () => thing.position.set(x, y, z);
+var getRotationX = (thing) => () => thing.rotation.x;
+var getRotationY = (thing) => () => thing.rotation.y;
+var getRotationZ = (thing) => () => thing.rotation.z;
+var setRotation = (thing) => (x) => (y) => (z) => () => thing.rotation.set(x, y, z);
+var setLightIntensity = (l) => (x) => () => l.intensity = x;
+var setDistance = (x) => (y) => () => x.distance = y;
+var setDecay = (x) => (y) => () => x.decay = y;
+var setTarget = (a) => (t) => () => a.target = t;
+
+// output/ThreeJS/index.js
+var setTarget2 = function() {
+  return function() {
+    return setTarget;
+  };
+};
+var setRotation2 = function() {
+  return setRotation;
+};
+var setPosition2 = function() {
+  return setPosition;
+};
+var setLightIntensity2 = function() {
+  return setLightIntensity;
+};
+var setDistance2 = function() {
+  return setDistance;
+};
+var setDecay2 = function() {
+  return setDecay;
+};
+var lookAt2 = function() {
+  return lookAt;
+};
+var loadGLTF_DRACO = function(pathToDracoModules) {
+  return function(url) {
+    return function(cb) {
+      return function __do2() {
+        var gltfLoader = newGLTFLoader();
+        var dracoLoader = newDRACOLoader();
+        setDecoderPath(dracoLoader)(pathToDracoModules)();
+        setDRACOLoader(gltfLoader)(dracoLoader)();
+        loadGLTF1(gltfLoader)(url)(cb)();
+        return gltfLoader;
+      };
+    };
+  };
+};
+var getRotationZ2 = function() {
+  return getRotationZ;
+};
+var getRotationY2 = function() {
+  return getRotationY;
+};
+var getRotationX2 = function() {
+  return getRotationX;
+};
+
 // output/ElementType/index.js
 var Dancer = /* @__PURE__ */ function() {
   function Dancer2() {
@@ -6208,29 +6208,9 @@ var updateAnimationAction = function(m) {
           return log2("strange error in LocoMotion: updateAnimationAction, should not be possible");
         }
         ;
-        throw new Error("Failed pattern match at Dancer (line 106, column 3 - line 117, column 96): " + [v.constructor.name]);
+        throw new Error("Failed pattern match at Dancer (line 122, column 3 - line 133, column 96): " + [v.constructor.name]);
       };
     };
-  };
-};
-var updateAnimation = function(valueMap) {
-  return function(s) {
-    return bind(bindStateT(monadReaderT(monadEffect)))(ask(monadAskStateT(monadAskReaderT(monadEffect))))(function(env) {
-      return liftEffect(monadEffectState(monadEffectReader(monadEffectEffect)))(whenMaybeRef(monadEffectEffect)(s.model)(function(m) {
-        return function __do2() {
-          var prevMixerState = read(m.mixerState)();
-          var newMixerState = valueToMixerState(m)(lookupValue(new ValueInt(0))("animation")(valueMap));
-          var prevDurState = read(m.durState)();
-          var dur = lookupNumber(1)("dur")(valueMap) * env.cycleDur;
-          when(applicativeEffect)(notEq(eqArray(eqNumber))(prevMixerState)(newMixerState) || prevDurState !== dur)(function __do3() {
-            traverseWithIndex_(applicativeEffect)(foldableWithIndexArray)(updateAnimationAction(m)(dur))(newMixerState)();
-            write(newMixerState)(m.mixerState)();
-            return write(dur)(m.durState)();
-          })();
-          return updateAnimationMixer(m.mixer)(env.delta)();
-        };
-      }));
-    });
   };
 };
 var removeDancer = function(d) {
@@ -6249,6 +6229,19 @@ var newDancer = /* @__PURE__ */ liftEffect(/* @__PURE__ */ monadEffectState(/* @
   };
 });
 var models = ["cactus.glb", "Daffy.glb", "Lily.glb", "NatureGirl.glb", "StoneFigure.glb", "Willy.glb", "Woman-NLA.glb", "ant.glb", "Branch.glb", "crackman.glb", "Diver.glb", "fossegrim.glb", "leafy.glb", "Oak.glb", "raccoon.glb", "wireman.glb"];
+var randomAnimation = function(zone) {
+  return function(increment) {
+    return function(nAnims) {
+      return bind(bindStateT(monadReaderT(monadEffect)))(ask(monadAskStateT(monadAskReaderT(monadEffect))))(function(env) {
+        var nModels = length(models);
+        var secs = unwrap()(unInstant(fromDateTime(env.tempo.time))) / (1e3 * toNumber(nModels));
+        var nBase = round2((secs - floor(secs)) * toNumber(nAnims));
+        var n = mod(euclideanRingInt)((nBase + zone | 0) + increment | 0)(nAnims);
+        return pure(applicativeStateT(monadReaderT(monadEffect)))(new ValueInt(n));
+      });
+    };
+  };
+};
 var randomModel = function(zone) {
   return function(increment) {
     return bind(bindStateT(monadReaderT(monadEffect)))(ask(monadAskStateT(monadAskReaderT(monadEffect))))(function(env) {
@@ -6310,6 +6303,48 @@ var updateModel = function(zone) {
     };
   };
 };
+var calculateAnimation = function(zone) {
+  return function(nAnims) {
+    return function(vm) {
+      var v = lookup(ordString)("animation")(vm);
+      if (v instanceof Nothing) {
+        return randomAnimation(zone)(0)(nAnims);
+      }
+      ;
+      if (v instanceof Just) {
+        return pure(applicativeStateT(monadReaderT(monadEffect)))(v.value0);
+      }
+      ;
+      throw new Error("Failed pattern match at Dancer (line 106, column 3 - line 108, column 21): " + [v.constructor.name]);
+    };
+  };
+};
+var updateAnimation = function(zone) {
+  return function(vm) {
+    return function(s) {
+      return whenMaybeRef(monadEffectState(monadEffectReader(monadEffectEffect)))(s.model)(function(m) {
+        return bind(bindStateT(monadReaderT(monadEffect)))(ask(monadAskStateT(monadAskReaderT(monadEffect))))(function(env) {
+          return bind(bindStateT(monadReaderT(monadEffect)))(liftEffect(monadEffectState(monadEffectReader(monadEffectEffect)))(read(m.mixerState)))(function(prevMixerState) {
+            var nAnims = length(m.actions);
+            return bind(bindStateT(monadReaderT(monadEffect)))(calculateAnimation(zone)(nAnims)(vm))(function(animationValue) {
+              var newMixerState = valueToMixerState(m)(animationValue);
+              return bind(bindStateT(monadReaderT(monadEffect)))(liftEffect(monadEffectState(monadEffectReader(monadEffectEffect)))(read(m.durState)))(function(prevDurState) {
+                var dur = lookupNumber(1)("dur")(vm) * env.cycleDur;
+                return discard(discardUnit)(bindStateT(monadReaderT(monadEffect)))(when(applicativeStateT(monadReaderT(monadEffect)))(notEq(eqArray(eqNumber))(prevMixerState)(newMixerState) || prevDurState !== dur)(liftEffect(monadEffectState(monadEffectReader(monadEffectEffect)))(function __do2() {
+                  traverseWithIndex_(applicativeEffect)(foldableWithIndexArray)(updateAnimationAction(m)(dur))(newMixerState)();
+                  write(newMixerState)(m.mixerState)();
+                  return write(dur)(m.durState)();
+                })))(function() {
+                  return liftEffect(monadEffectState(monadEffectReader(monadEffectEffect)))(updateAnimationMixer(m.mixer)(env.delta));
+                });
+              });
+            });
+          });
+        });
+      });
+    };
+  };
+};
 var updateDancer = function(zone) {
   return function(vm) {
     return function(x) {
@@ -6318,7 +6353,7 @@ var updateDancer = function(zone) {
           return discard(discardUnit)(bindStateT(monadReaderT(monadEffect)))(updatePosition()(vm)(m.scene))(function() {
             return discard(discardUnit)(bindStateT(monadReaderT(monadEffect)))(updateScale()(vm)(m.scene))(function() {
               return discard(discardUnit)(bindStateT(monadReaderT(monadEffect)))(updateRotation()(vm)(m.scene))(function() {
-                return updateAnimation(vm)(y);
+                return updateAnimation(zone)(vm)(y);
               });
             });
           });
