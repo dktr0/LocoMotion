@@ -73,6 +73,7 @@ launch cvs = do
 
   renderer <- Three.newWebGLRenderer { antialias: true, canvas: cvs, alpha: true }
   Three.setSize renderer iWidth iHeight false
+  setPixelRatioToDevicePixelRatio renderer
   Three.setClearColor renderer 0x000000 1.0
 
   tempo <- newTempo (1 % 2)

@@ -171,3 +171,7 @@ type Spot = {
   spotLight :: Three.SpotLight,
   virtualTarget :: Three.Object3D
   }
+  
+  
+foreign import setPixelRatioToDevicePixelRatio :: Three.Renderer -> Effect Unit
+

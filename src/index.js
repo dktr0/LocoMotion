@@ -492,34 +492,30 @@ var showCharImpl = function(c) {
 };
 var showStringImpl = function(s) {
   var l = s.length;
-  return '"' + s.replace(
-    /[\0-\x1F\x7F"\\]/g,
-    // eslint-disable-line no-control-regex
-    function(c, i) {
-      switch (c) {
-        case '"':
-        case "\\":
-          return "\\" + c;
-        case "\x07":
-          return "\\a";
-        case "\b":
-          return "\\b";
-        case "\f":
-          return "\\f";
-        case "\n":
-          return "\\n";
-        case "\r":
-          return "\\r";
-        case "	":
-          return "\\t";
-        case "\v":
-          return "\\v";
-      }
-      var k = i + 1;
-      var empty4 = k < l && s[k] >= "0" && s[k] <= "9" ? "\\&" : "";
-      return "\\" + c.charCodeAt(0).toString(10) + empty4;
+  return '"' + s.replace(/[\0-\x1F\x7F"\\]/g, function(c, i) {
+    switch (c) {
+      case '"':
+      case "\\":
+        return "\\" + c;
+      case "\x07":
+        return "\\a";
+      case "\b":
+        return "\\b";
+      case "\f":
+        return "\\f";
+      case "\n":
+        return "\\n";
+      case "\r":
+        return "\\r";
+      case "	":
+        return "\\t";
+      case "\v":
+        return "\\v";
     }
-  ) + '"';
+    var k = i + 1;
+    var empty4 = k < l && s[k] >= "0" && s[k] <= "9" ? "\\&" : "";
+    return "\\" + c.charCodeAt(0).toString(10) + empty4;
+  }) + '"';
 };
 var showArrayImpl = function(f) {
   return function(xs) {
@@ -5258,6 +5254,9 @@ var gltfToModel = function(gltf) {
     };
   };
 };
+
+// output/R/foreign.js
+var setPixelRatioToDevicePixelRatio = (renderer) => () => renderer.setPixelRatio(window.devicePixelRatio);
 
 // output/R/index.js
 var monadReaderT2 = /* @__PURE__ */ monadReaderT(monadEffect);
@@ -30560,7 +30559,7 @@ var updateElement = function(v) {
         });
       }
       ;
-      throw new Error("Failed pattern match at RenderEngine (line 243, column 1 - line 243, column 57): " + [v.constructor.name, v1.constructor.name, v2.constructor.name]);
+      throw new Error("Failed pattern match at RenderEngine (line 244, column 1 - line 244, column 57): " + [v.constructor.name, v1.constructor.name, v2.constructor.name]);
     };
   };
 };
@@ -30581,7 +30580,7 @@ var setClearColor2 = function(re) {
         return 0;
       }
       ;
-      throw new Error("Failed pattern match at RenderEngine (line 177, column 11 - line 179, column 32): " + [v.constructor.name]);
+      throw new Error("Failed pattern match at RenderEngine (line 178, column 11 - line 180, column 32): " + [v.constructor.name]);
     }();
     var a = function() {
       var v = lookup7("alpha")(cm);
@@ -30593,7 +30592,7 @@ var setClearColor2 = function(re) {
         return 1;
       }
       ;
-      throw new Error("Failed pattern match at RenderEngine (line 180, column 11 - line 182, column 27): " + [v.constructor.name]);
+      throw new Error("Failed pattern match at RenderEngine (line 181, column 11 - line 183, column 27): " + [v.constructor.name]);
     }();
     var rEnv = read(re.renderEnvironment)();
     return setClearColor(rEnv.renderer)(c)(a)();
@@ -30619,7 +30618,7 @@ var replaceAt = function(i) {
         return fromMaybe(a)(updateAt(i)(v)(a));
       }
       ;
-      throw new Error("Failed pattern match at RenderEngine (line 203, column 1 - line 203, column 54): " + [i.constructor.name, v.constructor.name, a.constructor.name]);
+      throw new Error("Failed pattern match at RenderEngine (line 204, column 1 - line 204, column 54): " + [i.constructor.name, v.constructor.name, a.constructor.name]);
     };
   };
 };
@@ -30656,7 +30655,7 @@ var removeElement = function(v) {
     return removeSpot(v.value0);
   }
   ;
-  throw new Error("Failed pattern match at RenderEngine (line 253, column 1 - line 253, column 35): " + [v.constructor.name]);
+  throw new Error("Failed pattern match at RenderEngine (line 254, column 1 - line 254, column 35): " + [v.constructor.name]);
 };
 var preAnimate = function(re) {
   return function __do2() {
@@ -30693,6 +30692,7 @@ var launch = function(cvs) {
       alpha: true
     })();
     setSize(renderer)(iWidth)(iHeight)(false)();
+    setPixelRatioToDevicePixelRatio(renderer)();
     setClearColor(renderer)(0)(1)();
     var tempo = newTempo(toRational2(1)(2))();
     var renderEnvironment = $$new({
@@ -30764,7 +30764,7 @@ var evaluate = function(re) {
         return pure14(new Just(x$prime.value0));
       }
       ;
-      throw new Error("Failed pattern match at RenderEngine (line 94, column 3 - line 101, column 22): " + [x$prime.constructor.name]);
+      throw new Error("Failed pattern match at RenderEngine (line 95, column 3 - line 102, column 22): " + [x$prime.constructor.name]);
     };
   };
 };
@@ -30801,7 +30801,7 @@ var createElement2 = function(v) {
     return map14(ElementSpot.create)(newSpot);
   }
   ;
-  throw new Error("Failed pattern match at RenderEngine (line 233, column 1 - line 233, column 42): " + [v.constructor.name]);
+  throw new Error("Failed pattern match at RenderEngine (line 234, column 1 - line 234, column 42): " + [v.constructor.name]);
 };
 var runElement = function(zone) {
   return function(i) {
@@ -30829,10 +30829,10 @@ var runElement = function(zone) {
               });
             }
             ;
-            throw new Error("Failed pattern match at RenderEngine (line 225, column 7 - line 230, column 35): " + [v2.constructor.name]);
+            throw new Error("Failed pattern match at RenderEngine (line 226, column 7 - line 231, column 35): " + [v2.constructor.name]);
           }
           ;
-          throw new Error("Failed pattern match at RenderEngine (line 220, column 11 - line 230, column 35): " + [v1.constructor.name]);
+          throw new Error("Failed pattern match at RenderEngine (line 221, column 11 - line 231, column 35): " + [v1.constructor.name]);
         }())(function(newE) {
           return modify_4(function(x) {
             var $97 = {};
@@ -30914,14 +30914,14 @@ var animateZone = function(re) {
             return defaultZoneState;
           }
           ;
-          throw new Error("Failed pattern match at RenderEngine (line 135, column 23 - line 137, column 52): " + [y.constructor.name]);
+          throw new Error("Failed pattern match at RenderEngine (line 136, column 23 - line 138, column 52): " + [y.constructor.name]);
         }();
         var rEnv = read(re.renderEnvironment)();
         var zoneState$prime = runProgram(z)(rEnv)(x.value0)(zoneState)();
         return write3(z)(zoneState$prime)(re.zoneStates)();
       }
       ;
-      throw new Error("Failed pattern match at RenderEngine (line 129, column 3 - line 140, column 47): " + [x.constructor.name]);
+      throw new Error("Failed pattern match at RenderEngine (line 130, column 3 - line 141, column 47): " + [x.constructor.name]);
     };
   };
 };
