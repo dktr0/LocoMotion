@@ -8,15 +8,16 @@
 
 <body onLoad="window.doLaunch()">
 
-  <script src="./threejs/three.min.js"></script> <!-- THREEJS library -->
-  <script src="./threejs/GLTFLoader.js"></script> <!-- also from THREEJS -->
-  <script src="./threejs/DRACOLoader.js"></script> <!-- also from THREEJS -->
-  <script src="./locoMotion.js"></script>
+<!--  <script src="./threejs/three.min.js"></script> --> <!-- THREEJS library -->
+<!--  <script src="./threejs/GLTFLoader.js"></script> --> <!-- also from THREEJS -->
+<!--  <script src="./threejs/DRACOLoader.js"></script> --> <!-- also from THREEJS -->
+<!--  <script src="./locoMotion.js"></script> -->
   <script type="module">
   // note: we're currently having trouble using the webpacked version via ES6 modules -->
   // but we can use the direct output of spago bundle-module OKAY vis ES6... -->
   // and we can use the webpacked version as a direct script import.. -->
-  // import * as LocoMotion from "./locoMotion.js";
+  import * as LocoMotion from "./locoMotion.js";
+  //window.test = LocoMotion; console.log(LocoMotion);
   window.doLaunch = function () {
     var cvs = document.getElementById('canvas');
     window.lm = new LocoMotion.LocoMotion(cvs);

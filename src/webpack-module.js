@@ -1,4 +1,4 @@
-import * as L from './index.js';
+import * as L from './output/Main/index.js';
 
 export function LocoMotion(canvas) {
   this.lm = L.launch(canvas)();

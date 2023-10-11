@@ -1,6 +1,7 @@
 { name = "LocoMotion"
 , dependencies =
   [ "aff"
+  , "arraybuffer-types"
   , "arrays"
   , "bifunctors"
   , "console"
