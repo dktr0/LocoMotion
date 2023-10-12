@@ -104,9 +104,13 @@ evaluate re z x = do
 
 clearZone :: RenderEngine -> Int -> Effect Unit
 clearZone re z = do
+  mzs <- ZoneMap.read z re.zoneStates
+  case mzs of 
+    Just zs -> deleteZoneState zs
+    Nothing -> pure unit
   ZoneMap.delete z re.programs
   ZoneMap.delete z re.zoneStates
-  log "LocoMotion WARNING: clearZone is not properly implemented yet (needs to delete assets!)"
+  log "LocoMotion clearZone"
 
 
 preAnimate :: RenderEngine -> Effect Unit
