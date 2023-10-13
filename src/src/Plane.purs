@@ -33,4 +33,6 @@ updatePlane vm fs = do
   pure fs
 
 removePlane :: Plane -> R Unit
-removePlane fState = liftEffect $ Three.removeFromParent fState.mesh
+removePlane fState = do
+  rEnv <- ask
+  liftEffect $ Three.removeObject3D rEnv.scene fState.mesh

@@ -34,7 +34,9 @@ updateAmbient vm x = do
   pure x
 
 removeAmbient :: Ambient -> R Unit
-removeAmbient x = liftEffect $ Three.removeFromParent x.ambientLight
+removeAmbient x = do
+  rEnv <- ask
+  liftEffect $ Three.removeObject3D rEnv.scene x.ambientLight
 
 
 updateColourAndIntensity :: forall a. Three.Light a => ValueMap -> a -> R Unit
@@ -64,9 +66,11 @@ updateDirectional vm x = do
   pure x
 
 removeDirectional :: Directional -> R Unit
-removeDirectional x = liftEffect $ do
-  Three.removeFromParent x.directionalLight
-  Three.removeFromParent x.virtualTarget
+removeDirectional x = do
+  rEnv <- ask
+  liftEffect $ do
+    Three.removeObject3D rEnv.scene x.directionalLight
+    Three.removeObject3D x.directionalLight x.virtualTarget
 
 
 updateVirtualTarget :: forall t. Three.Object3D' t => ValueMap -> t -> R Unit
@@ -94,7 +98,9 @@ updateHemisphere vm x = do
   pure x
 
 removeHemisphere :: Hemisphere -> R Unit
-removeHemisphere x = liftEffect $ Three.removeFromParent x.hemisphereLight
+removeHemisphere x = do
+  rEnv <- ask
+  liftEffect $ Three.removeObject3D rEnv.scene x.hemisphereLight
 
 
 newPoint :: R Point
@@ -117,7 +123,9 @@ updatePoint vm x = do
   pure x
 
 removePoint :: Point -> R Unit
-removePoint x = liftEffect $ Three.removeFromParent x.pointLight
+removePoint x = do
+  rEnv <- ask
+  liftEffect $ Three.removeObject3D rEnv.scene x.pointLight
 
 
 newRectArea :: R RectArea
@@ -142,7 +150,9 @@ updateRectArea vm x = do
   pure x
 
 removeRectArea :: RectArea -> R Unit
-removeRectArea x = liftEffect $ Three.removeFromParent x.rectAreaLight
+removeRectArea x = do
+  rEnv <- ask
+  liftEffect $ Three.removeObject3D rEnv.scene x.rectAreaLight
 
 
 newSpot :: R Spot
@@ -173,6 +183,8 @@ updateSpot vm x = do
   pure x
 
 removeSpot :: Spot -> R Unit
-removeSpot x = liftEffect $ do
-  Three.removeFromParent x.spotLight
-  Three.removeFromParent x.virtualTarget
+removeSpot x = do
+  rEnv <- ask
+  liftEffect $ do
+    Three.removeObject3D rEnv.scene x.spotLight
+    Three.removeObject3D rEnv.scene x.virtualTarget
