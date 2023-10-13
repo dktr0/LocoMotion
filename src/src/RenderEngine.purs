@@ -113,6 +113,7 @@ clearZone re z = do
   ZoneMap.delete z re.programs
   ZoneMap.delete z re.zoneStates
   log "LocoMotion clearZone"
+  -- TODO: if there are no active zones left, the canvas should be cleared to transparent somehow
 
 
 preAnimate :: RenderEngine -> Effect Unit
