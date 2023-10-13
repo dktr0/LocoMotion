@@ -6,7 +6,7 @@ in  upstream
   with purescript-threejs =
     { dependencies = [ "prelude", "effect" ]
     , repo = "https://github.com/dktr0/purescript-threejs"
-    , version = "fc115818e555b0a0d611a69bad277e6435670d29"
+    , version = "acd7a42d475cfeb499e925fcf7227a9f00d7f5bf"
     }
   with purescript-tempi =
     { dependencies =

@@ -32,6 +32,7 @@ import Model
 type RenderEnvironment = {
   scene :: Three.Scene,
   camera :: Three.PerspectiveCamera,
+  fog :: Three.Fog,
   renderer :: Three.Renderer,
   defaultLight :: Three.AmbientLight,
   tempo :: Tempo,
@@ -115,6 +116,15 @@ updateRotation vm a = do
       let rz' = rz*pi/180.0
       liftEffect $ Three.setRotation a rx' ry' rz'
 
+updateFog :: ValueMap -> R Unit
+updateFog vm = do
+  rEnv <- ask
+  let fogColour = lookupInt 0xffffff "fogColour" vm
+  fogNear <- realizeNumber "fogNear" 50.0 vm
+  fogFar <- realizeNumber "fogFar" 1000.0 vm 
+  liftEffect $ do
+    f <- Three.newFog fogColour fogNear fogFar
+    Three.setFog rEnv.scene f
 
 data Element =
   ElementDancer Dancer |

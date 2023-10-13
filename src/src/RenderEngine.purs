@@ -70,6 +70,9 @@ launch cvs = do
   iHeight <- Three.windowInnerHeight
   camera <- Three.newPerspectiveCamera 45.0 (iWidth/iHeight) 0.1 100.0
   Three.setPosition camera 0.0 1.0 10.0
+  
+  fog <- Three.newFog 0xffffff 1000.0 1000.0
+  Three.setFog scene fog
 
   renderer <- Three.newWebGLRenderer { antialias: true, canvas: cvs, alpha: true }
   Three.setSize renderer iWidth iHeight false
@@ -80,7 +83,7 @@ launch cvs = do
   let nCycles = 0.0
   let cycleDur = 2.0
   let delta = 0.0
-  renderEnvironment <- new { scene, camera, renderer, defaultLight, tempo, nCycles, cycleDur, delta }
+  renderEnvironment <- new { scene, camera, fog, renderer, defaultLight, tempo, nCycles, cycleDur, delta }
   programs <- ZoneMap.new
   zoneStates <- ZoneMap.new
   prevTNow <- nowDateTime >>= new
@@ -220,6 +223,7 @@ runCamera vm = do
   updatePosition vm re.camera
   updateScale vm re.camera
   updateRotation vm re.camera
+  updateFog vm
 
 
 runElement :: Int -> Int -> Tuple ElementType ValueMap -> R Unit
