@@ -17,7 +17,7 @@ import Data.Foldable (foldl)
 import Data.Either (Either(..))
 
 
-import TokenParser (P, boolean, commaSep, identifier, integer, number, parens, reserved, reservedOp, semiSep, stringLiteral, whiteSpace, naturalOrFloat)
+import TokenParser (P, boolean, commaSep, identifier, integer, number, parens, reserved, reservedOp, semiSep, stringLiteral, whiteSpace, naturalOrFloat, brackets)
 import ElementType
 
 type AST = List Statement
@@ -46,11 +46,12 @@ parseAST x = runParser x ast
 
 data Expression =
   Element Position ElementType |
-  Camera Position | Osc Position | Range Position | Clear Position | Phase Position |
+  Camera Position | Osc Position | Range Position | Clear Position | Phase Position | Step Position |
   LiteralNumber Position Number |
   LiteralString Position String |
   LiteralInt Position Int |
   LiteralBoolean Position Boolean |
+  ListExpression Position (List Expression) |
   This Position String | -- eg. this.x would be This "x"
   SemiGlobal Position String | -- eg. x would be SemiGlobal "x"
   Transformer Position (List (Tuple String Expression)) |
@@ -66,10 +67,13 @@ instance Eq Expression where
   eq (Osc p1) (Osc p2) = p1 == p2
   eq (Range p1) (Range p2) = p1 == p2
   eq (Clear p1) (Clear p2) = p1 == p2
+  eq (Phase p1) (Phase p2) = p1 == p2
+  eq (Step p1) (Step p2) = p1 == p2
   eq (LiteralNumber p1 x1) (LiteralNumber p2 x2) = p1 == p2 && x1 == x2
   eq (LiteralString p1 x1) (LiteralString p2 x2) = p1 == p2 && x1 == x2
   eq (LiteralInt p1 x1) (LiteralInt p2 x2) = p1 == p2 && x1 == x2
   eq (LiteralBoolean p1 x1) (LiteralBoolean p2 x2) = p1 == p2 && x1 == x2
+  eq (ListExpression p1 xs1) (ListExpression p2 xs2) = p1 == p2 && xs1 == xs2
   eq (This p1 x1) (This p2 x2) = p1 == p2 && x1 == x2
   eq (SemiGlobal p1 x1) (SemiGlobal p2 x2) = p1 == p2 && x1 == x2
   eq (Transformer p1 x1) (Transformer p2 x2) = p1 == p2 && x1 == x2
@@ -85,6 +89,7 @@ instance Show Expression where
   show (LiteralString p x) = "(LiteralString (" <> show p <> ") " <> show x <> ")"
   show (LiteralInt p x) = "LiteralInt (" <> show p <> ") " <> show x
   show (LiteralBoolean p x) = "LiteralBoolean (" <> show p <> ") " <> show x
+  show (ListExpression p xs) = "ListExpression (" <> show p <> ") (" <> show xs <> ")"
   show (This p x) = "This (" <> show p <> ") " <> show x
   show (SemiGlobal p x) = "SemiGlobal (" <> show p <> ") " <> show x
   show (Application p e1 e2) = "Application (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
@@ -95,6 +100,7 @@ instance Show Expression where
   show (Range p) = "Range (" <> show p <> ")"
   show (Clear p) = "Clear (" <> show p <> ")"
   show (Phase p) = "Phase (" <> show p <> ")"
+  show (Step p) = "Step (" <> show p <> ")"
   show (Sum p e1 e2) = "Sum (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
   show (Difference p e1 e2) = "Difference (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
   show (Product p e1 e2) = "Product (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
@@ -105,6 +111,7 @@ expressionPosition (LiteralNumber p _) = p
 expressionPosition (LiteralString p _) = p
 expressionPosition (LiteralInt p _) = p
 expressionPosition (LiteralBoolean p _) = p
+expressionPosition (ListExpression p _) = p
 expressionPosition (This p _) = p
 expressionPosition (SemiGlobal p _) = p
 expressionPosition (Application p _ _) = p
@@ -115,6 +122,7 @@ expressionPosition (Osc p) = p
 expressionPosition (Range p) = p
 expressionPosition (Clear p) = p
 expressionPosition (Phase p) = p
+expressionPosition (Step p) = p
 expressionPosition (Sum p _ _) = p
 expressionPosition (Difference p _ _) = p
 expressionPosition (Product p _ _) = p
@@ -200,6 +208,7 @@ argument = do
   p <- position
   choice [
     parens expression,
+    try list,
     try transformer,
     try intOrNumber,
     try $ LiteralString p <$> stringLiteral,
@@ -217,9 +226,16 @@ argument = do
     try (Range p <$ reserved "range"),
     try (Clear p <$ reserved "clear"),
     try (Phase p <$ reserved "phase"),
+    try (Step p <$ reserved "step"),
     try thisRef,
     semiGlobalRef
   ]
+  
+list :: P Expression
+list = do
+  p <- position
+  xs <- brackets $ commaSep expression
+  pure $ ListExpression p xs
 
 intOrNumber :: P Expression
 intOrNumber = do

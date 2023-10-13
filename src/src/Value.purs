@@ -19,7 +19,7 @@ import Control.Monad.Error.Class (throwError)
 import Data.Foldable (foldl)
 import Data.Number (sin,pi)
 import Control.Monad.State.Trans
-
+import Data.List (singleton)
 
 import AST (Expression)
 import AST as AST
@@ -92,6 +92,11 @@ valueToVariable _ = ConstantVariable 0.0
 valueToTransformer :: Value -> Transformer
 valueToTransformer (ValueTransformer x) = x
 valueToTransformer _ = pure
+
+valueToListVariable :: Value -> List Variable
+valueToListVariable (ValueList xs) = map valueToVariable xs 
+valueToListVariable x = singleton $ valueToVariable x
+
 
 instance Semiring Value where
   zero = ValueInt 0
