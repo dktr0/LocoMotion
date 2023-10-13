@@ -138,7 +138,8 @@ loadModel url s = do
   env <- ask
   liftEffect $ write url s.url
   let url' = resolveURL url
-  _ <- liftEffect $ Three.loadGLTF_DRACO "https://dktr0.github.io/LocoMotion/threejs/" url' $ \gltf -> do
+  let decoderPath = "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/jsm/libs/draco/"
+  _ <- liftEffect $ Three.loadGLTF_DRACO decoderPath url' $ \gltf -> do
     log $ "model " <> url' <> " loaded with " <> show (length gltf.animations) <> " animations"
     traverseWithIndex_ logAnimation gltf.animations
     Three.addAnything env.scene gltf.scene
