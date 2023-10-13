@@ -47,5 +47,3 @@ intToMixerState nAnimations n = fromMaybe allZeros $ updateAt n' 1.0 allZeros
     n' = mod n nAnimations
     allZeros = replicate nAnimations 0.0
     
-deleteModel :: Model -> Effect Unit
-deleteModel m = Three.removeFromParent m.scene

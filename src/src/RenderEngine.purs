@@ -106,7 +106,9 @@ clearZone :: RenderEngine -> Int -> Effect Unit
 clearZone re z = do
   mzs <- ZoneMap.read z re.zoneStates
   case mzs of 
-    Just zs -> deleteZoneState zs
+    Just zs -> do
+      re <- read re.renderEnvironment
+      deleteZoneState re zs
     Nothing -> pure unit
   ZoneMap.delete z re.programs
   ZoneMap.delete z re.zoneStates
@@ -264,3 +266,9 @@ removeElement (ElementHemisphere x) = removeHemisphere x
 removeElement (ElementPoint x) = removePoint x
 removeElement (ElementRectArea x) = removeRectArea x
 removeElement (ElementSpot x) = removeSpot x
+
+deleteZoneState :: RenderEnvironment -> ZoneState -> Effect Unit
+deleteZoneState re x = do
+  _ <- execR re x $ traverse_ removeElement x.elements
+  pure unit
+

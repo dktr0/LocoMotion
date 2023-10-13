@@ -171,21 +171,7 @@ type RectArea = {
 type Spot = {
   spotLight :: Three.SpotLight,
   virtualTarget :: Three.Object3D
-  }
-
-deleteElement :: Element -> Effect Unit
-deleteElement (ElementDancer x) = whenMaybeRef x.model deleteModel
-deleteElement (ElementPlane x) = Three.removeFromParent x.mesh
-deleteElement (ElementAmbient x) = Three.removeFromParent x.ambientLight
-deleteElement (ElementDirectional x) = Three.removeFromParent x.directionalLight
-deleteElement (ElementHemisphere x) = Three.removeFromParent x.hemisphereLight
-deleteElement (ElementPoint x) = Three.removeFromParent x.pointLight
-deleteElement (ElementRectArea x) = Three.removeFromParent x.rectAreaLight
-deleteElement (ElementSpot x) = Three.removeFromParent x.spotLight
-
-deleteZoneState :: ZoneState -> Effect Unit
-deleteZoneState x = traverse_ deleteElement x.elements
-  
+  }  
   
 foreign import setPixelRatioToDevicePixelRatio :: Three.Renderer -> Effect Unit
 
