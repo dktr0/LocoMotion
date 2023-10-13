@@ -6,11 +6,12 @@ module Variable where
 -- Eq and Show instances.
 
 import Prelude
-import Data.Number (sin,pi)
+import Data.Number (sin,pi,floor)
 
 data Variable =
   ConstantVariable Number |
   Osc Variable |
+  Phase Variable Variable |
   Sum Variable Variable |
   Sub Variable Variable |
   Product Variable Variable |
@@ -19,6 +20,7 @@ data Variable =
 realizeVariable :: Number -> Variable -> Number
 realizeVariable _ (ConstantVariable x) = x
 realizeVariable nCycles (Osc x) = osc nCycles (realizeVariable nCycles x)
+realizeVariable nCycles (Phase dur offset) = phase nCycles (realizeVariable nCycles dur) (realizeVariable nCycles offset)
 realizeVariable nCycles (Sum x y) = realizeVariable nCycles x + realizeVariable nCycles y
 realizeVariable nCycles (Sub x y) = realizeVariable nCycles x - realizeVariable nCycles y
 realizeVariable nCycles (Product x y) = realizeVariable nCycles x * realizeVariable nCycles y
@@ -36,6 +38,7 @@ instance Eq Variable where
 instance Show Variable where
   show (ConstantVariable x) = "ConstantVariable " <> show x
   show (Osc x) = "Osc (" <> show x <> ")"
+  show (Phase dur offset) = "Phase (" <> show dur <> ") (" <> show offset <> ")"
   show (Sum x y) = "Sum (" <> show x <> ") (" <> show y <> ")"
   show (Sub x y) = "Sub (" <> show x <> ") (" <> show y <> ")"
   show (Product x y) = "Product (" <> show x <> ") (" <> show y <> ")"
@@ -56,3 +59,10 @@ safeDivide x y = x/y
 
 osc :: Number -> Number -> Number
 osc nCycles f = sin $ f * nCycles * 2.0 * pi
+
+phase :: Number -> Number -> Number -> Number
+phase nCycles dur offset = x - floor x
+  where x = safeDivide (nCycles + offset) dur
+
+
+

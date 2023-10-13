@@ -37,7 +37,8 @@ data Value =
   ValueFunction (Position -> Value -> Either ParseError Value) |
   ValueElement ElementType Int ValueMap |
   ValueCamera |
-  ValueClear
+  ValueClear |
+  ValueList (List Value)
 
 instance Show Value where
   show (ValueNumber x) = "(ValueNumber " <> show x <> ")"
@@ -50,6 +51,7 @@ instance Show Value where
   show (ValueElement t i vm) = "(ValueElement " <> show t <> " " <> show i <> " (" <> show vm <> "))"
   show ValueCamera = "ValueCamera"
   show ValueClear = "ValueClear"
+  show (ValueList xs) = "ValueList " <> show xs
 
 
 valueToNumber :: Value -> Number

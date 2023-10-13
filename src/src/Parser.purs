@@ -97,6 +97,7 @@ expressionToValue (AST.Camera _) = pure ValueCamera
 expressionToValue (AST.Clear _) = pure ValueClear
 expressionToValue (AST.Osc _) = pure $ ValueFunction oscFunction
 expressionToValue (AST.Range _) = pure $ ValueFunction rangeFunction
+expressionToValue (AST.Phase _) = pure $ ValueFunction phaseFunction
 expressionToValue (AST.Sum _ e1 e2) = do
   v1 <- expressionToValue e1
   v2 <- expressionToValue e2
@@ -124,6 +125,7 @@ applicationToValue p eF eX = do
     ValueInt _ -> throwError $ ParseError "An Int can't be the left side of a function application" p
     ValueBoolean _ -> throwError $ ParseError "A Boolean can't be the left side of a function application" p
     ValueVariable _ -> throwError $ ParseError "A Variable can't be the left side of a function application" p
+    ValueList _ -> throwError $ ParseError "A List can't be the left side of a function application" p
     ValueTransformer tF -> do
       case x of
         ValueTransformer tX -> pure $ ValueTransformer $ appendTransformers tF tX
@@ -182,6 +184,8 @@ rangeFunction :: Position -> Value -> Either ParseError Value
 rangeFunction _ r1 = pure $ ValueFunction (\_ r2 -> pure $ ValueFunction (\_ x -> pure $ ValueVariable $ f (valueToVariable r1) (valueToVariable r2) (valueToVariable x)))
   where f r1' r2' x' = (x' * ConstantVariable 0.5 + ConstantVariable 0.5) * (r2' - r1') + r1'
 
+phaseFunction :: Position -> Value -> Either ParseError Value
+phaseFunction _ dur = pure $ ValueFunction (\_ offset -> pure $ ValueVariable $ Phase (valueToVariable dur) (valueToVariable offset))
 
 -- Transformers
 

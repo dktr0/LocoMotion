@@ -46,7 +46,7 @@ parseAST x = runParser x ast
 
 data Expression =
   Element Position ElementType |
-  Camera Position | Osc Position | Range Position | Clear Position |
+  Camera Position | Osc Position | Range Position | Clear Position | Phase Position |
   LiteralNumber Position Number |
   LiteralString Position String |
   LiteralInt Position Int |
@@ -94,6 +94,7 @@ instance Show Expression where
   show (Osc p) = "Osc (" <> show p <> ")"
   show (Range p) = "Range (" <> show p <> ")"
   show (Clear p) = "Clear (" <> show p <> ")"
+  show (Phase p) = "Phase (" <> show p <> ")"
   show (Sum p e1 e2) = "Sum (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
   show (Difference p e1 e2) = "Difference (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
   show (Product p e1 e2) = "Product (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
@@ -113,6 +114,7 @@ expressionPosition (Camera p) = p
 expressionPosition (Osc p) = p
 expressionPosition (Range p) = p
 expressionPosition (Clear p) = p
+expressionPosition (Phase p) = p
 expressionPosition (Sum p _ _) = p
 expressionPosition (Difference p _ _) = p
 expressionPosition (Product p _ _) = p
@@ -214,6 +216,7 @@ argument = do
     try (Osc p <$ reserved "osc"),
     try (Range p <$ reserved "range"),
     try (Clear p <$ reserved "clear"),
+    try (Phase p <$ reserved "phase"),
     try thisRef,
     semiGlobalRef
   ]
