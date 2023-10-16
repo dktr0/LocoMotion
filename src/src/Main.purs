@@ -35,7 +35,7 @@ clearZone = RE.clearZone
 setTempo :: RE.RenderEngine -> ForeignTempo -> Effect Unit
 setTempo re t = do
   rEnv <- read re.renderEnvironment
-  log $ "foreignTempo: " <> show t <> ", tempo: " <> show (fromForeignTempo t)
+  -- log $ "foreignTempo: " <> show t <> ", tempo: " <> show (fromForeignTempo t)
   write (rEnv { tempo = fromForeignTempo t } ) re.renderEnvironment
 
 

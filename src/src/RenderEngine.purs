@@ -132,9 +132,9 @@ preAnimate re = do
     }
   write envNew re.renderEnvironment
   -- debugging
-  let td = unwrap (diff tNow envNew.tempo.time :: Milliseconds)
-  let df = td * toNumber envNew.tempo.freq / 1000.0
-  log $ show td <> " " <> show df <> " " <> show envNew.nCycles
+  -- let td = unwrap (diff tNow envNew.tempo.time :: Milliseconds)
+  -- let df = td * toNumber envNew.tempo.freq / 1000.0
+  -- log $ show td <> " " <> show df <> " " <> show envNew.nCycles
 
 
 animateZone :: RenderEngine -> Zone -> Effect Unit

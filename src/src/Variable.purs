@@ -70,7 +70,7 @@ osc nCycles f = sin $ f * nCycles * 2.0 * pi
 
 phase :: Number -> Number -> Number -> Number
 phase nCycles dur offset = x - floor x
-  where x = safeDivide (nCycles + offset) dur
+  where x = safeDivide (nCycles - offset) dur
 
 step :: List Number -> Number -> Number
 step xs phs 
