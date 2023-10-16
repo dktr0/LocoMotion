@@ -131,6 +131,7 @@ preAnimate re = do
     cycleDur = 1.0 / toNumber envPrev.tempo.freq
     }
   write envNew re.renderEnvironment
+  log $ show envNew.nCycles
 
 
 animateZone :: RenderEngine -> Zone -> Effect Unit
