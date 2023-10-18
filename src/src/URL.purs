@@ -9,6 +9,10 @@ resolveURL :: String -> String
 resolveURL x = f $ trim x where
   f x | take 7 x == "http://" = x
       | take 8 x == "https://" = x
+      | toLower x == "sunstone" = defaultAssets <> "StoneFigure.glb"
+      | toLower x == "camille" = defaultAssets <> "NatureGirl.glb"
+      | toLower x == "ordroid" = defaultAssets <> "crackman.glb"
+      | toLower x == "dataghost" = defaultAssets <> "wireman.glb"
       | toLower x == "cactus" = defaultAssets <> "cactus.glb"
       | toLower x == "daffy" = defaultAssets <> "Daffy.glb"
       | toLower x == "lily" = defaultAssets <> "Lily.glb"
@@ -25,7 +29,9 @@ resolveURL x = f $ trim x where
       | toLower x == "oak" = defaultAssets <> "Oak.glb"
       | toLower x == "raccoon" = defaultAssets <> "raccoon.glb"
       | toLower x == "wireman" = defaultAssets <> "wireman.glb"
+      | toLower x == "garden" = defaultAssets <> "Garden.glb"
       | toLower x == "soldier" = "https://threejs.org/examples/models/gltf/Soldier.glb"
+      | toLower x == "helmet" = "https://threejs.org/examples/models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf"
       | otherwise = defaultAssets <> x
 
 defaultAssets :: String
