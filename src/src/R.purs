@@ -116,15 +116,27 @@ updateRotation vm a = do
       let rz' = rz*pi/180.0
       liftEffect $ Three.setRotation a rx' ry' rz'
 
-updateFog :: ValueMap -> R Unit
-updateFog vm = do
+updateCameraProperties :: ValueMap -> R Unit
+updateCameraProperties vm = do
   rEnv <- ask
+  fov <- realizeNumber "fov" 45.0 vm
+  iWidth <- liftEffect $ Three.windowInnerWidth
+  iHeight <- liftEffect $ Three.windowInnerHeight
+  let aspect = iWidth/iHeight
+  near <- realizeNumber "near" 0.1 vm
+  far <- realizeNumber "far" 100.0 vm
   let fogColour = lookupInt 0xffffff "fogColour" vm
   fogNear <- realizeNumber "fogNear" 50.0 vm
-  fogFar <- realizeNumber "fogFar" 1000.0 vm 
+  fogFar <- realizeNumber "fogFar" 1000.0 vm
   liftEffect $ do
+    Three.setFOV rEnv.camera fov
+    Three.setAspect rEnv.camera aspect
+    Three.setNear rEnv.camera near
+    Three.setFar rEnv.camera far
     f <- Three.newFog fogColour fogNear fogFar
     Three.setFog rEnv.scene f
+    Three.updateProjectionMatrix rEnv.camera
+
 
 data Element =
   ElementDancer Dancer |
@@ -181,7 +193,6 @@ type RectArea = {
 type Spot = {
   spotLight :: Three.SpotLight,
   virtualTarget :: Three.Object3D
-  }  
-  
-foreign import setPixelRatioToDevicePixelRatio :: Three.Renderer -> Effect Unit
+  }
 
+foreign import setPixelRatioToDevicePixelRatio :: Three.Renderer -> Effect Unit

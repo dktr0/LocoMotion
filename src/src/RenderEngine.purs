@@ -70,7 +70,7 @@ launch cvs = do
   iHeight <- Three.windowInnerHeight
   camera <- Three.newPerspectiveCamera 45.0 (iWidth/iHeight) 0.1 100.0
   Three.setPosition camera 0.0 1.0 10.0
-  
+
   fog <- Three.newFog 0xffffff 1000.0 1000.0
   Three.setFog scene fog
 
@@ -108,7 +108,7 @@ evaluate re z x = do
 clearZone :: RenderEngine -> Int -> Effect Unit
 clearZone re z = do
   mzs <- ZoneMap.read z re.zoneStates
-  case mzs of 
+  case mzs of
     Just zs -> do
       re <- read re.renderEnvironment
       deleteZoneState re zs
@@ -227,7 +227,7 @@ runCamera vm = do
   updatePosition vm re.camera
   updateScale vm re.camera
   updateRotation vm re.camera
-  updateFog vm
+  updateCameraProperties vm
 
 
 runElement :: Int -> Int -> Tuple ElementType ValueMap -> R Unit
@@ -280,4 +280,3 @@ deleteZoneState :: RenderEnvironment -> ZoneState -> Effect Unit
 deleteZoneState re x = do
   _ <- execR re x $ traverse_ removeElement x.elements
   pure unit
-
