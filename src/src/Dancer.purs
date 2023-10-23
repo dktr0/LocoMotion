@@ -2,7 +2,7 @@ module Dancer (newDancer,updateDancer,removeDancer) where
 
 import Prelude
 import Data.Number (pi,floor)
-import Data.Int (toNumber,round)
+import Data.Int (toNumber,round,floor) as Int
 import Data.Array
 import Data.Maybe (Maybe(..),fromMaybe)
 import Effect (Effect)
@@ -24,6 +24,7 @@ import Value
 import MaybeRef
 import R
 import Model
+import Variable
 
 newDancer :: R Dancer
 newDancer = liftEffect $ do
@@ -70,7 +71,7 @@ randomModel zone increment = do
   env <- ask 
   let secs = (unwrap $ unInstant $ fromDateTime $ env.tempo.time) / 1000.0
   let nModels = length models
-  let nBase = round $ (secs - floor secs) * toNumber nModels
+  let nBase = Int.round $ (secs - floor secs) * Int.toNumber nModels
   let n = mod (nBase + zone + increment) nModels
   pure $ fromMaybe "raccoon.glb" $ index models n
 
@@ -90,7 +91,7 @@ updateAnimation zone vm s = whenMaybeRef s.model $ \m -> do
     prevMixerState <- liftEffect $ read m.mixerState
     let nAnims = length m.actions
     animationValue <- calculateAnimation zone nAnims vm
-    let newMixerState = valueToMixerState m animationValue
+    newMixerState <- valueToMixerState m animationValue
     prevDurState <- liftEffect $ read m.durState
     let dur = lookupNumber 1.0 "dur" vm * env.cycleDur
     when (prevMixerState /= newMixerState || prevDurState /= dur) $ liftEffect $ do
@@ -111,8 +112,8 @@ randomAnimation :: Int -> Int -> Int -> R Value
 randomAnimation zone increment nAnims = do
   env <- ask 
   let nModels = length models
-  let secs = (unwrap $ unInstant $ fromDateTime $ env.tempo.time) / (1000.0 * toNumber nModels)
-  let nBase = round $ (secs - floor secs) * toNumber nAnims
+  let secs = (unwrap $ unInstant $ fromDateTime $ env.tempo.time) / (1000.0 * Int.toNumber nModels)
+  let nBase = Int.round $ (secs - floor secs) * Int.toNumber nAnims
   let n = mod (nBase + zone + increment) nAnims
   pure $ ValueInt n
   
@@ -149,3 +150,24 @@ loadModel url s = do
 
 logAnimation :: Int -> Three.AnimationClip -> Effect Unit
 logAnimation i x = log $ " " <> show i <> ": " <> show x.name
+
+
+valueToMixerState :: Model -> Value -> R (Array Number)
+valueToMixerState m (ValueVariable v) = do
+  rEnv <- ask
+  let n = realizeVariable rEnv.nCycles v
+  pure $ intToMixerState (length m.actions) (Int.floor n)
+valueToMixerState m (ValueInt i) = pure $ intToMixerState (length m.actions) i
+valueToMixerState m (ValueNumber n) = pure $ intToMixerState (length m.actions) (Int.floor n) -- later: could be a crossfade
+valueToMixerState m (ValueString v) = pure $ fromMaybe allZeros $ updateAt n' 1.0 allZeros
+  where
+    n' = fromMaybe 0 $ elemIndex v m.clipNames
+    allZeros = replicate (length m.actions) 0.0
+valueToMixerState _ _ = pure $ []
+
+intToMixerState :: Int -> Int -> Array Number
+intToMixerState nAnimations n = fromMaybe allZeros $ updateAt n' 1.0 allZeros
+  where
+    n' = mod n nAnimations
+    allZeros = replicate nAnimations 0.0
+    

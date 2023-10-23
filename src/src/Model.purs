@@ -32,18 +32,3 @@ type Model = {
 
 type MixerState = Array Number
 
-valueToMixerState :: Model -> Value -> Array Number
-valueToMixerState m (ValueInt i) = intToMixerState (length m.actions) i
-valueToMixerState m (ValueNumber n) = intToMixerState (length m.actions) (floor n) -- later: could be a crossfade
-valueToMixerState m (ValueString v) = fromMaybe allZeros $ updateAt n' 1.0 allZeros
-  where
-    n' = fromMaybe 0 $ elemIndex v m.clipNames
-    allZeros = replicate (length m.actions) 0.0
-valueToMixerState _ _ = []
-
-intToMixerState :: Int -> Int -> Array Number
-intToMixerState nAnimations n = fromMaybe allZeros $ updateAt n' 1.0 allZeros
-  where
-    n' = mod n nAnimations
-    allZeros = replicate nAnimations 0.0
-    
