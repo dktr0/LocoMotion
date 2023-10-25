@@ -7,7 +7,7 @@ import Data.Number (sin,pi)
 import Data.Int (toNumber)
 import Data.Map (insert,empty,lookup,Map(..))
 import Data.Map (fromFoldable) as Map
-import Data.List (List, foldl, mapMaybe, fromFoldable)
+import Data.List (List, foldl, mapMaybe, fromFoldable, singleton)
 import Data.Tuple (Tuple(..),fst)
 import Data.Either (Either)
 import Data.Maybe (Maybe(..))
@@ -191,6 +191,28 @@ phaseFunction _ dur = pure $ ValueFunction (\_ offset -> pure $ ValueVariable $ 
 
 stepFunction :: Position -> Value -> Either ParseError Value
 stepFunction _ xs = pure $ ValueFunction (\_ phs -> pure $ ValueVariable $ Step (valueToListVariable xs) (valueToVariable phs))
+
+forFunction :: Position -> Value -> Either ParseError Value
+forFunction p xs = pure $ ValueFunction (\_ f -> fmapValue p f xs) 
+
+mapFunction :: Position -> Value -> Either ParseError Value
+mapFunction p f = pure $ ValueFunction (\_ xs -> fmapValue p f xs)
+
+fmapValue :: Position -> Value -> Value -> Either ParseError Value
+-- main scenario is a function and a list
+fmapValue p (ValueFunction f) (ValueList xs) = do
+  xs' <- traverse (f p) xs
+  pure $ ValueList xs'
+-- if we have a function and a non-list value, wrap it in a singleton list
+fmapValue p (ValueFunction f) x = fmapValue p (ValueFunction f) $ ValueList $ singleton x
+-- if first argument is not a function, that's an error
+fmapValue p _ _ = throwError $ ParseError "missing function argument to for/map" p
+-- to resolve: couldn't transformer also take the place of functions in this? and if so, so could anything which implicitly contains a transformer (eg. dancer, camera, clear)
+
+-- for [0,1,2] (\x -> dancer { x = x });
+-- map (\x -> dancer { x = x }) [0,1,2];
+-- for [0,1,2] {   }
+
 
 -- Transformers
 
