@@ -47,6 +47,7 @@ parseAST x = runParser x ast
 data Expression =
   Element Position ElementType |
   Camera Position | Osc Position | Range Position | Clear Position | Phase Position | Step Position |
+  For Position | Map Position |
   LiteralNumber Position Number |
   LiteralString Position String |
   LiteralInt Position Int |
@@ -70,6 +71,8 @@ instance Eq Expression where
   eq (Clear p1) (Clear p2) = p1 == p2
   eq (Phase p1) (Phase p2) = p1 == p2
   eq (Step p1) (Step p2) = p1 == p2
+  eq (For p1) (For p2) = p1 == p2
+  eq (Map p1) (Map p2) = p1 == p2
   eq (LiteralNumber p1 x1) (LiteralNumber p2 x2) = p1 == p2 && x1 == x2
   eq (LiteralString p1 x1) (LiteralString p2 x2) = p1 == p2 && x1 == x2
   eq (LiteralInt p1 x1) (LiteralInt p2 x2) = p1 == p2 && x1 == x2
@@ -103,6 +106,8 @@ instance Show Expression where
   show (Clear p) = "Clear (" <> show p <> ")"
   show (Phase p) = "Phase (" <> show p <> ")"
   show (Step p) = "Step (" <> show p <> ")"
+  show (For p) = "For (" <> show p <> ")"
+  show (Map p) = "Map (" <> show p <> ")"
   show (Sum p e1 e2) = "Sum (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
   show (Difference p e1 e2) = "Difference (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
   show (Product p e1 e2) = "Product (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
@@ -126,6 +131,8 @@ expressionPosition (Range p) = p
 expressionPosition (Clear p) = p
 expressionPosition (Phase p) = p
 expressionPosition (Step p) = p
+expressionPosition (For p) = p
+expressionPosition (Map p) = p
 expressionPosition (Sum p _ _) = p
 expressionPosition (Difference p _ _) = p
 expressionPosition (Product p _ _) = p
@@ -231,11 +238,13 @@ argument = do
     try (Clear p <$ reserved "clear"),
     try (Phase p <$ reserved "phase"),
     try (Step p <$ reserved "step"),
+    try (For p <$ reserved "for"),
+    try (Map p <$ reserved "map"),
     try lambda,
     try thisRef,
     semiGlobalRef
   ]
-  
+
 list :: P Expression
 list = do
   p <- position
@@ -282,7 +291,7 @@ semiGlobalRef :: P Expression
 semiGlobalRef = SemiGlobal <$> position <*> identifier
 
 
-lambda :: P Expression 
+lambda :: P Expression
 lambda = do
   p <- position
   reservedOp "\\"
@@ -290,4 +299,3 @@ lambda = do
   reservedOp "->"
   e <- expression
   pure $ Lambda p x e
-

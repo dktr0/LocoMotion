@@ -72,7 +72,7 @@ expressionToValue (AST.LiteralNumber _ x) = pure $ ValueNumber x
 expressionToValue (AST.LiteralString _ x) = pure $ ValueString x
 expressionToValue (AST.LiteralInt _ x) = pure $ ValueInt x
 expressionToValue (AST.LiteralBoolean _ x) = pure $ ValueBoolean x
-expressionToValue (AST.ListExpression _ xs) = ValueList <$> traverse expressionToValue xs 
+expressionToValue (AST.ListExpression _ xs) = ValueList <$> traverse expressionToValue xs
 expressionToValue (AST.This p k) = do
   s <- get
   let tMap = s.thisMap
@@ -104,6 +104,8 @@ expressionToValue (AST.Osc _) = pure $ ValueFunction oscFunction
 expressionToValue (AST.Range _) = pure $ ValueFunction rangeFunction
 expressionToValue (AST.Phase _) = pure $ ValueFunction phaseFunction
 expressionToValue (AST.Step _) = pure $ ValueFunction stepFunction
+expressionToValue (AST.For _) = pure $ ValueFunction forFunction
+expressionToValue (AST.Map _) = pure $ ValueFunction mapFunction
 expressionToValue (AST.Sum _ e1 e2) = do
   v1 <- expressionToValue e1
   v2 <- expressionToValue e2
@@ -182,7 +184,7 @@ applicationToValue p eF eX = do
 
 embedLambda :: String -> Expression -> P Value
 embedLambda x e = do
-  oldState <- get 
+  oldState <- get
   pure $ ValueFunction (\_ v -> evalStateT (expressionToValue e) (oldState { lambdaMap = insert x v oldState.lambdaMap }))
 
 
@@ -205,7 +207,7 @@ stepFunction :: Position -> Value -> Either ParseError Value
 stepFunction _ xs = pure $ ValueFunction (\_ phs -> pure $ ValueVariable $ Step (valueToListVariable xs) (valueToVariable phs))
 
 forFunction :: Position -> Value -> Either ParseError Value
-forFunction p xs = pure $ ValueFunction (\_ f -> fmapValue p f xs) 
+forFunction p xs = pure $ ValueFunction (\_ f -> fmapValue p f xs)
 
 mapFunction :: Position -> Value -> Either ParseError Value
 mapFunction p f = pure $ ValueFunction (\_ xs -> fmapValue p f xs)
