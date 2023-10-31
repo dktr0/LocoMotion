@@ -59,7 +59,8 @@ data Expression =
   Sum Position Expression Expression |
   Difference Position Expression Expression |
   Product Position Expression Expression |
-  Divide Position Expression Expression
+  Divide Position Expression Expression |
+  Lambda Position String Expression
 
 instance Eq Expression where
   eq (Element p1 t1) (Element p2 t2) = p1 == p2 && t1 == t2
@@ -82,6 +83,7 @@ instance Eq Expression where
   eq (Difference p1 x1a x1b) (Difference p2 x2a x2b) = p1 == p2 && x1a == x2a && x1b == x2b
   eq (Product p1 x1a x1b) (Product p2 x2a x2b) = p1 == p2 && x1a == x2a && x1b == x2b
   eq (Divide p1 x1a x1b) (Divide p2 x2a x2b) = p1 == p2 && x1a == x2a && x1b == x2b
+  eq (Lambda p1 xs1 e1) (Lambda p2 xs2 e2) = p1 == p2 && xs1 == xs2 && e1 == e2
   eq _ _ = false
 
 instance Show Expression where
@@ -105,6 +107,7 @@ instance Show Expression where
   show (Difference p e1 e2) = "Difference (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
   show (Product p e1 e2) = "Product (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
   show (Divide p e1 e2) = "Divide (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
+  show (Lambda p xs e) = "Lambda (" <> show xs <> ") (" <> show e <> ")"
 
 expressionPosition :: Expression -> Position
 expressionPosition (LiteralNumber p _) = p
@@ -127,6 +130,7 @@ expressionPosition (Sum p _ _) = p
 expressionPosition (Difference p _ _) = p
 expressionPosition (Product p _ _) = p
 expressionPosition (Divide p _ _) = p
+expressionPosition (Lambda p _ _) = p
 
 
 -- parsing:
@@ -227,6 +231,7 @@ argument = do
     try (Clear p <$ reserved "clear"),
     try (Phase p <$ reserved "phase"),
     try (Step p <$ reserved "step"),
+    try lambda,
     try thisRef,
     semiGlobalRef
   ]
@@ -275,3 +280,14 @@ thisRef = do
 
 semiGlobalRef :: P Expression
 semiGlobalRef = SemiGlobal <$> position <*> identifier
+
+
+lambda :: P Expression 
+lambda = do
+  p <- position
+  reservedOp "\\"
+  x <- identifier
+  reservedOp "->"
+  e <- expression
+  pure $ Lambda p x e
+

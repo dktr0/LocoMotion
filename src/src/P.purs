@@ -22,16 +22,17 @@ import ElementType
 type PState = {
   semiMap :: ValueMap,
   thisMap :: ValueMap,
+  lambdaMap :: ValueMap,
   program :: Program
   }
 
 type P a = StateT PState (Either ParseError) a
 
 runP :: forall a. P a -> Either ParseError a
-runP = evalP empty empty defaultProgram
+runP = evalP empty empty empty defaultProgram
 
-evalP :: forall a. ValueMap -> ValueMap -> Program -> P a -> Either ParseError a
-evalP sm tm prog p = evalStateT p { semiMap: sm, thisMap: tm, program: prog }
+evalP :: forall a. ValueMap -> ValueMap -> ValueMap -> Program -> P a -> Either ParseError a
+evalP sm tm lm prog p = evalStateT p { semiMap: sm, thisMap: tm, lambdaMap: lm, program: prog }
 
 liftEitherParseError :: forall a. Either ParseError a -> P a
 liftEitherParseError (Left pe) = throwError pe

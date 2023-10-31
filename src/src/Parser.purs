@@ -18,6 +18,7 @@ import Data.Traversable (traverse_,traverse,sequence)
 import Control.Monad.Error.Class (throwError)
 import Control.Monad.State.Trans (get,modify_)
 import Data.Bifunctor (lmap)
+import Control.Monad.State.Trans (evalStateT)
 
 import Value
 import Value as Value
@@ -76,14 +77,17 @@ expressionToValue (AST.This p k) = do
   s <- get
   let tMap = s.thisMap
   case lookup k tMap of
-    Nothing -> throwError $ ParseError ("unknown this reference " <> k) p
+    Nothing -> throwError $ ParseError ("unknown this reference: " <> k) p
     Just v -> pure v
 expressionToValue (AST.SemiGlobal p k) = do
   s <- get
-  let sMap = s.semiMap
-  case lookup k sMap of
-    Nothing -> throwError $ ParseError ("unknown semiglobal reference " <> k) p
+  let lMap = s.lambdaMap
+  case lookup k s.lambdaMap of
     Just v -> pure v
+    Nothing -> do
+      case lookup k s.semiMap of
+        Just v -> pure v
+        Nothing -> throwError $ ParseError ("reference to unknown identifier: " <> k) p
 expressionToValue (AST.Application p e1 e2) = applicationToValue p e1 e2
 expressionToValue (AST.Transformer _ xs) = transformerToValue xs
 expressionToValue (AST.Element _ Dancer) = newElement Dancer defaultDancer
@@ -116,6 +120,8 @@ expressionToValue (AST.Divide _ e1 e2) = do
   v1 <- expressionToValue e1
   v2 <- expressionToValue e2
   pure $ divideValues v1 v2
+expressionToValue (AST.Lambda _ x e) = embedLambda x e
+
 
 applicationToValue :: Position -> Expression -> Expression -> P Value
 applicationToValue p eF eX = do
@@ -174,6 +180,12 @@ applicationToValue p eF eX = do
         Right v -> pure v
 
 
+embedLambda :: String -> Expression -> P Value
+embedLambda x e = do
+  oldState <- get 
+  pure $ ValueFunction (\_ v -> evalStateT (expressionToValue e) (oldState { lambdaMap = insert x v oldState.lambdaMap }))
+
+
 -- Miscellaneous functions
 
 oscFunction :: Position -> Value -> Either ParseError Value
@@ -209,11 +221,6 @@ fmapValue p (ValueFunction f) x = fmapValue p (ValueFunction f) $ ValueList $ si
 fmapValue p _ _ = throwError $ ParseError "missing function argument to for/map" p
 -- to resolve: couldn't transformer also take the place of functions in this? and if so, so could anything which implicitly contains a transformer (eg. dancer, camera, clear)
 
--- for [0,1,2] (\x -> dancer { x = x });
--- map (\x -> dancer { x = x }) [0,1,2];
--- for [0,1,2] {   }
-
-
 -- Transformers
 
 transformerToValue :: List (Tuple String Expression) -> P Value
@@ -224,7 +231,7 @@ transformerToValue xs = do
 parseModifier :: Tuple String Expression -> P Transformer
 parseModifier (Tuple k e) = do
   s <- get
-  pure $ \tm -> evalP s.semiMap tm s.program $ do
+  pure $ \tm -> evalP s.semiMap tm s.lambdaMap s.program $ do
     v <- expressionToValue e
     pure $ insert k v tm
 
