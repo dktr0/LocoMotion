@@ -38,13 +38,16 @@ liftEitherParseError :: forall a. Either ParseError a -> P a
 liftEitherParseError (Left pe) = throwError pe
 liftEitherParseError (Right a) = pure a
 
+{-
 newElement :: ElementType -> ValueMap -> P Value
 newElement t vm = do
   let e = Tuple t vm
   s <- modify $ \s -> s { program = s.program { elements = Array.snoc s.program.elements e } }
   let n = Array.length s.program.elements - 1
   pure $ ValueElement t n vm
+-}
 
+{-
 modifyElement :: Int -> Transformer -> P Value
 modifyElement n t = do
   s <- get
@@ -61,6 +64,7 @@ modifyElement n t = do
       pure unit
     Just x -> put $ s { program = s.program { elements = x } }
   pure $ ValueElement eType n newVm
+-}
 
 modifyCamera :: Transformer -> P Value
 modifyCamera t = do

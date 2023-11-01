@@ -19,6 +19,7 @@ import Control.Monad.Error.Class (throwError)
 import Control.Monad.State.Trans (get,modify_)
 import Data.Bifunctor (lmap)
 import Control.Monad.State.Trans (evalStateT)
+import Data.Array as Array
 
 import Value
 import Value as Value
@@ -62,10 +63,17 @@ parseStatement :: Statement -> P Unit
 parseStatement (AST.Assignment _ k e) = do -- position is currently unused, but it might be used in future if we were checking validity of definition names
   v <- expressionToValue e
   modify_ $ \s -> s { semiMap = insert k v s.semiMap }
+  valueToEffect v
 parseStatement (AST.Action e) = do
-  _ <- expressionToValue e
-  pure unit
+  v <- expressionToValue e
+  valueToEffect v
 parseStatement (AST.EmptyStatement _) = pure unit
+
+
+valueToEffect :: Value -> P Unit
+valueToEffect (ValueElement t vm) = modify_ $ \s -> s { program = s.program { elements = Array.snoc s.program.elements (Tuple t vm) } }
+valueToEffect (ValueList xs) = traverse_ valueToEffect xs
+valueToEffect _ = pure unit
 
 expressionToValue :: Expression -> P Value
 expressionToValue (AST.LiteralNumber _ x) = pure $ ValueNumber x
@@ -90,14 +98,14 @@ expressionToValue (AST.SemiGlobal p k) = do
         Nothing -> throwError $ ParseError ("reference to unknown identifier: " <> k) p
 expressionToValue (AST.Application p e1 e2) = applicationToValue p e1 e2
 expressionToValue (AST.Transformer _ xs) = transformerToValue xs
-expressionToValue (AST.Element _ Dancer) = newElement Dancer defaultDancer
-expressionToValue (AST.Element _ Plane) = newElement Plane defaultPlane
-expressionToValue (AST.Element _ Ambient) = newElement Ambient empty
-expressionToValue (AST.Element _ Directional) = newElement Directional empty
-expressionToValue (AST.Element _ Hemisphere) = newElement Hemisphere empty
-expressionToValue (AST.Element _ Point) = newElement Point empty
-expressionToValue (AST.Element _ RectArea) = newElement RectArea empty
-expressionToValue (AST.Element _ Spot) = newElement Spot empty
+expressionToValue (AST.Element _ Dancer) = pure $ ValueElement Dancer defaultDancer
+expressionToValue (AST.Element _ Plane) = pure $ ValueElement Plane defaultPlane
+expressionToValue (AST.Element _ Ambient) = pure $ ValueElement Ambient empty
+expressionToValue (AST.Element _ Directional) = pure $ ValueElement Directional empty
+expressionToValue (AST.Element _ Hemisphere) = pure $ ValueElement Hemisphere empty
+expressionToValue (AST.Element _ Point) = pure $ ValueElement Point empty
+expressionToValue (AST.Element _ RectArea) = pure $ ValueElement RectArea empty
+expressionToValue (AST.Element _ Spot) = pure $ ValueElement Spot empty
 expressionToValue (AST.Camera _) = pure ValueCamera
 expressionToValue (AST.Clear _) = pure ValueClear
 expressionToValue (AST.Osc _) = pure $ ValueFunction oscFunction
@@ -139,7 +147,7 @@ applicationToValue p eF eX = do
     ValueTransformer tF -> do
       case x of
         ValueTransformer tX -> pure $ ValueTransformer $ appendTransformers tF tX
-        ValueElement _ _ vmX -> applyTransformer tF vmX
+        ValueElement _ vmX -> applyTransformer tF vmX
         ValueCamera -> do
           vmX <- readCamera
           applyTransformer tF vmX
@@ -147,21 +155,27 @@ applicationToValue p eF eX = do
           vmX <- readClear
           applyTransformer tF vmX
         _ -> throwError $ ParseError "invalid argument applied to Transformer" (AST.expressionPosition eX)
-    ValueElement _ i _ -> do
+    ValueElement eType eMap -> do
       case x of
-        ValueTransformer tX -> modifyElement i tX
-        ValueElement _ _ vmX -> modifyElement i (valueMapToTransformer vmX)
+        ValueTransformer tX -> do
+          eMap' <- liftEitherParseError $ tX eMap
+          pure $ ValueElement eType eMap'        
+        ValueElement _ eMap2 -> do
+          eMap' <- liftEitherParseError $ (valueMapToTransformer eMap2) eMap
+          pure $ ValueElement eType eMap'
         ValueCamera -> do
           vmX <- readCamera
-          modifyElement i (valueMapToTransformer vmX)
+          eMap' <- liftEitherParseError $ (valueMapToTransformer vmX) eMap
+          pure $ ValueElement eType eMap'
         ValueClear -> do
           vmX <- readClear
-          modifyElement i (valueMapToTransformer vmX)
+          eMap' <- liftEitherParseError $ (valueMapToTransformer vmX) eMap
+          pure $ ValueElement eType eMap'
         _ -> throwError $ ParseError "invalid argument applied to Dancer" (AST.expressionPosition eX)
     ValueCamera -> do
       case x of
         ValueTransformer tX -> modifyCamera tX
-        ValueElement _ _ vmX -> modifyCamera (valueMapToTransformer vmX)
+        ValueElement _ vmX -> modifyCamera (valueMapToTransformer vmX)
         ValueCamera -> pure ValueCamera
         ValueClear -> do
           vmX <- readClear
@@ -170,7 +184,7 @@ applicationToValue p eF eX = do
     ValueClear -> do
       case x of
         ValueTransformer tX -> modifyClear tX
-        ValueElement _ _ vmX -> modifyClear (valueMapToTransformer vmX)
+        ValueElement _ vmX -> modifyClear (valueMapToTransformer vmX)
         ValueCamera -> do
           vmX <- readCamera
           modifyClear (valueMapToTransformer vmX)
