@@ -1,4 +1,4 @@
-module Parser (parseProgram,parseProgramDebug) where
+module Parser (parseProgram) where
 
 import Prelude
 import Effect
@@ -34,6 +34,7 @@ import ElementType
 parseProgram :: String -> Either String Program
 parseProgram x = lmap showParseError $ AST.parseAST x >>= (astToProgram >>> runP)
 
+{-
 parseProgramDebug :: String -> Effect (Either String Program)
 parseProgramDebug x = do
   let y = AST.parseAST x
@@ -46,6 +47,7 @@ parseProgramDebug x = do
      log $ show z
      pure $ lmap showParseError z
     Left e -> pure (Left $ showParseError e)
+-}
 
 showParseError :: ParseError -> String
 showParseError (ParseError e (Position p)) = show p.line <> ":" <> show p.column <> " " <> e
@@ -71,9 +73,30 @@ parseStatement (AST.EmptyStatement _) = pure unit
 
 
 valueToEffect :: Value -> P Unit
-valueToEffect (ValueElement t vm) = modify_ $ \s -> s { program = s.program { elements = Array.snoc s.program.elements (Tuple t vm) } }
+valueToEffect (ValueElement Dancer f) = elementToEffect Dancer defaultDancer f
+valueToEffect (ValueElement Plane f) = elementToEffect Plane defaultPlane f
+valueToEffect (ValueElement Ambient f) = lightToEffect Ambient empty f
+valueToEffect (ValueElement Directional f) = lightToEffect Directional empty f
+valueToEffect (ValueElement Hemisphere f) = lightToEffect Hemisphere empty f
+valueToEffect (ValueElement Point f) = lightToEffect Point empty f
+valueToEffect (ValueElement RectArea f) = lightToEffect RectArea empty f
+valueToEffect (ValueElement Spot f) = lightToEffect Spot empty f
+valueToEffect (ValueCamera f) = modify_ $ \s -> s { program = s.program { camera = appendTransformers s.program.camera f }}
+valueToEffect (ValueClear f) = modify_ $ \s -> s { program = s.program { clear = appendTransformers s.program.clear f }}
 valueToEffect (ValueList xs) = traverse_ valueToEffect xs
 valueToEffect _ = pure unit
+
+elementToEffect :: ElementType -> ValueMap -> Transformer -> P Unit
+elementToEffect t vm f = do
+  vm' <- liftEitherParseError $ f vm
+  modify_ $ \s -> s { program = s.program { elements = Array.snoc s.program.elements (Tuple t vm') } }
+
+lightToEffect :: ElementType -> ValueMap -> Transformer -> P Unit
+lightToEffect t vm f = do
+  vm' <- liftEitherParseError $ f vm
+  modify_ $ \s -> s { program = s.program { elements = Array.snoc s.program.elements (Tuple t vm') } }
+  modify_ $ \s -> s { program = s.program { hasCustomLights = true } }
+
 
 expressionToValue :: Expression -> P Value
 expressionToValue (AST.LiteralNumber _ x) = pure $ ValueNumber x
@@ -98,16 +121,16 @@ expressionToValue (AST.SemiGlobal p k) = do
         Nothing -> throwError $ ParseError ("reference to unknown identifier: " <> k) p
 expressionToValue (AST.Application p e1 e2) = applicationToValue p e1 e2
 expressionToValue (AST.Transformer _ xs) = transformerToValue xs
-expressionToValue (AST.Element _ Dancer) = pure $ ValueElement Dancer defaultDancer
-expressionToValue (AST.Element _ Plane) = pure $ ValueElement Plane defaultPlane
-expressionToValue (AST.Element _ Ambient) = pure $ ValueElement Ambient empty
-expressionToValue (AST.Element _ Directional) = pure $ ValueElement Directional empty
-expressionToValue (AST.Element _ Hemisphere) = pure $ ValueElement Hemisphere empty
-expressionToValue (AST.Element _ Point) = pure $ ValueElement Point empty
-expressionToValue (AST.Element _ RectArea) = pure $ ValueElement RectArea empty
-expressionToValue (AST.Element _ Spot) = pure $ ValueElement Spot empty
-expressionToValue (AST.Camera _) = pure ValueCamera
-expressionToValue (AST.Clear _) = pure ValueClear
+expressionToValue (AST.Element _ Dancer) = pure $ ValueElement Dancer emptyTransformer
+expressionToValue (AST.Element _ Plane) = pure $ ValueElement Plane emptyTransformer
+expressionToValue (AST.Element _ Ambient) = pure $ ValueElement Ambient emptyTransformer
+expressionToValue (AST.Element _ Directional) = pure $ ValueElement Directional emptyTransformer
+expressionToValue (AST.Element _ Hemisphere) = pure $ ValueElement Hemisphere emptyTransformer
+expressionToValue (AST.Element _ Point) = pure $ ValueElement Point emptyTransformer
+expressionToValue (AST.Element _ RectArea) = pure $ ValueElement RectArea emptyTransformer
+expressionToValue (AST.Element _ Spot) = pure $ ValueElement Spot emptyTransformer
+expressionToValue (AST.Camera _) = pure $ ValueCamera emptyTransformer
+expressionToValue (AST.Clear _) = pure $ ValueClear emptyTransformer
 expressionToValue (AST.Osc _) = pure $ ValueFunction oscFunction
 expressionToValue (AST.Range _) = pure $ ValueFunction rangeFunction
 expressionToValue (AST.Phase _) = pure $ ValueFunction phaseFunction
@@ -147,48 +170,30 @@ applicationToValue p eF eX = do
     ValueTransformer tF -> do
       case x of
         ValueTransformer tX -> pure $ ValueTransformer $ appendTransformers tF tX
-        ValueElement _ vmX -> applyTransformer tF vmX
-        ValueCamera -> do
-          vmX <- readCamera
-          applyTransformer tF vmX
-        ValueClear -> do
-          vmX <- readClear
-          applyTransformer tF vmX
+        ValueElement _ tX -> pure $ ValueTransformer $ appendTransformers tF tX
+        ValueCamera tX -> pure $ ValueTransformer $ appendTransformers tF tX
+        ValueClear tX -> pure $ ValueTransformer $ appendTransformers tF tX
         _ -> throwError $ ParseError "invalid argument applied to Transformer" (AST.expressionPosition eX)
-    ValueElement eType eMap -> do
+    ValueElement eType tF -> do
       case x of
-        ValueTransformer tX -> do
-          eMap' <- liftEitherParseError $ tX eMap
-          pure $ ValueElement eType eMap'        
-        ValueElement _ eMap2 -> do
-          eMap' <- liftEitherParseError $ (valueMapToTransformer eMap2) eMap
-          pure $ ValueElement eType eMap'
-        ValueCamera -> do
-          vmX <- readCamera
-          eMap' <- liftEitherParseError $ (valueMapToTransformer vmX) eMap
-          pure $ ValueElement eType eMap'
-        ValueClear -> do
-          vmX <- readClear
-          eMap' <- liftEitherParseError $ (valueMapToTransformer vmX) eMap
-          pure $ ValueElement eType eMap'
-        _ -> throwError $ ParseError "invalid argument applied to Dancer" (AST.expressionPosition eX)
-    ValueCamera -> do
+        ValueTransformer tX -> pure $ ValueElement eType $ appendTransformers tF tX
+        ValueElement _ tX -> pure $ ValueElement eType $ appendTransformers tF tX
+        ValueCamera tX -> pure $ ValueElement eType $ appendTransformers tF tX
+        ValueClear tX -> pure $ ValueElement eType $ appendTransformers tF tX
+        _ -> throwError $ ParseError "invalid argument applied to element" (AST.expressionPosition eX)
+    ValueCamera tF -> do
       case x of
-        ValueTransformer tX -> modifyCamera tX
-        ValueElement _ vmX -> modifyCamera (valueMapToTransformer vmX)
-        ValueCamera -> pure ValueCamera
-        ValueClear -> do
-          vmX <- readClear
-          modifyCamera (valueMapToTransformer vmX)
+        ValueTransformer tX -> pure $ ValueCamera $ appendTransformers tF tX
+        ValueElement _ tX -> pure $ ValueCamera $ appendTransformers tF tX
+        ValueCamera tX -> pure $ ValueCamera $ appendTransformers tF tX
+        ValueClear tX -> pure $ ValueCamera $ appendTransformers tF tX
         _ -> throwError $ ParseError "invalid argument applied to Camera" (AST.expressionPosition eX)
-    ValueClear -> do
+    ValueClear tF -> do
       case x of
-        ValueTransformer tX -> modifyClear tX
-        ValueElement _ vmX -> modifyClear (valueMapToTransformer vmX)
-        ValueCamera -> do
-          vmX <- readCamera
-          modifyClear (valueMapToTransformer vmX)
-        ValueClear -> pure ValueClear
+        ValueTransformer tX -> pure $ ValueClear $ appendTransformers tF tX
+        ValueElement _ tX -> pure $ ValueClear $ appendTransformers tF tX
+        ValueCamera tX -> pure $ ValueClear $ appendTransformers tF tX
+        ValueClear tX -> pure $ ValueClear $ appendTransformers tF tX
         _ -> throwError $ ParseError "invalid argument applied to Clear" (AST.expressionPosition eX)
     ValueFunction f' -> do
       case f' (AST.expressionPosition eX) x of

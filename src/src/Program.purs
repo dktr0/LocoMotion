@@ -10,8 +10,8 @@ import Value
 
 type Program = {
   elements :: Array ProgramElement,
-  cameraMap :: ValueMap,
-  clearMap :: Maybe ValueMap,
+  camera :: Transformer,
+  clear :: Transformer,
   hasCustomLights :: Boolean
   }
 
@@ -20,8 +20,8 @@ type ProgramElement = Tuple ElementType ValueMap
 defaultProgram :: Program
 defaultProgram = {
   elements: [],
-  cameraMap: defaultCamera,
-  clearMap: Nothing,
+  camera: emptyTransformer,
+  clear: emptyTransformer,
   hasCustomLights: false
   }
 

@@ -110,8 +110,8 @@ clearZone re z = do
   mzs <- ZoneMap.read z re.zoneStates
   case mzs of
     Just zs -> do
-      re <- read re.renderEnvironment
-      deleteZoneState re zs
+      rEnv <- read re.renderEnvironment
+      deleteZoneState rEnv zs
     Nothing -> pure unit
   ZoneMap.delete z re.programs
   ZoneMap.delete z re.zoneStates
@@ -170,6 +170,7 @@ postAnimate re = do
     Three.setAspect rEnv.camera (iWidth/iHeight)
     Three.setSize rEnv.renderer iWidth iHeight false
     setClearColor re
+    runCamera re
     Three.render rEnv.renderer rEnv.scene rEnv.camera
   -- t1 <- nowDateTime
   -- let tDiff = unwrap (diff t1 t0 :: Milliseconds)
@@ -186,9 +187,12 @@ handleDefaultLighting re = do
 
 setClearColor :: RenderEngine -> Effect Unit
 setClearColor re = do
-  zs <- read re.programs -- :: Map Int Program
-  let clearMaps = Map.catMaybes $ map (_.clearMap) zs -- Map Int ValueMap
-  let cm = Map.unions clearMaps
+  zs <- read re.programs -- :: Map Int Program  
+  let clears = map (_.clear) zs
+  let clear' = foldM (\vm f -> f vm) defaultClear clears -- :: Either ParseError ValueMap
+  let cm = case clear' of
+             Right x -> x
+             Left _ -> defaultClear -- note: silent failure when there is a ParseError in combining clears
   let c = case Map.lookup "colour" cm of
             Just x -> valueToInt x
             Nothing -> 0x000000
@@ -198,10 +202,26 @@ setClearColor re = do
   rEnv <- read re.renderEnvironment
   Three.setClearColor rEnv.renderer c a
 
+
+runCamera :: RenderEngine -> Effect Unit
+runCamera re = do
+  zs <- read re.programs
+  rEnv <- read re.renderEnvironment
+  let cameras = map (_.camera) zs
+  let camera' = foldM (\vm f -> f vm) defaultCamera cameras -- :: Either ParseError ValueMap
+  let vm = case camera' of
+             Right x -> x
+             Left _ -> defaultCamera -- note: silent failure when there is a ParseError in combining cameras
+  _ <- execR rEnv defaultZoneState $ do -- a bit hacky but should work since zoneState not relevant to computations
+    updatePosition vm rEnv.camera
+    updateScale vm rEnv.camera
+    updateRotation vm rEnv.camera
+    updateCameraProperties vm
+  pure unit
+
+
 runProgram :: Int -> RenderEnvironment -> Program -> ZoneState -> Effect ZoneState
-runProgram zone re prog zoneState = execR re zoneState $ do
-  runElements zone prog.elements
-  runCamera prog.cameraMap
+runProgram zone re prog zoneState = execR re zoneState $ runElements zone prog.elements
 
 
 runElements :: Int -> Array (Tuple ElementType ValueMap) -> R Unit
@@ -219,15 +239,6 @@ replaceAt :: forall a. Int -> a -> Array a -> Array a
 replaceAt i v a
   | i >= length a = snoc a v
   | otherwise = fromMaybe a $ updateAt i v a
-
-
-runCamera :: ValueMap -> R Unit
-runCamera vm = do
-  re <- ask
-  updatePosition vm re.camera
-  updateScale vm re.camera
-  updateRotation vm re.camera
-  updateCameraProperties vm
 
 
 runElement :: Int -> Int -> Tuple ElementType ValueMap -> R Unit

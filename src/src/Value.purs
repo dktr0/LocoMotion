@@ -35,9 +35,9 @@ data Value =
   ValueVariable Variable | -- x = osc 1.0;
   ValueTransformer Transformer | -- x = { ry = this.ry + osc 1.0 };
   ValueFunction (Position -> Value -> Either ParseError Value) |
-  ValueElement ElementType ValueMap |
-  ValueCamera |
-  ValueClear |
+  ValueElement ElementType Transformer |
+  ValueCamera Transformer |
+  ValueClear Transformer |
   ValueList (List Value)
 
 instance Show Value where
@@ -48,9 +48,9 @@ instance Show Value where
   show (ValueVariable x) = "(ValueVariable " <> show x <> ")"
   show (ValueTransformer _) = "ValueTransformer..."
   show (ValueFunction _) = "ValueFunction... "
-  show (ValueElement t vm) = "(ValueElement " <> show t <> " (" <> show vm <> "))"
-  show ValueCamera = "ValueCamera"
-  show ValueClear = "ValueClear"
+  show (ValueElement t _) = "(ValueElement " <> show t <> " ...)"
+  show (ValueCamera _) = "ValueCamera..."
+  show (ValueClear _) = "ValueClear..."
   show (ValueList xs) = "ValueList " <> show xs
 
 
@@ -125,9 +125,7 @@ instance Eq Value where
   eq (ValueInt x) (ValueInt y) = x == y
   eq (ValueBoolean x) (ValueBoolean y) = x == y
   eq (ValueVariable x) (ValueVariable y) = x == y
-  eq (ValueElement t1 x) (ValueElement t2 y) = t1 == t2 && x == y
-  eq ValueCamera ValueCamera = true
-  eq ValueClear ValueClear = true
+  eq (ValueList x) (ValueList y) = x == y
   eq _ _ = false
 
 divideValues :: Value -> Value -> Value
@@ -163,6 +161,9 @@ lookupValue d k m = maybe d identity $ lookup k m
 -- Transformers
 
 type Transformer = ValueMap -> Either ParseError ValueMap
+
+emptyTransformer :: Transformer
+emptyTransformer = \x -> pure x
 
 valueMapToTransformer :: ValueMap -> Transformer
 valueMapToTransformer vmNew vmOld = pure $ union vmNew vmOld
