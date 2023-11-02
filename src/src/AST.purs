@@ -8,7 +8,7 @@ module AST (
   ) where
 
 import Prelude
-import Data.List (List(..),(:))
+import Data.List (List(..),(:),range)
 import Data.Tuple (Tuple(..))
 import Parsing (Position(..),position, ParseError,runParser)
 import Parsing.Combinators (chainl1, choice, lookAhead, try, (<|>), many, option)
@@ -17,7 +17,7 @@ import Data.Foldable (foldl)
 import Data.Either (Either(..))
 
 
-import TokenParser (P, boolean, commaSep, identifier, integer, number, parens, reserved, reservedOp, semiSep, stringLiteral, whiteSpace, naturalOrFloat, brackets)
+import TokenParser (P, boolean, commaSep, identifier, integer, number, parens, reserved, reservedOp, semiSep, stringLiteral, whiteSpace, naturalOrFloat, brackets, comma)
 import ElementType
 
 type AST = List Statement
@@ -112,7 +112,7 @@ instance Show Expression where
   show (Difference p e1 e2) = "Difference (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
   show (Product p e1 e2) = "Product (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
   show (Divide p e1 e2) = "Divide (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
-  show (Lambda p xs e) = "Lambda (" <> show xs <> ") (" <> show e <> ")"
+  show (Lambda p xs e) = "Lambda (" <> show p <> ") (" <> show xs <> ") (" <> show e <> ")"
 
 expressionPosition :: Expression -> Position
 expressionPosition (LiteralNumber p _) = p
@@ -244,13 +244,26 @@ argument = do
     try thisRef,
     semiGlobalRef
   ]
-
+  
 list :: P Expression
 list = do
+  _ <- pure unit
+  brackets $ (try list2 <|> list1)  -- not super sure why list2 needs to be first (need to make some tests to protect here)
+  
+list1 :: P Expression
+list1 = do
   p <- position
-  xs <- brackets $ commaSep expression
+  xs <- commaSep expression
   pure $ ListExpression p xs
-
+  
+list2 :: P Expression
+list2 = do
+  p <- position
+  x <- integer
+  reservedOp ".."
+  y <- integer
+  pure $ ListExpression p $ map (LiteralInt p) $ range x y  
+  
 intOrNumber :: P Expression
 intOrNumber = do
   p <- position
