@@ -17,7 +17,7 @@ import Data.Foldable (foldl)
 import Data.Either (Either(..))
 
 
-import TokenParser (P, boolean, commaSep, identifier, integer, number, parens, reserved, reservedOp, semiSep, stringLiteral, whiteSpace, naturalOrFloat, brackets, comma)
+import TokenParser (P, boolean, commaSep, identifier, integer, number, parens, reserved, reservedOp, semiSep, stringLiteral, whiteSpace, naturalOrFloat, brackets, comma, reservedNamesDef)
 import ElementType
 
 type AST = List Statement
@@ -206,25 +206,7 @@ argument = do
   ]
 
 reservedNames :: P Expression
-reservedNames = 
-  choice [
-    try $ reservedName "dancer",
-    try $ reservedName "plane",
-    try $ reservedName "ambient",
-    try $ reservedName "directional",
-    try $ reservedName "hemisphere",
-    try $ reservedName "point",
-    try $ reservedName "rectarea",
-    try $ reservedName "spot",
-    try $ reservedName "camera",
-    try $ reservedName "clear",
-    try $ reservedName "osc",
-    try $ reservedName "range",
-    try $ reservedName "phase",
-    try $ reservedName "step",
-    try $ reservedName "for",
-    reservedName "map"
-  ]
+reservedNames = choice $ map (try <<< reservedName) reservedNamesDef
   
 reservedName :: String -> P Expression
 reservedName x = do

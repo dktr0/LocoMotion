@@ -153,12 +153,17 @@ reservedToValue _ "rectarea" = pure $ ValueElement RectArea emptyTransformer
 reservedToValue _ "spot" = pure $ ValueElement Spot emptyTransformer
 reservedToValue _ "camera" = pure $ ValueCamera emptyTransformer
 reservedToValue _ "clear" = pure $ ValueClear emptyTransformer
-reservedToValue _ "osc" = pure $ ValueFunction Functions.osc
-reservedToValue _ "range" = pure $ ValueFunction Functions.range
-reservedToValue _ "phase" = pure $ ValueFunction Functions.phase
-reservedToValue _ "step" = pure $ ValueFunction Functions.step
-reservedToValue _ "for" = pure $ ValueFunction Functions.for
-reservedToValue _ "map" = pure $ ValueFunction Functions.map
+reservedToValue _ "cps" = pure $ ValueVariable CPS
+reservedToValue _ "cycle" = pure $ ValueVariable Cycle
+reservedToValue _ "time" = pure $ ValueVariable Time
+reservedToValue _ "beat" = pure $ ValueVariable Beat
+reservedToValue _ "osc" = pure $ valueFunction Functions.osc
+reservedToValue _ "range" = pure $ valueFunction3 Functions.range
+reservedToValue _ "phase" = pure $ valueFunction2 Functions.phase
+reservedToValue _ "step" = pure $ valueFunction2 Functions.step
+reservedToValue _ "for" = pure $ Functions.for
+reservedToValue _ "map" = pure $ Functions.map
+reservedToValue _ "sin" = pure $ valueFunction Functions.sin
 reservedToValue p x = throwError $ ParseError ("internal LocoMotion error: reservedToValue called for unknown identifier: " <> x) p
 
 

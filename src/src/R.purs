@@ -27,19 +27,7 @@ import Variable
 import Value
 import ElementType
 import Model
-
-
-type RenderEnvironment = {
-  scene :: Three.Scene,
-  camera :: Three.PerspectiveCamera,
-  fog :: Three.Fog,
-  renderer :: Three.Renderer,
-  defaultLight :: Three.AmbientLight,
-  tempo :: Tempo,
-  nCycles :: Number,
-  cycleDur :: Number,
-  delta :: Number
-  }
+import RenderEnvironment
 
 
 type ZoneState = {
@@ -66,7 +54,7 @@ realizeNumber k def valueMap = do
   case v of
     ValueVariable x -> do
       env <- ask
-      pure $ realizeVariable env.nCycles x
+      pure $ realizeVariable env x
     _ -> pure $ valueToNumber v
 
 

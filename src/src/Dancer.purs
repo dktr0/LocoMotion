@@ -1,30 +1,27 @@
 module Dancer (newDancer,updateDancer,removeDancer) where
 
-import Prelude
-import Data.Number (pi,floor)
+import Prelude (Unit, bind, discard, mod, pure, show, unit, when, ($), (*), (+), (-), (/), (/=), (<>), (||))
+import Data.Number (floor)
 import Data.Int (toNumber,round,floor) as Int
 import Data.Array
 import Data.Maybe (Maybe(..),fromMaybe)
 import Effect (Effect)
-import Effect.Ref (Ref, new, read, write)
+import Effect.Ref (new, read, write)
 import Effect.Console (log)
 import Effect.Class (liftEffect)
 import ThreeJS as Three
-import Data.Rational
-import Data.Ratio
-import Data.Traversable (traverse,traverse_)
 import Data.FoldableWithIndex (traverseWithIndex_)
-import Data.Map (Map,lookup)
+import Data.Map (lookup)
 import Control.Monad.Reader.Trans (ask)
 import Data.Newtype (unwrap)
 import Data.DateTime.Instant (unInstant,fromDateTime)
 
-import URL
-import Value
-import MaybeRef
-import R
-import Model
-import Variable
+import URL (resolveURL)
+import Value (Value(..), ValueMap, lookupNumber, lookupString)
+import MaybeRef (whenMaybeRef)
+import R (Dancer, R, updatePosition, updateRotation, updateScale)
+import Model (Model, gltfToModel)
+import Variable (realizeVariable)
 
 newDancer :: R Dancer
 newDancer = liftEffect $ do
@@ -93,7 +90,7 @@ updateAnimation zone vm s = whenMaybeRef s.model $ \m -> do
     animationValue <- calculateAnimation zone nAnims vm
     newMixerState <- valueToMixerState m animationValue
     prevDurState <- liftEffect $ read m.durState
-    let dur = lookupNumber 1.0 "dur" vm * env.cycleDur
+    let dur = lookupNumber 1.0 "dur" vm * env.cycle
     when (prevMixerState /= newMixerState || prevDurState /= dur) $ liftEffect $ do
       -- log $ "prevMixerState /= newMixerState, dur = " <> show dur
       -- log $ show prevMixerState <> " ... " <> show newMixerState
@@ -155,7 +152,7 @@ logAnimation i x = log $ " " <> show i <> ": " <> show x.name
 valueToMixerState :: Model -> Value -> R (Array Number)
 valueToMixerState m (ValueVariable v) = do
   rEnv <- ask
-  let n = realizeVariable rEnv.nCycles v
+  let n = realizeVariable rEnv v
   pure $ intToMixerState (length m.actions) (Int.floor n)
 valueToMixerState m (ValueInt i) = pure $ intToMixerState (length m.actions) i
 valueToMixerState m (ValueNumber n) = pure $ intToMixerState (length m.actions) (Int.floor n) -- later: could be a crossfade

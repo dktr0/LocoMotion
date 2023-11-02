@@ -97,6 +97,15 @@ valueToListVariable :: Value -> List Variable
 valueToListVariable (ValueList xs) = map valueToVariable xs 
 valueToListVariable x = singleton $ valueToVariable x
 
+valueFunction :: (Value -> Value) -> Value
+valueFunction f = ValueFunction (\_ x -> pure $ f x)
+
+valueFunction2 :: (Value -> Value -> Value) -> Value
+valueFunction2 f = ValueFunction (\_ x -> pure $ valueFunction (f x))
+
+valueFunction3 :: (Value -> Value -> Value -> Value) -> Value
+valueFunction3 f = ValueFunction (\_ x -> pure $ valueFunction2 (f x))
+
 
 instance Semiring Value where
   zero = ValueInt 0
