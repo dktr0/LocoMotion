@@ -45,16 +45,14 @@ parseAST :: String -> Either ParseError AST
 parseAST x = runParser x ast
 
 data Expression =
-  Element Position ElementType |
-  Camera Position | Osc Position | Range Position | Clear Position | Phase Position | Step Position |
-  For Position | Map Position |
+  Reserved Position String | 
+  Identifier Position String |
   LiteralNumber Position Number |
   LiteralString Position String |
   LiteralInt Position Int |
   LiteralBoolean Position Boolean |
   ListExpression Position (List Expression) |
   This Position String | -- eg. this.x would be This "x"
-  SemiGlobal Position String | -- eg. x would be SemiGlobal "x"
   Transformer Position (List (Tuple String Expression)) |
   Application Position Expression Expression |
   Sum Position Expression Expression |
@@ -64,22 +62,14 @@ data Expression =
   Lambda Position String Expression
 
 instance Eq Expression where
-  eq (Element p1 t1) (Element p2 t2) = p1 == p2 && t1 == t2
-  eq (Camera p1) (Camera p2) = p1 == p2
-  eq (Osc p1) (Osc p2) = p1 == p2
-  eq (Range p1) (Range p2) = p1 == p2
-  eq (Clear p1) (Clear p2) = p1 == p2
-  eq (Phase p1) (Phase p2) = p1 == p2
-  eq (Step p1) (Step p2) = p1 == p2
-  eq (For p1) (For p2) = p1 == p2
-  eq (Map p1) (Map p2) = p1 == p2
+  eq (Reserved p1 n1) (Reserved p2 n2) = p1 == p2 && n1 == n2
+  eq (Identifier p1 n1) (Identifier p2 n2) = p1 == p2 && n1 == n2
   eq (LiteralNumber p1 x1) (LiteralNumber p2 x2) = p1 == p2 && x1 == x2
   eq (LiteralString p1 x1) (LiteralString p2 x2) = p1 == p2 && x1 == x2
   eq (LiteralInt p1 x1) (LiteralInt p2 x2) = p1 == p2 && x1 == x2
   eq (LiteralBoolean p1 x1) (LiteralBoolean p2 x2) = p1 == p2 && x1 == x2
   eq (ListExpression p1 xs1) (ListExpression p2 xs2) = p1 == p2 && xs1 == xs2
   eq (This p1 x1) (This p2 x2) = p1 == p2 && x1 == x2
-  eq (SemiGlobal p1 x1) (SemiGlobal p2 x2) = p1 == p2 && x1 == x2
   eq (Transformer p1 x1) (Transformer p2 x2) = p1 == p2 && x1 == x2
   eq (Application p1 x1a x1b) (Application p2 x2a x2b) = p1 == p2 && x1a == x2a && x1b == x2b
   eq (Sum p1 x1a x1b) (Sum p2 x2a x2b) = p1 == p2 && x1a == x2a && x1b == x2b
@@ -90,24 +80,16 @@ instance Eq Expression where
   eq _ _ = false
 
 instance Show Expression where
+  show (Reserved p x) = "Reserved (" <> show p <> ") " <> show x
+  show (Identifier p x) = "Identifier (" <> show p <> ") " <> show x
   show (LiteralNumber p x) = "LiteralNumber (" <> show p <> ") " <> show x
   show (LiteralString p x) = "(LiteralString (" <> show p <> ") " <> show x <> ")"
   show (LiteralInt p x) = "LiteralInt (" <> show p <> ") " <> show x
   show (LiteralBoolean p x) = "LiteralBoolean (" <> show p <> ") " <> show x
   show (ListExpression p xs) = "ListExpression (" <> show p <> ") (" <> show xs <> ")"
   show (This p x) = "This (" <> show p <> ") " <> show x
-  show (SemiGlobal p x) = "SemiGlobal (" <> show p <> ") " <> show x
   show (Application p e1 e2) = "Application (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
   show (Transformer p x) = "Transformer (" <> show p <> ") (" <> show x <> ")"
-  show (Element p t) = "(Element " <> show t <> "(" <> show p <> "))"
-  show (Camera p) = "Camera (" <> show p <> ")"
-  show (Osc p) = "Osc (" <> show p <> ")"
-  show (Range p) = "Range (" <> show p <> ")"
-  show (Clear p) = "Clear (" <> show p <> ")"
-  show (Phase p) = "Phase (" <> show p <> ")"
-  show (Step p) = "Step (" <> show p <> ")"
-  show (For p) = "For (" <> show p <> ")"
-  show (Map p) = "Map (" <> show p <> ")"
   show (Sum p e1 e2) = "Sum (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
   show (Difference p e1 e2) = "Difference (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
   show (Product p e1 e2) = "Product (" <> show p <> ") (" <> show e1 <> ") (" <> show e2 <> ")"
@@ -115,24 +97,16 @@ instance Show Expression where
   show (Lambda p xs e) = "Lambda (" <> show p <> ") (" <> show xs <> ") (" <> show e <> ")"
 
 expressionPosition :: Expression -> Position
+expressionPosition (Reserved p _) = p
+expressionPosition (Identifier p _) = p
 expressionPosition (LiteralNumber p _) = p
 expressionPosition (LiteralString p _) = p
 expressionPosition (LiteralInt p _) = p
 expressionPosition (LiteralBoolean p _) = p
 expressionPosition (ListExpression p _) = p
 expressionPosition (This p _) = p
-expressionPosition (SemiGlobal p _) = p
 expressionPosition (Application p _ _) = p
 expressionPosition (Transformer p _) = p
-expressionPosition (Element p _) = p
-expressionPosition (Camera p) = p
-expressionPosition (Osc p) = p
-expressionPosition (Range p) = p
-expressionPosition (Clear p) = p
-expressionPosition (Phase p) = p
-expressionPosition (Step p) = p
-expressionPosition (For p) = p
-expressionPosition (Map p) = p
 expressionPosition (Sum p _ _) = p
 expressionPosition (Difference p _ _) = p
 expressionPosition (Product p _ _) = p
@@ -224,26 +198,37 @@ argument = do
     try intOrNumber,
     try $ LiteralString p <$> stringLiteral,
     try $ LiteralBoolean p <$> boolean,
-    try (Element p Dancer <$ reserved "dancer"),
-    try (Element p Plane <$ reserved "plane"),
-    try (Element p Ambient <$ reserved "ambient"),
-    try (Element p Directional <$ reserved "directional"),
-    try (Element p Hemisphere <$ reserved "hemisphere"),
-    try (Element p Point <$ reserved "point"),
-    try (Element p RectArea <$ reserved "rectarea"),
-    try (Element p Spot <$ reserved "spot"),
-    try (Camera p <$ reserved "camera"),
-    try (Osc p <$ reserved "osc"),
-    try (Range p <$ reserved "range"),
-    try (Clear p <$ reserved "clear"),
-    try (Phase p <$ reserved "phase"),
-    try (Step p <$ reserved "step"),
-    try (For p <$ reserved "for"),
-    try (Map p <$ reserved "map"),
+    try reservedNames,
     try lambda,
     try thisRef,
-    semiGlobalRef
+    Identifier p <$> identifier
   ]
+
+reservedNames :: P Expression
+reservedNames = 
+  choice [
+    try $ reservedName "dancer",
+    try $ reservedName "plane",
+    try $ reservedName "ambient",
+    try $ reservedName "directional",
+    try $ reservedName "hemisphere",
+    try $ reservedName "point",
+    try $ reservedName "rectarea",
+    try $ reservedName "spot",
+    try $ reservedName "camera",
+    try $ reservedName "clear",
+    try $ reservedName "osc",
+    try $ reservedName "range",
+    try $ reservedName "phase",
+    try $ reservedName "step",
+    try $ reservedName "for",
+    reservedName "map"
+  ]
+  
+reservedName :: String -> P Expression
+reservedName x = do
+  p <- position
+  Reserved p x <$ reserved x 
   
 list :: P Expression
 list = do
@@ -299,10 +284,6 @@ thisRef = do
   reserved "this"
   reservedOp "."
   This p <$> identifier
-
-semiGlobalRef :: P Expression
-semiGlobalRef = SemiGlobal <$> position <*> identifier
-
 
 lambda :: P Expression
 lambda = do

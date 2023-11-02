@@ -110,7 +110,7 @@ expressionToValue (AST.This p k) = do
   case lookup k tMap of
     Nothing -> throwError $ ParseError ("unknown this reference: " <> k) p
     Just v -> pure v
-expressionToValue (AST.SemiGlobal p k) = do
+expressionToValue (AST.Identifier p k) = do
   s <- get
   let lMap = s.lambdaMap
   case lookup k s.lambdaMap of
@@ -121,22 +121,7 @@ expressionToValue (AST.SemiGlobal p k) = do
         Nothing -> throwError $ ParseError ("reference to unknown identifier: " <> k) p
 expressionToValue (AST.Application p e1 e2) = applicationToValue p e1 e2
 expressionToValue (AST.Transformer _ xs) = transformerToValue xs
-expressionToValue (AST.Element _ Dancer) = pure $ ValueElement Dancer emptyTransformer
-expressionToValue (AST.Element _ Plane) = pure $ ValueElement Plane emptyTransformer
-expressionToValue (AST.Element _ Ambient) = pure $ ValueElement Ambient emptyTransformer
-expressionToValue (AST.Element _ Directional) = pure $ ValueElement Directional emptyTransformer
-expressionToValue (AST.Element _ Hemisphere) = pure $ ValueElement Hemisphere emptyTransformer
-expressionToValue (AST.Element _ Point) = pure $ ValueElement Point emptyTransformer
-expressionToValue (AST.Element _ RectArea) = pure $ ValueElement RectArea emptyTransformer
-expressionToValue (AST.Element _ Spot) = pure $ ValueElement Spot emptyTransformer
-expressionToValue (AST.Camera _) = pure $ ValueCamera emptyTransformer
-expressionToValue (AST.Clear _) = pure $ ValueClear emptyTransformer
-expressionToValue (AST.Osc _) = pure $ ValueFunction oscFunction
-expressionToValue (AST.Range _) = pure $ ValueFunction rangeFunction
-expressionToValue (AST.Phase _) = pure $ ValueFunction phaseFunction
-expressionToValue (AST.Step _) = pure $ ValueFunction stepFunction
-expressionToValue (AST.For _) = pure $ ValueFunction forFunction
-expressionToValue (AST.Map _) = pure $ ValueFunction mapFunction
+expressionToValue (AST.Reserved p x) = reservedToValue p x
 expressionToValue (AST.Sum _ e1 e2) = do
   v1 <- expressionToValue e1
   v2 <- expressionToValue e2
@@ -154,6 +139,26 @@ expressionToValue (AST.Divide _ e1 e2) = do
   v2 <- expressionToValue e2
   pure $ divideValues v1 v2
 expressionToValue (AST.Lambda _ x e) = embedLambda x e
+
+
+reservedToValue :: Position -> String -> P Value
+reservedToValue _ "dancer" = pure $ ValueElement Dancer emptyTransformer
+reservedToValue _ "plane" = pure $ ValueElement Plane emptyTransformer
+reservedToValue _ "ambient" = pure $ ValueElement Ambient emptyTransformer
+reservedToValue _ "directional" = pure $ ValueElement Directional emptyTransformer
+reservedToValue _ "hemisphere" = pure $ ValueElement Hemisphere emptyTransformer
+reservedToValue _ "point" = pure $ ValueElement Point emptyTransformer
+reservedToValue _ "rectarea" = pure $ ValueElement RectArea emptyTransformer
+reservedToValue _ "spot" = pure $ ValueElement Spot emptyTransformer
+reservedToValue _ "camera" = pure $ ValueCamera emptyTransformer
+reservedToValue _ "clear" = pure $ ValueClear emptyTransformer
+reservedToValue _ "osc" = pure $ ValueFunction oscFunction
+reservedToValue _ "range" = pure $ ValueFunction rangeFunction
+reservedToValue _ "phase" = pure $ ValueFunction phaseFunction
+reservedToValue _ "step" = pure $ ValueFunction stepFunction
+reservedToValue _ "for" = pure $ ValueFunction forFunction
+reservedToValue _ "map" = pure $ ValueFunction mapFunction
+reservedToValue p x = throwError $ ParseError ("internal LocoMotion error: reservedToValue called for unknown identifier: " <> x) p
 
 
 applicationToValue :: Position -> Expression -> Expression -> P Value
