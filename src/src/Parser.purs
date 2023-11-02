@@ -138,7 +138,7 @@ expressionToValue (AST.Divide _ e1 e2) = do
   v1 <- expressionToValue e1
   v2 <- expressionToValue e2
   pure $ divideValues v1 v2
-expressionToValue (AST.Lambda _ x e) = embedLambda x e
+expressionToValue (AST.Lambda _ xs e) = embedLambdas xs e
 
 
 reservedToValue :: Position -> String -> P Value
@@ -206,11 +206,6 @@ applicationToValue p eF eX = do
         Right v -> pure v
 
 
-embedLambda :: String -> Expression -> P Value
-embedLambda x e = do
-  oldState <- get
-  pure $ ValueFunction (\_ v -> evalStateT (expressionToValue e) (oldState { lambdaMap = insert x v oldState.lambdaMap }))
-
 embedLambdas :: List String -> Expression -> P Value
 embedLambdas Nil e = expressionToValue e
 embedLambdas (argName:moreArgs) e = do
@@ -231,12 +226,6 @@ parseModifier (Tuple k e) = do
   pure $ \tm -> evalP s.semiMap tm s.lambdaMap s.program $ do
     v <- expressionToValue e
     pure $ insert k v tm
-
-applyTransformer :: Transformer -> ValueMap -> P Value -- where Value is always a Transformer
-applyTransformer tF x =
-  case tF x of
-    Left pe -> throwError pe
-    Right vm -> pure $ ValueTransformer $ valueMapToTransformer vm
 
 
 -- Miscellaneous functions

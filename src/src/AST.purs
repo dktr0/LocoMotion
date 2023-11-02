@@ -59,7 +59,7 @@ data Expression =
   Difference Position Expression Expression |
   Product Position Expression Expression |
   Divide Position Expression Expression |
-  Lambda Position String Expression
+  Lambda Position (List String) Expression
 
 instance Eq Expression where
   eq (Reserved p1 n1) (Reserved p2 n2) = p1 == p2 && n1 == n2
@@ -290,7 +290,7 @@ lambda :: P Expression
 lambda = do
   p <- position
   reservedOp "\\"
-  x <- identifier
+  xs <- many identifier
   reservedOp "->"
   e <- expression
-  pure $ Lambda p x e
+  pure $ Lambda p xs e
