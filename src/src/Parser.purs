@@ -30,6 +30,7 @@ import R (R)
 import P
 import Program
 import ElementType
+import Functions as Functions
 
 parseProgram :: String -> Either String Program
 parseProgram x = lmap showParseError $ AST.parseAST x >>= (astToProgram >>> runP)
@@ -152,12 +153,12 @@ reservedToValue _ "rectarea" = pure $ ValueElement RectArea emptyTransformer
 reservedToValue _ "spot" = pure $ ValueElement Spot emptyTransformer
 reservedToValue _ "camera" = pure $ ValueCamera emptyTransformer
 reservedToValue _ "clear" = pure $ ValueClear emptyTransformer
-reservedToValue _ "osc" = pure $ ValueFunction oscFunction
-reservedToValue _ "range" = pure $ ValueFunction rangeFunction
-reservedToValue _ "phase" = pure $ ValueFunction phaseFunction
-reservedToValue _ "step" = pure $ ValueFunction stepFunction
-reservedToValue _ "for" = pure $ ValueFunction forFunction
-reservedToValue _ "map" = pure $ ValueFunction mapFunction
+reservedToValue _ "osc" = pure $ ValueFunction Functions.osc
+reservedToValue _ "range" = pure $ ValueFunction Functions.range
+reservedToValue _ "phase" = pure $ ValueFunction Functions.phase
+reservedToValue _ "step" = pure $ ValueFunction Functions.step
+reservedToValue _ "for" = pure $ ValueFunction Functions.for
+reservedToValue _ "map" = pure $ ValueFunction Functions.map
 reservedToValue p x = throwError $ ParseError ("internal LocoMotion error: reservedToValue called for unknown identifier: " <> x) p
 
 
@@ -226,41 +227,5 @@ parseModifier (Tuple k e) = do
   pure $ \tm -> evalP s.semiMap tm s.lambdaMap s.program $ do
     v <- expressionToValue e
     pure $ insert k v tm
-
-
--- Miscellaneous functions
-
-oscFunction :: Position -> Value -> Either ParseError Value
-oscFunction _ (ValueVariable f) = pure $ ValueVariable $ Osc f
-oscFunction _ (ValueNumber f) = pure $ ValueVariable $ Osc $ ConstantVariable f
-oscFunction _ (ValueInt f) = pure $ ValueVariable $ Osc $ ConstantVariable $ toNumber f
-oscFunction p _ = throwError $ ParseError "argument to osc must be Variable/Number/Int" p
-
-rangeFunction :: Position -> Value -> Either ParseError Value
-rangeFunction _ r1 = pure $ ValueFunction (\_ r2 -> pure $ ValueFunction (\_ x -> pure $ ValueVariable $ f (valueToVariable r1) (valueToVariable r2) (valueToVariable x)))
-  where f r1' r2' x' = (x' * ConstantVariable 0.5 + ConstantVariable 0.5) * (r2' - r1') + r1'
-
-phaseFunction :: Position -> Value -> Either ParseError Value
-phaseFunction _ dur = pure $ ValueFunction (\_ offset -> pure $ ValueVariable $ Phase (valueToVariable dur) (valueToVariable offset))
-
-stepFunction :: Position -> Value -> Either ParseError Value
-stepFunction _ xs = pure $ ValueFunction (\_ phs -> pure $ ValueVariable $ Step (valueToListVariable xs) (valueToVariable phs))
-
-forFunction :: Position -> Value -> Either ParseError Value
-forFunction p xs = pure $ ValueFunction (\_ f -> fmapValue p f xs)
-
-mapFunction :: Position -> Value -> Either ParseError Value
-mapFunction p f = pure $ ValueFunction (\_ xs -> fmapValue p f xs)
-
-fmapValue :: Position -> Value -> Value -> Either ParseError Value
--- main scenario is a function and a list
-fmapValue p (ValueFunction f) (ValueList xs) = do
-  xs' <- traverse (f p) xs
-  pure $ ValueList xs'
--- if we have a function and a non-list value, wrap it in a singleton list
-fmapValue p (ValueFunction f) x = fmapValue p (ValueFunction f) $ ValueList $ singleton x
--- if first argument is not a function, that's an error
-fmapValue p _ _ = throwError $ ParseError "missing function argument to for/map" p
--- to resolve: couldn't transformer also take the place of functions in this? and if so, so could anything which implicitly contains a transformer (eg. dancer, camera, clear)
 
 
