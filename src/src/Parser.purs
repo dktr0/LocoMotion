@@ -7,7 +7,7 @@ import Data.Number (sin,pi)
 import Data.Int (toNumber)
 import Data.Map (insert,empty,lookup,Map(..))
 import Data.Map (fromFoldable) as Map
-import Data.List (List, foldl, mapMaybe, fromFoldable, singleton)
+import Data.List (List(..), foldl, mapMaybe, fromFoldable, singleton, (:))
 import Data.Tuple (Tuple(..),fst)
 import Data.Either (Either)
 import Data.Maybe (Maybe(..))
@@ -62,9 +62,9 @@ setCustomLightsFlag :: Program -> Program
 setCustomLightsFlag p = p { hasCustomLights = elem true $ map (isLight <<< fst) p.elements }
 
 parseStatement :: Statement -> P Unit
-parseStatement (AST.Assignment _ k e) = do -- position is currently unused, but it might be used in future if we were checking validity of definition names
-  v <- expressionToValue e
-  modify_ $ \s -> s { semiMap = insert k v s.semiMap }
+parseStatement (AST.Assignment _ name args body) = do
+  v <- embedLambdas args body
+  modify_ $ \s -> s { semiMap = insert name v s.semiMap }
   valueToEffect v
 parseStatement (AST.Action e) = do
   v <- expressionToValue e
@@ -211,6 +211,33 @@ embedLambda x e = do
   oldState <- get
   pure $ ValueFunction (\_ v -> evalStateT (expressionToValue e) (oldState { lambdaMap = insert x v oldState.lambdaMap }))
 
+embedLambdas :: List String -> Expression -> P Value
+embedLambdas Nil e = expressionToValue e
+embedLambdas (argName:moreArgs) e = do
+  pState <- get
+  pure $ ValueFunction (\_ argValue -> evalStateT (embedLambdas moreArgs e) (pState { lambdaMap = insert argName argValue pState.lambdaMap }))
+  
+
+-- Transformers
+
+transformerToValue :: List (Tuple String Expression) -> P Value
+transformerToValue xs = do
+  ts <- traverse parseModifier xs -- :: P (List Transformer)
+  pure $ ValueTransformer $ foldl appendTransformers pure ts
+
+parseModifier :: Tuple String Expression -> P Transformer
+parseModifier (Tuple k e) = do
+  s <- get
+  pure $ \tm -> evalP s.semiMap tm s.lambdaMap s.program $ do
+    v <- expressionToValue e
+    pure $ insert k v tm
+
+applyTransformer :: Transformer -> ValueMap -> P Value -- where Value is always a Transformer
+applyTransformer tF x =
+  case tF x of
+    Left pe -> throwError pe
+    Right vm -> pure $ ValueTransformer $ valueMapToTransformer vm
+
 
 -- Miscellaneous functions
 
@@ -247,22 +274,4 @@ fmapValue p (ValueFunction f) x = fmapValue p (ValueFunction f) $ ValueList $ si
 fmapValue p _ _ = throwError $ ParseError "missing function argument to for/map" p
 -- to resolve: couldn't transformer also take the place of functions in this? and if so, so could anything which implicitly contains a transformer (eg. dancer, camera, clear)
 
--- Transformers
 
-transformerToValue :: List (Tuple String Expression) -> P Value
-transformerToValue xs = do
-  ts <- traverse parseModifier xs -- :: P (List Transformer)
-  pure $ ValueTransformer $ foldl appendTransformers pure ts
-
-parseModifier :: Tuple String Expression -> P Transformer
-parseModifier (Tuple k e) = do
-  s <- get
-  pure $ \tm -> evalP s.semiMap tm s.lambdaMap s.program $ do
-    v <- expressionToValue e
-    pure $ insert k v tm
-
-applyTransformer :: Transformer -> ValueMap -> P Value -- where Value is always a Transformer
-applyTransformer tF x =
-  case tF x of
-    Left pe -> throwError pe
-    Right vm -> pure $ ValueTransformer $ valueMapToTransformer vm

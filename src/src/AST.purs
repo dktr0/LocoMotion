@@ -23,18 +23,18 @@ import ElementType
 type AST = List Statement
 
 data Statement =
-  Assignment Position String Expression |
+  Assignment Position String (List String) Expression | -- position name arguments body
   Action Expression | -- Action doesn't need to record Position since the contained Expression will have the Position
   EmptyStatement Position
 
 instance Eq Statement where
-  eq (Assignment p1 s1 e1) (Assignment p2 s2 e2) = p1 == p2 && s1 == s2 && e1 == e2
+  eq (Assignment p1 n1 as1 e1) (Assignment p2 n2 as2 e2) = p1 == p2 && n1 == n2 && as1 == as2 && e1 == e2
   eq (Action e1) (Action e2) = e1 == e2
   eq (EmptyStatement p1) (EmptyStatement p2) = p1 == p2
   eq _ _ = false
 
 instance Show Statement where
-  show (Assignment p k e) = "Assignment (" <> show p <> ") " <> show k <> " (" <> show e <> ")"
+  show (Assignment p name args body) = "Assignment (" <> show p <> ") " <> show name <> " (" <> show args <> ") (" <> show body <> ")"
   show (Action e) = "Action (" <> show e <> ")"
   show (EmptyStatement p) = "EmptyStatement (" <> show p <> ")"
 
@@ -129,10 +129,11 @@ statement = try assignment <|> try action <|> emptyStatement
 assignment :: P Statement
 assignment = do
   p <- position
-  k <- identifier
+  name <- identifier
+  args <- many identifier
   reservedOp "="
-  v <- expression
-  pure $ Assignment p k v
+  body <- expression
+  pure $ Assignment p name args body
 
 action :: P Statement
 action = Action <$> expression
