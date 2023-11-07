@@ -64,7 +64,11 @@ realizeInt k def valueMap = do
     ValueVariable x -> do
       env <- ask
 <<<<<<< HEAD
+<<<<<<< HEAD
       pure $ floor $ realizeVariable env x
+=======
+      pure $ floor $  realizeVariable env.nCycles x
+>>>>>>> c076ef4 (box element added)
 =======
       pure $ floor $  realizeVariable env.nCycles x
 >>>>>>> c076ef4 (box element added)
@@ -77,7 +81,11 @@ realizeBoolean k def valueMap = do
     ValueVariable x -> do
       env <- ask
 <<<<<<< HEAD
+<<<<<<< HEAD
       pure $ valueToBoolean $ ValueNumber $ realizeVariable env x
+=======
+      pure $ valueToBoolean $ ValueNumber $ realizeVariable env.nCycles x
+>>>>>>> c076ef4 (box element added)
 =======
       pure $ valueToBoolean $ ValueNumber $ realizeVariable env.nCycles x
 >>>>>>> c076ef4 (box element added)
