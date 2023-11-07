@@ -106,6 +106,20 @@ updateScale vm a = do
   size <- realizeNumber "size" 1.0 vm
   liftEffect $ Three.setScaleOfAnything a (sx*size) (sy*size) (sz*size)
 
+
+-- assume objects are structured so that their floor edge is at y=0  
+updatePositionAndScale :: forall a. Three.Object3D' a => ValueMap -> a -> R Unit
+updatePositoinAndScale vm a = do
+  sx <- realizeNumber "sx" 1.0 vm
+  sy <- realizeNumber "sy" 1.0 vm
+  sz <- realizeNumber "sz" 1.0 vm
+  size <- realizeNumber "size" 1.0 vm
+
+  x <- realizeNumber "x" 0.0 vm
+  y <- realizeNumber "y" 0.0 vm
+  z <- realizeNumber "z" 0.0 vm
+
+
 updateRotation :: forall a. Three.Object3D' a => ValueMap -> a -> R Unit
 updateRotation vm a = do
   let mlx = Map.lookup "lx" vm
