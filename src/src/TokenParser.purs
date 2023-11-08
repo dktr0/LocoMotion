@@ -61,15 +61,7 @@ reservedNamesDef = [
 
 tokenParser :: GenTokenParser String Identity
 tokenParser = makeTokenParser $ LanguageDef (unGenLanguageDef emptyDef) {
-<<<<<<< HEAD
-<<<<<<< HEAD
   reservedNames = reservedNamesDef,
-=======
-  reservedNames = ["dancer","camera","plane","osc","range","phase","step","clear","ambient","directional","hemisphere","point","rectarea","spot","for","map","box"],
->>>>>>> c076ef4 (box element added)
-=======
-  reservedNames = ["dancer","camera","plane","osc","range","phase","step","clear","ambient","directional","hemisphere","point","rectarea","spot","for","map","box"],
->>>>>>> c076ef4 (box element added)
   reservedOpNames = [";","=","*","+","-","/","\\",".."],
   commentStart = "{-",
   commentEnd = "-}",

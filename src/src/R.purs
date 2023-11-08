@@ -63,15 +63,7 @@ realizeInt k def valueMap = do
   case v of
     ValueVariable x -> do
       env <- ask
-<<<<<<< HEAD
-<<<<<<< HEAD
       pure $ floor $ realizeVariable env x
-=======
-      pure $ floor $  realizeVariable env.nCycles x
->>>>>>> c076ef4 (box element added)
-=======
-      pure $ floor $  realizeVariable env.nCycles x
->>>>>>> c076ef4 (box element added)
     _ -> pure $ valueToInt v
     
 realizeBoolean :: String -> Boolean -> ValueMap -> R Boolean
@@ -80,15 +72,7 @@ realizeBoolean k def valueMap = do
   case v of
     ValueVariable x -> do
       env <- ask
-<<<<<<< HEAD
-<<<<<<< HEAD
       pure $ valueToBoolean $ ValueNumber $ realizeVariable env x
-=======
-      pure $ valueToBoolean $ ValueNumber $ realizeVariable env.nCycles x
->>>>>>> c076ef4 (box element added)
-=======
-      pure $ valueToBoolean $ ValueNumber $ realizeVariable env.nCycles x
->>>>>>> c076ef4 (box element added)
     _ -> pure $ valueToBoolean v
 
 updatePosition :: forall a. Three.Object3D' a => ValueMap -> a -> R Unit
