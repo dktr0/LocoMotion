@@ -15,9 +15,10 @@ import Data.Map (lookup)
 import Control.Monad.Reader.Trans (ask)
 import Data.Newtype (unwrap)
 import Data.DateTime.Instant (unInstant,fromDateTime)
+import Data.List (List(..),(:))
 
 import URL (resolveURL)
-import Value (Value(..), ValueMap, lookupNumber, lookupString)
+import Value (Value(..), ValueMap, lookupNumber, lookupString, valueToNumber, valueToInt)
 import MaybeRef (whenMaybeRef)
 import R (Dancer, R, updatePosition, updateRotation, updateScale)
 import Model (Model, gltfToModel)
@@ -54,18 +55,18 @@ updateModel zone vm d = do
     removeDancer d
     loadModel urlProg d
   pure d
-  
+
 
 calculateModelURL :: Int -> ValueMap -> R String
-calculateModelURL zone vm = 
-  case lookupString "" "url" vm of 
+calculateModelURL zone vm =
+  case lookupString "" "url" vm of
     "" -> randomModel zone 0
     x -> pure x
-    
+
 
 randomModel :: Int -> Int -> R String
 randomModel zone increment = do
-  env <- ask 
+  env <- ask
   let secs = (unwrap $ unInstant $ fromDateTime $ env.tempo.time) / 1000.0
   let nModels = length models
   let nBase = Int.round $ (secs - floor secs) * Int.toNumber nModels
@@ -100,20 +101,20 @@ updateAnimation zone vm s = whenMaybeRef s.model $ \m -> do
     liftEffect $ Three.updateAnimationMixer m.mixer env.delta
 
 calculateAnimation :: Int -> Int -> ValueMap -> R Value
-calculateAnimation zone nAnims vm = 
+calculateAnimation zone nAnims vm =
   case lookup "animation" vm of
     Nothing -> randomAnimation zone 0 nAnims
     Just v -> pure v
 
 randomAnimation :: Int -> Int -> Int -> R Value
 randomAnimation zone increment nAnims = do
-  env <- ask 
+  env <- ask
   let nModels = length models
   let secs = (unwrap $ unInstant $ fromDateTime $ env.tempo.time) / (1000.0 * Int.toNumber nModels)
   let nBase = Int.round $ (secs - floor secs) * Int.toNumber nAnims
   let n = mod (nBase + zone + increment) nAnims
   pure $ ValueInt n
-  
+
 
 updateAnimationAction :: Model -> Number -> Int -> Number -> Effect Unit
 updateAnimationAction m dur i weight = do
@@ -150,6 +151,7 @@ logAnimation i x = log $ " " <> show i <> ": " <> show x.name
 
 
 valueToMixerState :: Model -> Value -> R (Array Number)
+valueToMixerState m (ValueList xs) = valueListToMixerState m xs
 valueToMixerState m (ValueVariable v) = do
   rEnv <- ask
   let n = realizeVariable rEnv v
@@ -162,9 +164,41 @@ valueToMixerState m (ValueString v) = pure $ fromMaybe allZeros $ updateAt n' 1.
     allZeros = replicate (length m.actions) 0.0
 valueToMixerState _ _ = pure $ []
 
+
+
 intToMixerState :: Int -> Int -> Array Number
-intToMixerState nAnimations n = fromMaybe allZeros $ updateAt n' 1.0 allZeros
+intToMixerState nAnimations n = nWeightToMixerState nAnimations n 1.0
+
+nWeightToMixerState :: Int -> Int -> Number -> Array Number
+nWeightToMixerState nAnimations n w = fromMaybe allZeros $ updateAt n' w allZeros
   where
     n' = mod n nAnimations
     allZeros = replicate nAnimations 0.0
-    
+
+valueToAnimation :: Model -> Value -> R Int
+valueToAnimation m (ValueVariable n) = do
+  rEnv <- ask
+  let nAnimations = length m.actions
+  let n' = Int.floor $ realizeVariable rEnv n
+  pure $ mod n' nAnimations
+valueToAnimation m x = do
+  let nAnimations = length m.actions
+  let n' = valueToInt x
+  pure $ mod n' nAnimations
+
+valueListToMixerState :: Model -> List Value -> R (Array Number)
+valueListToMixerState m (n : w : xs) = do
+  n' <- valueToAnimation m n
+  w' <- realizeWeight w
+  let ms = nWeightToMixerState (length m.actions) n' w'
+  mss <- valueListToMixerState m xs
+  pure $ zipWith (+) ms mss
+valueListToMixerState m (n : Nil) = valueListToMixerState m (n : ValueNumber 1.0 : Nil)
+valueListToMixerState m Nil = pure $ replicate (length m.actions) 0.0
+
+-- surely this is something more generic that should be moved/generalized...
+realizeWeight :: Value -> R Number
+realizeWeight (ValueVariable v) = do
+  rEnv <- ask
+  pure $ realizeVariable rEnv v
+realizeWeight x = pure $ valueToNumber x
