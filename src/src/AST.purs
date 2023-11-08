@@ -45,7 +45,7 @@ parseAST :: String -> Either ParseError AST
 parseAST x = runParser x ast
 
 data Expression =
-  Reserved Position String | 
+  Reserved Position String |
   Identifier Position String |
   LiteralNumber Position Number |
   LiteralString Position String |
@@ -206,31 +206,39 @@ argument = do
 
 reservedNames :: P Expression
 reservedNames = choice $ map (try <<< reservedName) reservedNamesDef
-  
+
 reservedName :: String -> P Expression
 reservedName x = do
   p <- position
-  Reserved p x <$ reserved x 
-  
+  Reserved p x <$ reserved x
+
 list :: P Expression
 list = do
   _ <- pure unit
   brackets $ (try list2 <|> list1)  -- not super sure why list2 needs to be first (need to make some tests to protect here)
-  
+
 list1 :: P Expression
 list1 = do
   p <- position
   xs <- commaSep expression
   pure $ ListExpression p xs
-  
+
 list2 :: P Expression
 list2 = do
   p <- position
-  x <- integer
+  x <- integerMaybeInParens
   reservedOp ".."
-  y <- integer
-  pure $ ListExpression p $ map (LiteralInt p) $ range x y  
-  
+  y <- integerMaybeInParens
+  pure $ ListExpression p $ map (LiteralInt p) $ range x y
+
+integerMaybeInParens :: P Int
+integerMaybeInParens = do
+  _ <- pure unit
+  choice [
+    try $ parens integerMaybeInParens,
+    integer
+  ]
+
 intOrNumber :: P Expression
 intOrNumber = do
   p <- position
