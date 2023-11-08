@@ -17,7 +17,11 @@ import Data.Newtype (unwrap)
 import Data.DateTime.Instant (unInstant,fromDateTime)
 
 import URL (resolveURL)
+<<<<<<< HEAD
 import Value (Value(..), ValueMap, lookupNumber, lookupString)
+=======
+import Value (Value(..), ValueMap, lookupNumber, lookupString) 
+>>>>>>> 856b0d1 (resolve huge merge conflicts)
 import MaybeRef (whenMaybeRef)
 import R (Dancer, R, updatePosition, updateRotation, updateScale)
 import Model (Model, gltfToModel)

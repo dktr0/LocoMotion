@@ -15,4 +15,7 @@ type RenderEnvironment = {
   beat :: Number,
   delta :: Number
   }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 856b0d1 (resolve huge merge conflicts)

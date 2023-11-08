@@ -46,3 +46,7 @@ sin :: Value -> Value
 sin (ValueVariable x) = ValueVariable $ Sin x
 sin x = ValueNumber $ Number.sin $ valueToNumber x
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 856b0d1 (resolve huge merge conflicts)
