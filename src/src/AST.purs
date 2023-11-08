@@ -198,7 +198,27 @@ argument = do
     try intOrNumber,
     try $ LiteralString p <$> stringLiteral,
     try $ LiteralBoolean p <$> boolean,
+<<<<<<< HEAD
     try reservedNames,
+=======
+    try (Element p Dancer <$ reserved "dancer"),
+    try (Element p Plane <$ reserved "plane"),
+    try (Element p Box <$ reserved "box"),
+    try (Element p Ambient <$ reserved "ambient"),
+    try (Element p Directional <$ reserved "directional"),
+    try (Element p Hemisphere <$ reserved "hemisphere"),
+    try (Element p Point <$ reserved "point"),
+    try (Element p RectArea <$ reserved "rectarea"),
+    try (Element p Spot <$ reserved "spot"),
+    try (Camera p <$ reserved "camera"),
+    try (Osc p <$ reserved "osc"),
+    try (Range p <$ reserved "range"),
+    try (Clear p <$ reserved "clear"),
+    try (Phase p <$ reserved "phase"),
+    try (Step p <$ reserved "step"),
+    try (For p <$ reserved "for"),
+    try (Map p <$ reserved "map"),
+>>>>>>> c076ef4 (box element added)
     try lambda,
     try thisRef,
     Identifier p <$> identifier

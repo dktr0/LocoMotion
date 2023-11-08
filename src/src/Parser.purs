@@ -123,7 +123,27 @@ expressionToValue (AST.Identifier p k) = do
         Nothing -> throwError $ ParseError ("reference to unknown identifier: " <> k) p
 expressionToValue (AST.Application p e1 e2) = applicationToValue p e1 e2
 expressionToValue (AST.Transformer _ xs) = transformerToValue xs
+<<<<<<< HEAD
 expressionToValue (AST.Reserved p x) = reservedToValue p x
+=======
+expressionToValue (AST.Element _ Dancer) = pure $ ValueElement Dancer emptyTransformer
+expressionToValue (AST.Element _ Plane) = pure $ ValueElement Plane emptyTransformer
+expressionToValue (AST.Element _ Box) = pure $ ValueElement Box emptyTransformer
+expressionToValue (AST.Element _ Ambient) = pure $ ValueElement Ambient emptyTransformer
+expressionToValue (AST.Element _ Directional) = pure $ ValueElement Directional emptyTransformer
+expressionToValue (AST.Element _ Hemisphere) = pure $ ValueElement Hemisphere emptyTransformer
+expressionToValue (AST.Element _ Point) = pure $ ValueElement Point emptyTransformer
+expressionToValue (AST.Element _ RectArea) = pure $ ValueElement RectArea emptyTransformer
+expressionToValue (AST.Element _ Spot) = pure $ ValueElement Spot emptyTransformer
+expressionToValue (AST.Camera _) = pure $ ValueCamera emptyTransformer
+expressionToValue (AST.Clear _) = pure $ ValueClear emptyTransformer
+expressionToValue (AST.Osc _) = pure $ ValueFunction oscFunction
+expressionToValue (AST.Range _) = pure $ ValueFunction rangeFunction
+expressionToValue (AST.Phase _) = pure $ ValueFunction phaseFunction
+expressionToValue (AST.Step _) = pure $ ValueFunction stepFunction
+expressionToValue (AST.For _) = pure $ ValueFunction forFunction
+expressionToValue (AST.Map _) = pure $ ValueFunction mapFunction
+>>>>>>> c076ef4 (box element added)
 expressionToValue (AST.Sum _ e1 e2) = do
   v1 <- expressionToValue e1
   v2 <- expressionToValue e2
