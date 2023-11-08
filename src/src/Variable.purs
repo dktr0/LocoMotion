@@ -17,7 +17,7 @@ import RenderEnvironment
 data Variable =
   ConstantVariable Number |
   CPS |
-  Cycle | 
+  Cycle |
   Time |
   Beat |
   Osc Variable |
@@ -27,7 +27,9 @@ data Variable =
   Sub Variable Variable |
   Product Variable Variable |
   Divide Variable Variable |
-  Sin Variable
+  Sin Variable -- |
+  -- HSV Variable Variable Variable
+
 
 realizeVariable :: RenderEnvironment -> Variable -> Number
 realizeVariable _ (ConstantVariable x) = x
@@ -43,6 +45,7 @@ realizeVariable re (Sub x y) = realizeVariable re x - realizeVariable re y
 realizeVariable re (Product x y) = realizeVariable re x * realizeVariable re y
 realizeVariable re (Divide x y) = safeDivide (realizeVariable re x) (realizeVariable re y)
 realizeVariable re (Sin x) = sin $ realizeVariable re x
+-- realizeVariable re (HSV h s v) = hsv (realizeVariable re h) (realizeVariable re s) (realizeVariable re v)
 
 instance Eq Variable where
   eq (ConstantVariable x) (ConstantVariable y) = x == y
@@ -96,6 +99,9 @@ phase nCycles dur offset = x - floor x
   where x = safeDivide (nCycles - offset) dur
 
 step :: List Number -> Number -> Number
-step xs phs 
+step xs phs
   | length xs <= 0 = 0.0
   | otherwise = fromMaybe 0.0 $ index xs $ Int.floor $ (phs - floor phs) * (Int.toNumber (length xs))
+
+hsv :: Number -> Number -> Number -> Number
+hsv h s v = 0.0 -- placeholder

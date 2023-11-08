@@ -47,7 +47,7 @@ import Program
 import ElementType
 import Dancer
 import Plane
-import Box
+import Shapes
 import Lights
 import RenderEnvironment
 
@@ -127,7 +127,7 @@ preAnimate re = do
   tNow <- nowDateTime
   tPrev <- read re.prevTNow
   write tNow re.prevTNow
-  envPrev <- read re.renderEnvironment  
+  envPrev <- read re.renderEnvironment
   let beatNow = timeToCountNumber envPrev.tempo tNow
   let envNew = envPrev {
     time = unwrap (diff tNow (origin envPrev.tempo) :: Seconds),
@@ -192,7 +192,7 @@ handleDefaultLighting re = do
 
 setClearColor :: RenderEngine -> Effect Unit
 setClearColor re = do
-  zs <- read re.programs -- :: Map Int Program  
+  zs <- read re.programs -- :: Map Int Program
   let clears = map (_.clear) zs
   let clear' = foldM (\vm f -> f vm) defaultClear clears -- :: Either ParseError ValueMap
   let cm = case clear' of
@@ -266,6 +266,7 @@ createElement :: ElementType -> R Element
 createElement Dancer = ElementDancer <$> newDancer
 createElement Plane = ElementPlane <$> newPlane
 createElement Box = ElementBox <$> newBox
+createElement Sphere = ElementSphere <$> newSphere
 createElement Ambient = ElementAmbient <$> newAmbient
 createElement Directional = ElementDirectional <$> newDirectional
 createElement Hemisphere = ElementHemisphere <$> newHemisphere
@@ -277,6 +278,7 @@ updateElement :: Int -> ValueMap -> Element -> R Element
 updateElement zone vm (ElementDancer x) = updateDancer zone vm x >>= (pure <<< ElementDancer)
 updateElement _ vm (ElementPlane x) = updatePlane vm x >>= (pure <<< ElementPlane)
 updateElement _ vm (ElementBox x) = updateBox vm x >>= (pure <<< ElementBox)
+updateElement _ vm (ElementSphere x) = updateSphere vm x >>= (pure <<< ElementSphere)
 updateElement _ vm (ElementAmbient x) = updateAmbient vm x >>= (pure <<< ElementAmbient)
 updateElement _ vm (ElementDirectional x) = updateDirectional vm x >>= (pure <<< ElementDirectional)
 updateElement _ vm (ElementHemisphere x) = updateHemisphere vm x >>= (pure <<< ElementHemisphere)
@@ -288,6 +290,7 @@ removeElement :: Element -> R Unit
 removeElement (ElementDancer x) = removeDancer x
 removeElement (ElementPlane x) = removePlane x
 removeElement (ElementBox x) = removeBox x
+removeElement (ElementSphere x) = removeSphere x
 removeElement (ElementAmbient x) = removeAmbient x
 removeElement (ElementDirectional x) = removeDirectional x
 removeElement (ElementHemisphere x) = removeHemisphere x

@@ -56,7 +56,7 @@ realizeNumber k def valueMap = do
       env <- ask
       pure $ realizeVariable env x
     _ -> pure $ valueToNumber v
-    
+
 realizeInt :: String -> Int -> ValueMap -> R Int
 realizeInt k def valueMap = do
   let v = lookupValue (ValueInt def) k valueMap
@@ -65,7 +65,7 @@ realizeInt k def valueMap = do
       env <- ask
       pure $ floor $ realizeVariable env x
     _ -> pure $ valueToInt v
-    
+
 realizeBoolean :: String -> Boolean -> ValueMap -> R Boolean
 realizeBoolean k def valueMap = do
   let v = lookupValue (ValueBoolean def) k valueMap
@@ -91,7 +91,7 @@ updateScale vm a = do
   liftEffect $ Three.setScaleOfAnything a (sx*size) (sy*size) (sz*size)
 
 
-{- -- assume objects are structured so that their floor edge is at y=0  
+{- -- assume objects are structured so that their floor edge is at y=0
 updatePositionAndScale :: forall a. Three.Object3D' a => ValueMap -> a -> R Unit
 updatePositoinAndScale vm a = do
   sx <- realizeNumber "sx" 1.0 vm
@@ -161,6 +161,7 @@ data Element =
   ElementDancer Dancer |
   ElementPlane Plane |
   ElementBox Box |
+  ElementSphere Sphere |
   ElementAmbient Ambient |
   ElementDirectional Directional |
   ElementHemisphere Hemisphere |
@@ -178,6 +179,7 @@ elementType (ElementPoint _) = Point
 elementType (ElementRectArea _) = RectArea
 elementType (ElementSpot _) = Spot
 elementType (ElementBox _) = Box
+elementType (ElementSphere _) = Sphere
 
 type Dancer =
   {
@@ -189,8 +191,13 @@ type Plane = {
   mesh :: Three.Mesh,
   material :: Three.MeshPhongMaterial
   }
-  
+
 type Box = {
+  mesh :: Three.Mesh,
+  material :: Three.MeshPhongMaterial
+  }
+
+type Sphere = {
   mesh :: Three.Mesh,
   material :: Three.MeshPhongMaterial
   }

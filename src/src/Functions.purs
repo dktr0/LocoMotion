@@ -12,6 +12,10 @@ import Data.Number as Number
 import Variable
 import Value
 
+-- hsv :: Value -> Value -> Value -> Value
+-- hsv (ValueVariable h) (ValueVariable s) (ValueVariable v) = 
+
+
 osc :: Value -> Value
 osc f = ValueVariable $ Osc (valueToVariable f)
 
@@ -45,5 +49,3 @@ fmapValue p _ _ = throwError $ ParseError "missing function argument to for/map"
 sin :: Value -> Value
 sin (ValueVariable x) = ValueVariable $ Sin x
 sin x = ValueNumber $ Number.sin $ valueToNumber x
-
-

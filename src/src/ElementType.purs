@@ -8,6 +8,7 @@ data ElementType =
   Dancer |
   Plane |
   Box |
+  Sphere |
   Ambient |
   Directional |
   Hemisphere |

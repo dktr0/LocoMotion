@@ -77,6 +77,7 @@ valueToEffect :: Value -> P Unit
 valueToEffect (ValueElement Dancer f) = elementToEffect Dancer defaultDancer f
 valueToEffect (ValueElement Plane f) = elementToEffect Plane defaultPlane f
 valueToEffect (ValueElement Box f) = elementToEffect Box defaultBox f
+valueToEffect (ValueElement Sphere f) = elementToEffect Sphere defaultBox f
 valueToEffect (ValueElement Ambient f) = lightToEffect Ambient empty f
 valueToEffect (ValueElement Directional f) = lightToEffect Directional empty f
 valueToEffect (ValueElement Hemisphere f) = lightToEffect Hemisphere empty f
@@ -147,6 +148,7 @@ reservedToValue :: Position -> String -> P Value
 reservedToValue _ "dancer" = pure $ ValueElement Dancer emptyTransformer
 reservedToValue _ "plane" = pure $ ValueElement Plane emptyTransformer
 reservedToValue _ "box" = pure $ ValueElement Box emptyTransformer
+reservedToValue _ "sphere" = pure $ ValueElement Sphere emptyTransformer
 reservedToValue _ "ambient" = pure $ ValueElement Ambient emptyTransformer
 reservedToValue _ "directional" = pure $ ValueElement Directional emptyTransformer
 reservedToValue _ "hemisphere" = pure $ ValueElement Hemisphere emptyTransformer
