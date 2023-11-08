@@ -145,6 +145,7 @@ expressionToValue (AST.Lambda _ xs e) = embedLambdas xs e
 reservedToValue :: Position -> String -> P Value
 reservedToValue _ "dancer" = pure $ ValueElement Dancer emptyTransformer
 reservedToValue _ "plane" = pure $ ValueElement Plane emptyTransformer
+reservedToValue _ "box" = pure $ ValueElement Box emptyTransformer
 reservedToValue _ "ambient" = pure $ ValueElement Ambient emptyTransformer
 reservedToValue _ "directional" = pure $ ValueElement Directional emptyTransformer
 reservedToValue _ "hemisphere" = pure $ ValueElement Hemisphere emptyTransformer

@@ -1,6 +1,6 @@
 
 build:
-	npm install
+	# npm install
 	cd src && spago build
 	esbuild src/webpack-module.js --bundle --minify --format=esm --outfile=locoMotion.js
 

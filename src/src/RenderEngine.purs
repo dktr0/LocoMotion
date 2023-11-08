@@ -47,6 +47,7 @@ import Program
 import ElementType
 import Dancer
 import Plane
+import Box
 import Lights
 import RenderEnvironment
 
@@ -264,6 +265,7 @@ runElement zone i (Tuple t vm) = do
 createElement :: ElementType -> R Element
 createElement Dancer = ElementDancer <$> newDancer
 createElement Plane = ElementPlane <$> newPlane
+createElement Box = ElementBox <$> newBox
 createElement Ambient = ElementAmbient <$> newAmbient
 createElement Directional = ElementDirectional <$> newDirectional
 createElement Hemisphere = ElementHemisphere <$> newHemisphere
@@ -274,6 +276,7 @@ createElement Spot = ElementSpot <$> newSpot
 updateElement :: Int -> ValueMap -> Element -> R Element
 updateElement zone vm (ElementDancer x) = updateDancer zone vm x >>= (pure <<< ElementDancer)
 updateElement _ vm (ElementPlane x) = updatePlane vm x >>= (pure <<< ElementPlane)
+updateElement _ vm (ElementBox x) = updateBox vm x >>= (pure <<< ElementBox)
 updateElement _ vm (ElementAmbient x) = updateAmbient vm x >>= (pure <<< ElementAmbient)
 updateElement _ vm (ElementDirectional x) = updateDirectional vm x >>= (pure <<< ElementDirectional)
 updateElement _ vm (ElementHemisphere x) = updateHemisphere vm x >>= (pure <<< ElementHemisphere)
@@ -284,6 +287,7 @@ updateElement _ vm (ElementSpot x) = updateSpot vm x >>= (pure <<< ElementSpot)
 removeElement :: Element -> R Unit
 removeElement (ElementDancer x) = removeDancer x
 removeElement (ElementPlane x) = removePlane x
+removeElement (ElementBox x) = removeBox x
 removeElement (ElementAmbient x) = removeAmbient x
 removeElement (ElementDirectional x) = removeDirectional x
 removeElement (ElementHemisphere x) = removeHemisphere x

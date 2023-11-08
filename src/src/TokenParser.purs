@@ -55,7 +55,8 @@ reservedNamesDef = [
   "spot",
   "for",
   "map",
-  "sin"
+  "sin",
+  "box"
   ]
 
 tokenParser :: GenTokenParser String Identity
