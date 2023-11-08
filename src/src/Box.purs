@@ -1,4 +1,4 @@
-module Plane (newPlane,updatePlane,removePlane) where
+module Box (newBox,updateBox,removeBox) where
 
 import Prelude
 import ThreeJS as Three
@@ -12,17 +12,17 @@ import Data.Maybe (Maybe(..))
 import Value
 import R
 
-newPlane :: R Plane
-newPlane = do
-  geometry <- liftEffect $ Three.newPlaneGeometry 1.0 1.0 1 1
+newBox :: R Box
+newBox = do
+  geometry <- liftEffect $ Three.newBoxGeometry 1.0 1.0 1.0
   material <- liftEffect $ Three.newMeshPhongMaterial { depthWrite: false }
   mesh <- liftEffect $ Three.newMesh geometry material
   env <- ask
   liftEffect $ Three.addAnything env.scene mesh
   pure { mesh, material }
 
-updatePlane :: ValueMap -> Plane -> R Plane
-updatePlane vm fs = do
+updateBox :: ValueMap -> Box -> R Box
+updateBox vm fs = do
   colour <- realizeInt "colour" 0x888888 vm
   shadows <- realizeBoolean "shadows" true vm
   liftEffect $ Three.setColorInt fs.material colour
@@ -32,7 +32,7 @@ updatePlane vm fs = do
   updateRotation vm fs.mesh
   pure fs
 
-removePlane :: Plane -> R Unit
-removePlane fState = do
+removeBox :: Box -> R Unit
+removeBox fState = do
   rEnv <- ask
   liftEffect $ Three.removeObject3D rEnv.scene fState.mesh

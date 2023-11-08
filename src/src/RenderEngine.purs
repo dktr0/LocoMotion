@@ -47,7 +47,9 @@ import Program
 import ElementType
 import Dancer
 import Plane
+import Box
 import Lights
+import RenderEnvironment
 
 type RenderEngine =
   {
@@ -80,10 +82,11 @@ launch cvs = do
   Three.setClearColor renderer 0x000000 1.0
 
   tempo <- newTempo (1 % 2)
-  let nCycles = 0.0
-  let cycleDur = 2.0
+  let cycle = 2.0
+  let time = 0.0
+  let beat = 0.0
   let delta = 0.0
-  renderEnvironment <- new { scene, camera, fog, renderer, defaultLight, tempo, nCycles, cycleDur, delta }
+  renderEnvironment <- new { scene, camera, fog, renderer, defaultLight, tempo, time, beat, cycle, delta }
   programs <- ZoneMap.new
   zoneStates <- ZoneMap.new
   prevTNow <- nowDateTime >>= new
@@ -124,17 +127,20 @@ preAnimate re = do
   tNow <- nowDateTime
   tPrev <- read re.prevTNow
   write tNow re.prevTNow
-  envPrev <- read re.renderEnvironment
+  envPrev <- read re.renderEnvironment  
+  let beatNow = timeToCountNumber envPrev.tempo tNow
   let envNew = envPrev {
-    delta = unwrap (diff tNow tPrev :: Seconds),
-    nCycles = timeToCountNumber envPrev.tempo tNow,
-    cycleDur = 1.0 / toNumber envPrev.tempo.freq
+    time = unwrap (diff tNow (origin envPrev.tempo) :: Seconds),
+    beat = beatNow,
+    cycle = 1.0 / toNumber envPrev.tempo.freq,
+    delta = unwrap (diff tNow tPrev :: Seconds)
     }
   write envNew re.renderEnvironment
   -- debugging
   -- let td = unwrap (diff tNow envNew.tempo.time :: Milliseconds)
   -- let df = td * toNumber envNew.tempo.freq / 1000.0
-  -- log $ show td <> " " <> show df <> " " <> show envNew.nCycles
+  -- log $ show td <> " " <> show df <> " " <> show envNew.beat
+
 
 
 animateZone :: RenderEngine -> Zone -> Effect Unit
@@ -260,6 +266,7 @@ runElement zone i (Tuple t vm) = do
 createElement :: ElementType -> R Element
 createElement Dancer = ElementDancer <$> newDancer
 createElement Plane = ElementPlane <$> newPlane
+createElement Box = ElementBox <$> newBox
 createElement Ambient = ElementAmbient <$> newAmbient
 createElement Directional = ElementDirectional <$> newDirectional
 createElement Hemisphere = ElementHemisphere <$> newHemisphere
@@ -270,6 +277,7 @@ createElement Spot = ElementSpot <$> newSpot
 updateElement :: Int -> ValueMap -> Element -> R Element
 updateElement zone vm (ElementDancer x) = updateDancer zone vm x >>= (pure <<< ElementDancer)
 updateElement _ vm (ElementPlane x) = updatePlane vm x >>= (pure <<< ElementPlane)
+updateElement _ vm (ElementBox x) = updateBox vm x >>= (pure <<< ElementBox)
 updateElement _ vm (ElementAmbient x) = updateAmbient vm x >>= (pure <<< ElementAmbient)
 updateElement _ vm (ElementDirectional x) = updateDirectional vm x >>= (pure <<< ElementDirectional)
 updateElement _ vm (ElementHemisphere x) = updateHemisphere vm x >>= (pure <<< ElementHemisphere)
@@ -280,6 +288,7 @@ updateElement _ vm (ElementSpot x) = updateSpot vm x >>= (pure <<< ElementSpot)
 removeElement :: Element -> R Unit
 removeElement (ElementDancer x) = removeDancer x
 removeElement (ElementPlane x) = removePlane x
+removeElement (ElementBox x) = removeBox x
 removeElement (ElementAmbient x) = removeAmbient x
 removeElement (ElementDirectional x) = removeDirectional x
 removeElement (ElementHemisphere x) = removeHemisphere x

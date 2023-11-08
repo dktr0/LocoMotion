@@ -33,9 +33,35 @@ boolean = choice [
   reserved "false" $> false
   ]
 
+reservedNamesDef :: Array String
+reservedNamesDef = [
+  "dancer",
+  "camera",
+  "plane",
+  "cps",
+  "cycle",
+  "time",
+  "beat",
+  "osc",
+  "range",
+  "phase",
+  "step",
+  "clear",
+  "ambient",
+  "directional",
+  "hemisphere",
+  "point",
+  "rectarea",
+  "spot",
+  "for",
+  "map",
+  "sin",
+  "box"
+  ]
+
 tokenParser :: GenTokenParser String Identity
 tokenParser = makeTokenParser $ LanguageDef (unGenLanguageDef emptyDef) {
-  reservedNames = ["dancer","camera","plane","osc","range","phase","step","clear","ambient","directional","hemisphere","point","rectarea","spot","for","map"],
+  reservedNames = reservedNamesDef,
   reservedOpNames = [";","=","*","+","-","/","\\",".."],
   commentStart = "{-",
   commentEnd = "-}",
