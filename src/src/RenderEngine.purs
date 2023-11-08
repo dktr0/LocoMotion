@@ -140,10 +140,6 @@ preAnimate re = do
   -- let td = unwrap (diff tNow envNew.tempo.time :: Milliseconds)
   -- let df = td * toNumber envNew.tempo.freq / 1000.0
   -- log $ show td <> " " <> show df <> " " <> show envNew.beat
-<<<<<<< HEAD
-=======
-
->>>>>>> 856b0d1 (resolve huge merge conflicts)
 
 
 animateZone :: RenderEngine -> Zone -> Effect Unit

@@ -10,7 +10,8 @@
   "devDependencies": {
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "cd src && spago build && cd .. && esbuild src/webpack-module.js --bundle --minify --format=esm --outfile=locoMotion.js",
+    "serve": "npx http-server -c-1"
   },
   "repository": {
     "type": "git",
