@@ -179,3 +179,4 @@ valueMapToTransformer vmNew vmOld = pure $ union vmNew vmOld
 
 appendTransformers :: Transformer -> Transformer -> Transformer
 appendTransformers fx fy = \thisMap -> fx thisMap >>= fy
+

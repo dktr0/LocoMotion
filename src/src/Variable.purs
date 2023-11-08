@@ -99,4 +99,3 @@ step :: List Number -> Number -> Number
 step xs phs 
   | length xs <= 0 = 0.0
   | otherwise = fromMaybe 0.0 $ index xs $ Int.floor $ (phs - floor phs) * (Int.toNumber (length xs))
-

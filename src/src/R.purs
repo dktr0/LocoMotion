@@ -56,7 +56,24 @@ realizeNumber k def valueMap = do
       env <- ask
       pure $ realizeVariable env x
     _ -> pure $ valueToNumber v
-
+    
+realizeInt :: String -> Int -> ValueMap -> R Int
+realizeInt k def valueMap = do
+  let v = lookupValue (ValueInt def) k valueMap
+  case v of
+    ValueVariable x -> do
+      env <- ask
+      pure $ floor $ realizeVariable env x
+    _ -> pure $ valueToInt v
+    
+realizeBoolean :: String -> Boolean -> ValueMap -> R Boolean
+realizeBoolean k def valueMap = do
+  let v = lookupValue (ValueBoolean def) k valueMap
+  case v of
+    ValueVariable x -> do
+      env <- ask
+      pure $ valueToBoolean $ ValueNumber $ realizeVariable env x
+    _ -> pure $ valueToBoolean v
 
 updatePosition :: forall a. Three.Object3D' a => ValueMap -> a -> R Unit
 updatePosition vm a = do
@@ -129,6 +146,7 @@ updateCameraProperties vm = do
 data Element =
   ElementDancer Dancer |
   ElementPlane Plane |
+  ElementBox Box |
   ElementAmbient Ambient |
   ElementDirectional Directional |
   ElementHemisphere Hemisphere |
@@ -145,6 +163,7 @@ elementType (ElementHemisphere _) = Hemisphere
 elementType (ElementPoint _) = Point
 elementType (ElementRectArea _) = RectArea
 elementType (ElementSpot _) = Spot
+elementType (ElementBox _) = Box
 
 type Dancer =
   {
@@ -153,6 +172,11 @@ type Dancer =
   }
 
 type Plane = {
+  mesh :: Three.Mesh,
+  material :: Three.MeshPhongMaterial
+  }
+  
+type Box = {
   mesh :: Three.Mesh,
   material :: Three.MeshPhongMaterial
   }
