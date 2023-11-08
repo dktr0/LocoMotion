@@ -13,11 +13,14 @@ import Variable
 import Value
 
 -- hsv :: Value -> Value -> Value -> Value
--- hsv (ValueVariable h) (ValueVariable s) (ValueVariable v) = 
+-- hsv (ValueVariable h) (ValueVariable s) (ValueVariable v) =
 
 
 osc :: Value -> Value
-osc f = ValueVariable $ Osc (valueToVariable f)
+osc f = ValueVariable $ Osc (valueToVariable f) (ConstantVariable 0.0)
+
+oscphs :: Value -> Value -> Value
+oscphs f phs = ValueVariable $ Osc (valueToVariable f) (valueToVariable phs)
 
 range :: Value -> Value -> Value -> Value
 range r1 r2 x = ValueVariable $ f (valueToVariable r1) (valueToVariable r2) (valueToVariable x)

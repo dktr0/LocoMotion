@@ -43,6 +43,7 @@ reservedNamesDef = [
   "time",
   "beat",
   "osc",
+  "oscphs",
   "range",
   "phase",
   "step",

@@ -20,7 +20,7 @@ data Variable =
   Cycle |
   Time |
   Beat |
-  Osc Variable |
+  Osc Variable Variable |
   Phase Variable Variable |
   Step (List Variable) Variable |
   Sum Variable Variable |
@@ -37,7 +37,7 @@ realizeVariable re CPS = Rational.toNumber re.tempo.freq
 realizeVariable re Cycle = re.cycle
 realizeVariable re Time = re.time
 realizeVariable re Beat = re.beat
-realizeVariable re (Osc x) = osc re.beat (realizeVariable re x)
+realizeVariable re (Osc f phs) = osc re.beat (realizeVariable re f) (realizeVariable re phs)
 realizeVariable re (Phase dur offset) = phase re.beat (realizeVariable re dur) (realizeVariable re offset)
 realizeVariable re (Step xs phs) = step (map (realizeVariable re) xs) (realizeVariable re phs)
 realizeVariable re (Sum x y) = realizeVariable re x + realizeVariable re y
@@ -53,7 +53,7 @@ instance Eq Variable where
   eq Cycle Cycle = true
   eq Time Time = true
   eq Beat Beat = true
-  eq (Osc x) (Osc y) = x == y
+  eq (Osc f1 phs1) (Osc f2 phs2) = f1 == f2 && phs1 == phs2
   eq (Phase x1 y1) (Phase x2 y2) = x1 == x2 && y1 == y2
   eq (Step xs1 phs1) (Step xs2 phs2) = xs1 == xs2 && phs1 == phs2
   eq (Sum a b) (Sum c d) = a == c && b == d
@@ -69,7 +69,7 @@ instance Show Variable where
   show Cycle = "Cycle"
   show Time = "Time"
   show Beat = "Beat"
-  show (Osc x) = "Osc (" <> show x <> ")"
+  show (Osc f phs) = "Osc (" <> show f <> ") (" <> show phs <> ")"
   show (Phase dur offset) = "Phase (" <> show dur <> ") (" <> show offset <> ")"
   show (Step xs phs) = "Step (" <> show xs <> ") (" <> show phs <> ")"
   show (Sum x y) = "Sum (" <> show x <> ") (" <> show y <> ")"
@@ -91,8 +91,8 @@ safeDivide :: Number -> Number -> Number
 safeDivide _ 0.0 = 0.0
 safeDivide x y = x/y
 
-osc :: Number -> Number -> Number
-osc nCycles f = sin $ f * nCycles * 2.0 * pi
+osc :: Number -> Number -> Number -> Number
+osc nCycles f phs = sin $ (f * nCycles * 2.0 * pi) + (2.0 * pi * phs)
 
 phase :: Number -> Number -> Number -> Number
 phase nCycles dur offset = x - floor x

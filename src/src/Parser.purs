@@ -162,6 +162,7 @@ reservedToValue _ "cycle" = pure $ ValueVariable Cycle
 reservedToValue _ "time" = pure $ ValueVariable Time
 reservedToValue _ "beat" = pure $ ValueVariable Beat
 reservedToValue _ "osc" = pure $ valueFunction Functions.osc
+reservedToValue _ "oscphs" = pure $ valueFunction2 Functions.oscphs
 reservedToValue _ "range" = pure $ valueFunction3 Functions.range
 reservedToValue _ "phase" = pure $ valueFunction2 Functions.phase
 reservedToValue _ "step" = pure $ valueFunction2 Functions.step
