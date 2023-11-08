@@ -234,5 +234,3 @@ parseModifier (Tuple k e) = do
   pure $ \tm -> evalP s.semiMap tm s.lambdaMap s.program $ do
     v <- expressionToValue e
     pure $ insert k v tm
-
-

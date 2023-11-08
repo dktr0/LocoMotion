@@ -32,6 +32,7 @@ resolveURL x = f $ trim x where
       | toLower x == "garden" = defaultAssets <> "Garden.glb"
       | toLower x == "soldier" = "https://threejs.org/examples/models/gltf/Soldier.glb"
       | toLower x == "helmet" = "https://threejs.org/examples/models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf"
+      | toLower x == "mushy" = defaultAssets <> "mushy.glb"
       | otherwise = defaultAssets <> x
 
 defaultAssets :: String
