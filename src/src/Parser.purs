@@ -76,6 +76,7 @@ parseStatement (AST.EmptyStatement _) = pure unit
 valueToEffect :: Value -> P Unit
 valueToEffect (ValueElement Dancer f) = elementToEffect Dancer defaultDancer f
 valueToEffect (ValueElement Plane f) = elementToEffect Plane defaultPlane f
+valueToEffect (ValueElement Box f) = elementToEffect Box defaultBox f
 valueToEffect (ValueElement Ambient f) = lightToEffect Ambient empty f
 valueToEffect (ValueElement Directional f) = lightToEffect Directional empty f
 valueToEffect (ValueElement Hemisphere f) = lightToEffect Hemisphere empty f
@@ -218,7 +219,6 @@ embedLambdas Nil e = expressionToValue e
 embedLambdas (argName:moreArgs) e = do
   pState <- get
   pure $ ValueFunction (\_ argValue -> evalStateT (embedLambdas moreArgs e) (pState { lambdaMap = insert argName argValue pState.lambdaMap }))
-  
 
 -- Transformers
 

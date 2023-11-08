@@ -113,7 +113,6 @@ expressionPosition (Product p _ _) = p
 expressionPosition (Divide p _ _) = p
 expressionPosition (Lambda p _ _) = p
 
-
 -- parsing:
 
 ast :: P AST

@@ -44,6 +44,23 @@ defaultPlane = fromFoldable [
   Tuple "colour" (ValueInt 0x888888),
   Tuple "shadows" (ValueBoolean true)
   ]
+  
+defaultBox :: ValueMap
+defaultBox = fromFoldable [
+  Tuple "colour" (ValueInt 0x888888),
+  Tuple "shadows" (ValueBoolean true),
+  Tuple "x" (ValueNumber 0.0),
+  Tuple "y" (ValueNumber 0.0),
+  Tuple "z" (ValueNumber 0.0),
+  Tuple "rx" (ValueNumber 0.0),
+  Tuple "ry" (ValueNumber 0.0),
+  Tuple "rz" (ValueNumber 0.0),
+  Tuple "sx" (ValueNumber 1.0),
+  Tuple "sy" (ValueNumber 1.0),
+  Tuple "sz" (ValueNumber 1.0),
+  Tuple "size" (ValueNumber 1.0)  
+  ]
+
 
 defaultCamera :: ValueMap
 defaultCamera = fromFoldable [
