@@ -169,6 +169,9 @@ reservedToValue _ "step" = pure $ valueFunction2 Functions.step
 reservedToValue _ "for" = pure $ Functions.for
 reservedToValue _ "map" = pure $ Functions.map
 reservedToValue _ "sin" = pure $ valueFunction Functions.sin
+reservedToValue _ "rgb" = pure $ valueFunction3 Functions.rgb
+reservedToValue _ "hsv" = pure $ valueFunction3 Functions.hsv
+reservedToValue _ "rnd" = pure $ valueFunction Functions.rnd
 reservedToValue p x = throwError $ ParseError ("internal LocoMotion error: reservedToValue called for unknown identifier: " <> x) p
 
 

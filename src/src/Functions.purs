@@ -52,3 +52,12 @@ fmapValue p _ _ = throwError $ ParseError "missing function argument to for/map"
 sin :: Value -> Value
 sin (ValueVariable x) = ValueVariable $ Sin x
 sin x = ValueNumber $ Number.sin $ valueToNumber x
+
+hsv :: Value -> Value -> Value -> Value
+hsv h s v = ValueVariable $ HSV (valueToVariable h) (valueToVariable s) (valueToVariable v)
+
+rgb :: Value -> Value -> Value -> Value
+rgb r g b = ValueVariable $ RGB (valueToVariable r) (valueToVariable g) (valueToVariable b)
+
+rnd :: Value -> Value
+rnd v = ValueVariable $ Rnd (valueToVariable v)

@@ -58,7 +58,10 @@ reservedNamesDef = [
   "map",
   "sin",
   "box",
-  "sphere"
+  "sphere",
+  "rgb",
+  "hsv",
+  "rnd"
   ]
 
 tokenParser :: GenTokenParser String Identity
