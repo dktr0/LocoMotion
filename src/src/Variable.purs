@@ -114,24 +114,31 @@ step xs phs
   | otherwise = fromMaybe 0.0 $ index xs $ Int.floor $ (phs - floor phs) * (Int.toNumber (length xs))
 
 rgb :: Number -> Number -> Number -> Number
-rgb r g b = (r*255.0*256.0*256.0) + (g*255.0*256.0) + (b*255.0)
+rgb r g b = Int.toNumber $ (r' * 65536) + (g' * 256) + b'
+  where
+    r' = Int.floor $ r * 255.0
+    g' = Int.floor $ g * 255.0
+    b' = Int.floor $ b * 255.0
 
 hsv :: Number -> Number -> Number -> Number
-hsv h s v = v * rgb r'' g'' b''
+hsv h s v = rgb r'' g'' b''
   where
-    k1 = 1.0
-    k2 = 2.0/3.0
-    k3 = 1.0/3.0
-    k4 = 3.0
     r = abs $ (fract $ h + 1.0) * 6.0 - 3.0
-    g = abs $ (fract $ h + 2.0/3.0) * 6.0 - 3.0
-    b = abs $ (fract $ h + 1.0/3.0) * 6.0 - 3.0
+    g = abs $ (fract $ h + (2.0/3.0)) * 6.0 - 3.0
+    b = abs $ (fract $ h + (1.0/3.0)) * 6.0 - 3.0
     r' = clamp 0.0 1.0 $ abs r - 1.0
     g' = clamp 0.0 1.0 $ abs g - 1.0
     b' = clamp 0.0 1.0 $ abs b - 1.0
-    r'' = mix 1.0 r' s
-    g'' = mix 1.0 g' s
-    b'' = mix 1.0 b' s
+    r'' = mix 1.0 r' s * v
+    g'' = mix 1.0 g' s * v
+    b'' = mix 1.0 b' s * v
+
+{-
+\  vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);\
+\  vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);\
+\  return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);}\
+
+-}
 
 fract :: Number -> Number
 fract x = x - floor x

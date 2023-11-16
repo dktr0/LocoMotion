@@ -41,7 +41,7 @@ removeAmbient x = do
 
 updateColourAndIntensity :: forall a. Three.Light a => ValueMap -> a -> R Unit
 updateColourAndIntensity vm a = do
-  let colour = lookupInt 0xffffff "colour" vm
+  colour <- realizeInt "colour" 0xffffff vm
   intensity <- realizeNumber "intensity" 1.0 vm
   liftEffect $ Three.setColorInt a colour
   liftEffect $ Three.setLightIntensity a intensity
@@ -91,7 +91,7 @@ newHemisphere = do
 
 updateHemisphere :: ValueMap -> Hemisphere -> R Hemisphere
 updateHemisphere vm x = do
-  let groundColour = lookupInt 0xffffff "ground" vm
+  groundColour <- realizeInt "ground" 0xffffff vm
   liftEffect $ Three.setGroundColor x.hemisphereLight groundColour
   updateColourAndIntensity vm x.hemisphereLight
   updatePosition vm x.hemisphereLight

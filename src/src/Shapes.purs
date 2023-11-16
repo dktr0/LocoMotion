@@ -25,7 +25,6 @@ newBox = do
 updateBox :: ValueMap -> Box -> R Box
 updateBox vm fs = do
   colour <- realizeInt "colour" 0x888888 vm
-  liftEffect $ log $ show colour
   shadows <- realizeBoolean "shadows" true vm
   liftEffect $ Three.setColorInt fs.material colour
   liftEffect $ Three.setReceiveShadow fs.mesh shadows
