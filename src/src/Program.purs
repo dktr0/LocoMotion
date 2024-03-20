@@ -12,7 +12,8 @@ type Program = {
   elements :: Array ProgramElement,
   camera :: Transformer,
   clear :: Transformer,
-  hasCustomLights :: Boolean
+  hasCustomLights :: Boolean,
+  eTime :: Number -- evaluation time in POSIX 1970 seconds
   }
 
 type ProgramElement = Tuple ElementType ValueMap
@@ -22,7 +23,8 @@ defaultProgram = {
   elements: [],
   camera: emptyTransformer,
   clear: emptyTransformer,
-  hasCustomLights: false
+  hasCustomLights: false,
+  eTime: 0.0
   }
 
 defaultDancer :: ValueMap

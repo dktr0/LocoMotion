@@ -85,8 +85,10 @@ launch cvs = do
   let cycle = 2.0
   let time = 0.0
   let beat = 0.0
+  let eTime = 0.0
+  let eBeat = 0.0
   let delta = 0.0
-  renderEnvironment <- new { scene, camera, fog, renderer, defaultLight, tempo, time, beat, cycle, delta }
+  renderEnvironment <- new { scene, camera, fog, renderer, defaultLight, tempo, time, beat, eTime, eBeat, cycle, delta }
   programs <- ZoneMap.new
   zoneStates <- ZoneMap.new
   prevTNow <- nowDateTime >>= new
@@ -94,22 +96,19 @@ launch cvs = do
   pure { renderEnvironment, programs, zoneStates, prevTNow }
 
 
-evaluate :: RenderEngine -> Int -> String -> Effect (Maybe String)
-evaluate re z x = do
+define :: RenderEngine -> Int -> Number -> String -> Effect (Maybe String)
+define re z eTime x = do
   -- x' <- parseProgramDebug x
-  let x' = parseProgram x
+  let x' = parseProgram eTime x
   case x' of
     Right p -> do
       ZoneMap.write z p re.programs
-      -- log "evaluate completed with no error"
       pure Nothing
-    Left err -> do
-      -- log "evaluate completed with error"
-      pure $ Just err
+    Left err -> pure $ Just err
 
 
-clearZone :: RenderEngine -> Int -> Effect Unit
-clearZone re z = do
+clear :: RenderEngine -> Int -> Effect Unit
+clear re z = do
   mzs <- ZoneMap.read z re.zoneStates
   case mzs of
     Just zs -> do
@@ -118,12 +117,12 @@ clearZone re z = do
     Nothing -> pure unit
   ZoneMap.delete z re.programs
   ZoneMap.delete z re.zoneStates
-  log "LocoMotion clearZone"
+  log "LocoMotion clear"
   -- TODO: if there are no active zones left, the canvas should be cleared to transparent somehow
 
 
-preAnimate :: RenderEngine -> Effect Unit
-preAnimate re = do
+preAnimate :: RenderEngine -> Number -> Effect Unit
+preAnimate re _ = do
   tNow <- nowDateTime
   tPrev <- read re.prevTNow
   write tNow re.prevTNow
@@ -142,8 +141,8 @@ preAnimate re = do
   -- log $ show td <> " " <> show df <> " " <> show envNew.beat
 
 
-animateZone :: RenderEngine -> Zone -> Effect Unit
-animateZone re z = do
+animateZone :: RenderEngine -> Number -> Zone -> Effect Unit
+animateZone re _ z = do
   -- t0 <- nowDateTime
   x <- ZoneMap.read z re.programs
   case x of
@@ -156,7 +155,14 @@ animateZone re z = do
                         Just y' -> y'
                         Nothing -> defaultZoneState
       rEnv <- read re.renderEnvironment
-      zoneState' <- runProgram z rEnv prog zoneState
+      let rEnv' = rEnv {
+        ...prog is program
+        ...prog.eTime is evaluation time in POSIX seconds
+        
+        eTime = 1.0,
+        eBeat = 1.0
+        }
+      zoneState' <- runProgram z rEnv' prog zoneState
       ZoneMap.write z zoneState' re.zoneStates
   -- t1 <- nowDateTime
   -- let tDiff = unwrap (diff t1 t0 :: Milliseconds)

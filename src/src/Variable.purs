@@ -11,6 +11,7 @@ import Data.List (List,length,index)
 import Data.Maybe (fromMaybe)
 import Data.Int as Int
 import Data.Rational as Rational
+import Data.Semiring (zero,one)
 
 import RenderEnvironment
 
@@ -20,6 +21,8 @@ data Variable =
   Cycle |
   Time |
   Beat |
+  ETime |
+  EBeat |
   Osc Variable Variable |
   Phase Variable Variable |
   Step (List Variable) Variable |
@@ -27,6 +30,7 @@ data Variable =
   Sub Variable Variable |
   Product Variable Variable |
   Divide Variable Variable |
+  Clamp Variable Variable Variable |
   Sin Variable  |
   RGB Variable Variable Variable |
   HSV Variable Variable Variable |
@@ -39,6 +43,8 @@ realizeVariable re CPS = Rational.toNumber re.tempo.freq
 realizeVariable re Cycle = re.cycle
 realizeVariable re Time = re.time
 realizeVariable re Beat = re.beat
+realizeVariable re ETime = re.eTime
+realizeVariable re EBeat = re.eBeat
 realizeVariable re (Osc f phs) = osc re.beat (realizeVariable re f) (realizeVariable re phs)
 realizeVariable re (Phase dur offset) = phase re.beat (realizeVariable re dur) (realizeVariable re offset)
 realizeVariable re (Step xs phs) = step (map (realizeVariable re) xs) (realizeVariable re phs)
@@ -46,6 +52,7 @@ realizeVariable re (Sum x y) = realizeVariable re x + realizeVariable re y
 realizeVariable re (Sub x y) = realizeVariable re x - realizeVariable re y
 realizeVariable re (Product x y) = realizeVariable re x * realizeVariable re y
 realizeVariable re (Divide x y) = safeDivide (realizeVariable re x) (realizeVariable re y)
+realizeVariable re (Clamp edge0 edge1 x) = clamp (realizeVariable re edge0) (realizeVariable re edge1) (realizeVariable re x)
 realizeVariable re (Sin x) = sin $ realizeVariable re x
 realizeVariable re (RGB r g b) = rgb (realizeVariable re r) (realizeVariable re g) (realizeVariable re b)
 realizeVariable re (HSV h s v) = hsv (realizeVariable re h) (realizeVariable re s) (realizeVariable re v)
@@ -57,6 +64,8 @@ instance Eq Variable where
   eq Cycle Cycle = true
   eq Time Time = true
   eq Beat Beat = true
+  eq ETime ETime = true
+  eq EBeat EBeat = true
   eq (Osc f1 phs1) (Osc f2 phs2) = f1 == f2 && phs1 == phs2
   eq (Phase x1 y1) (Phase x2 y2) = x1 == x2 && y1 == y2
   eq (Step xs1 phs1) (Step xs2 phs2) = xs1 == xs2 && phs1 == phs2
@@ -64,6 +73,7 @@ instance Eq Variable where
   eq (Sub a b) (Sub c d) = a == c && b == d
   eq (Product a b) (Product c d) = a == c && b == d
   eq (Divide a b) (Divide c d) = a == c && b == d
+  eq (Clamp a b c) (Clamp d e f) = a == d && b == e && c == f
   eq (Sin x) (Sin y) = x == y
   eq (RGB r1 g1 b1) (RGB r2 g2 b2) = r1 == r2 && g1 == g2 && b1 == b2
   eq (HSV h1 s1 v1) (HSV h2 s2 v2) = h1 == h2 && s1 == s2 && v1 == v2
@@ -76,6 +86,8 @@ instance Show Variable where
   show Cycle = "Cycle"
   show Time = "Time"
   show Beat = "Beat"
+  show ETime = "ETime"
+  show EBeat = "EBeat"
   show (Osc f phs) = "Osc (" <> show f <> ") (" <> show phs <> ")"
   show (Phase dur offset) = "Phase (" <> show dur <> ") (" <> show offset <> ")"
   show (Step xs phs) = "Step (" <> show xs <> ") (" <> show phs <> ")"
@@ -83,6 +95,7 @@ instance Show Variable where
   show (Sub x y) = "Sub (" <> show x <> ") (" <> show y <> ")"
   show (Product x y) = "Product (" <> show x <> ") (" <> show y <> ")"
   show (Divide x y) = "Divide (" <> show x <> ") (" <> show y <> ")"
+  show (Clamp edge0 edge1 x) = "Clamp (" <> show edge0 <> ") (" <> show edge1 <> ") (" <> show x <> ")"
   show (Sin x) = "Sin (" <> show x <> ")"
   show (RGB r g b) = "RGB (" <> show r <> ") (" <> show g <> ") (" <> show b <> ")"
   show (HSV h s v) = "RGB (" <> show h <> ") (" <> show s <> ") (" <> show v <> ")"
@@ -132,13 +145,6 @@ hsv h s v = rgb r'' g'' b''
     r'' = mix 1.0 r' s * v
     g'' = mix 1.0 g' s * v
     b'' = mix 1.0 b' s * v
-
-{-
-\  vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);\
-\  vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);\
-\  return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);}\
-
--}
 
 fract :: Number -> Number
 fract x = x - floor x

@@ -13,18 +13,19 @@
   window.doLaunch = function () {
     var cvs = document.getElementById('canvas');
     window.lm = new LocoMotion.LocoMotion(cvs);
-    window.lm.evaluate(0,"");
+    window.lm.define({zone:0, time:Date.now()/1000.0, text:""});
     window.requestAnimationFrame(animate);
   }
   function animate() {
     window.requestAnimationFrame(animate);
-    window.lm.preAnimate();
-    window.lm.animateZone(0);
-    window.lm.postAnimate();
+    var t = Date.now()/1000.0;
+    window.lm.preRender({canDraw:true, nowTime:t});
+    window.lm.render({zone:0, canDraw:true, nowTime:t});
+    window.lm.postRender({canDraw:true, nowTime:t});
   }
   window.doEval = function () {
     var t = document.getElementById("editorArea").value;
-    var r = window.lm.evaluate(0,t);
+    var r = window.lm.define({zone:0, time:Date.now()/1000.0, text:t});
     document.getElementById('errors').textContent = r.error;
   }
   window.addEventListener('keydown', function (e) {

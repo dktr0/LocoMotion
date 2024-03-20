@@ -11,8 +11,10 @@ type RenderEnvironment = {
   defaultLight :: Three.AmbientLight,
   tempo :: Tempo,
   cycle :: Number, -- duration of cycle in seconds
-  time :: Number,
-  beat :: Number,
+  time :: Number, -- seconds since origin of tempo
+  beat :: Number, -- beats/cycles since origin of tempo
+  eTime :: Number, -- seconds since evaluation 
+  eBeat :: Number, -- beats/cycles since evaluation
   delta :: Number
   }
 

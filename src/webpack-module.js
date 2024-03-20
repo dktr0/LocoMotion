@@ -4,28 +4,29 @@ export function LocoMotion(canvas) {
   this.lm = L.launch(canvas)();
 }
 
-LocoMotion.prototype.evaluate = function(zone,txt) {
-  return L.evaluate(this.lm)(zone)(txt)();
+LocoMotion.prototype.define = function(args) {
+  return L.define(this.lm)(args.zone)(args.time)(args.text)();
 }
 
-LocoMotion.prototype.clearZone = function(zone) {
-  return L.clearZone(this.lm)(zone)();
+LocoMotion.prototype.clear = function(args) {
+  return L.clear(this.lm)(args.zone)();
 }
 
 LocoMotion.prototype.setTempo = function(foreignTempo) {
   return L.setTempo(this.lm)(foreignTempo)();
 }
 
-LocoMotion.prototype.preAnimate = function() {
-  return L.preAnimate(this.lm)();
+LocoMotion.prototype.preRender = function(args) {
+  if(args.canDraw) { L.preRender(this.lm)(args.nowTime)(); }
 }
 
-LocoMotion.prototype.animateZone = function(zone) {
-  return L.animateZone(this.lm)(zone)();
+LocoMotion.prototype.render = function(args) {
+  if(args.canDraw) { L.render(this.lm)(args.nowTime)(args.zone)(); }
+  return [];
 }
 
-LocoMotion.prototype.postAnimate = function() {
-  return L.postAnimate(this.lm)();
+LocoMotion.prototype.postRender = function(args) {
+  if(args.canDraw) { L.postRender(this.lm)(args.nowTime)(); }
 }
 
 export function exoLang(canvas) {

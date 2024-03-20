@@ -20,16 +20,16 @@ launch :: HTML.HTMLCanvasElement -> Effect RE.RenderEngine
 launch = RE.launch
 
 
-evaluate :: RE.RenderEngine -> Int -> String -> Effect { success :: Boolean, error :: String }
-evaluate re zone x = do
-  y <- RE.evaluate re zone x
+define :: RE.RenderEngine -> Int -> Number -> String -> Effect { success :: Boolean, error :: String }
+define re zone eTime x = do
+  y <- RE.define re zone eTime x
   case y of
     Just error -> pure $ { success: false, error }
     Nothing -> pure $ { success: true, error: "" }
 
 
-clearZone :: RE.RenderEngine -> Int -> Effect Unit
-clearZone = RE.clearZone
+clear :: RE.RenderEngine -> Int -> Effect Unit
+clear = RE.clear
 
 
 setTempo :: RE.RenderEngine -> ForeignTempo -> Effect Unit
@@ -39,13 +39,13 @@ setTempo re t = do
   write (rEnv { tempo = fromForeignTempo t } ) re.renderEnvironment
 
 
-preAnimate :: RE.RenderEngine -> Effect Unit
-preAnimate = RE.preAnimate
+preRender :: RE.RenderEngine -> Number -> Effect Unit
+preRender = RE.preRender
 
 
-animateZone :: RE.RenderEngine -> Int -> Effect Unit
-animateZone = RE.animateZone
+render :: RE.RenderEngine -> Number -> Int -> Effect Unit
+render = RE.render
 
 
-postAnimate :: RE.RenderEngine -> Effect Unit
-postAnimate = RE.postAnimate
+postRender :: RE.RenderEngine -> Number -> Effect Unit
+postRender = RE.postRender

@@ -32,8 +32,8 @@ import Program
 import ElementType
 import Functions as Functions
 
-parseProgram :: String -> Either String Program
-parseProgram x = lmap showParseError $ AST.parseAST x >>= (astToProgram >>> runP)
+parseProgram :: Number -> String -> Either String Program
+parseProgram eTime x = lmap showParseError $ AST.parseAST x >>= (astToProgram eTime >>> runP)
 
 {-
 parseProgramDebug :: String -> Effect (Either String Program)
@@ -53,11 +53,14 @@ parseProgramDebug x = do
 showParseError :: ParseError -> String
 showParseError (ParseError e (Position p)) = show p.line <> ":" <> show p.column <> " " <> e
 
-astToProgram :: AST -> P Program
-astToProgram ast = do
+astToProgram :: Number -> AST -> P Program
+astToProgram eTime ast = do
  traverse_ parseStatement ast
  s <- get
- pure $ setCustomLightsFlag s.program
+ pure $ s.program {
+   hasCustomLights = elem true $ map (isLight <<< fst) s.program.elements,
+   eTime = eTime
+   }
 
 setCustomLightsFlag :: Program -> Program
 setCustomLightsFlag p = p { hasCustomLights = elem true $ map (isLight <<< fst) p.elements }
@@ -172,6 +175,8 @@ reservedToValue _ "sin" = pure $ valueFunction Functions.sin
 reservedToValue _ "rgb" = pure $ valueFunction3 Functions.rgb
 reservedToValue _ "hsv" = pure $ valueFunction3 Functions.hsv
 reservedToValue _ "rnd" = pure $ valueFunction Functions.rnd
+reservedToValue _ "in" = pure $ valueFunction Functions.in'
+reservedToValue _ "out" = pure $ valueFunction Functions.out
 reservedToValue p x = throwError $ ParseError ("internal LocoMotion error: reservedToValue called for unknown identifier: " <> x) p
 
 

@@ -8,12 +8,10 @@ import Data.List (singleton)
 import Control.Monad.Error.Class (throwError)
 import Data.Int as Int
 import Data.Number as Number
+import Data.Semiring (zero,one)
 
 import Variable
 import Value
-
--- hsv :: Value -> Value -> Value -> Value
--- hsv (ValueVariable h) (ValueVariable s) (ValueVariable v) =
 
 
 osc :: Value -> Value
@@ -61,3 +59,10 @@ rgb r g b = ValueVariable $ RGB (valueToVariable r) (valueToVariable g) (valueTo
 
 rnd :: Value -> Value
 rnd v = ValueVariable $ Rnd (valueToVariable v)
+
+in' :: Value -> Value
+in' fadeInTime = ValueVariable $ Clamp zero one $ Divide ETime $ valueToVariable fadeInTime
+
+out :: Value -> Value
+out fadeOutTime = ValueVariable $ Clamp zero one $ Sub one $ Divide ETime $ valueToVariable fadeOutTime
+

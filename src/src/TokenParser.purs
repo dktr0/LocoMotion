@@ -61,7 +61,9 @@ reservedNamesDef = [
   "sphere",
   "rgb",
   "hsv",
-  "rnd"
+  "rnd",
+  "in",
+  "out"
   ]
 
 tokenParser :: GenTokenParser String Identity
