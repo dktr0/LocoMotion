@@ -22,7 +22,7 @@ oscphs f phs = ValueVariable $ Osc (valueToVariable f) (valueToVariable phs)
 
 range :: Value -> Value -> Value -> Value
 range r1 r2 x = ValueVariable $ f (valueToVariable r1) (valueToVariable r2) (valueToVariable x)
-  where f r1' r2' x' = (x' * ConstantVariable 0.5 + ConstantVariable 0.5) * (r2' - r1') + r1'
+  where f r1' r2' x' = x' * (r2' - r1') + r1'
 
 phase :: Value -> Value -> Value
 phase dur offset = ValueVariable $ Phase (valueToVariable dur) (valueToVariable offset)

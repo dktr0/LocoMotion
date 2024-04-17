@@ -1,55 +1,40 @@
-module RenderEngine
-  (
-  RenderEngine(..),
-  launch,
-  evaluate,
-  clearZone,
-  preAnimate,
-  animateZone,
-  postAnimate
-  ) where
+module RenderEngine where
 
-import Prelude
+import Prelude (Unit, bind, bottom, discard, map, otherwise, pure, unit, when, ($), (*), (/), (<$>), (<<<), (==), (>), (>=), (>>=), (-))
 import Effect (Effect)
 import Effect.Ref (Ref, new, read, write)
 import Effect.Console (log)
 import Data.Array (length,drop,take,index,updateAt,snoc)
-import Data.Foldable (foldM,foldl,elem)
-import Data.Number (pi)
+import Data.Foldable (elem, foldM)
 import Data.Map as Map
-import Data.Maybe
-import Data.Either
-import Data.List as List
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Either (Either(..))
 import ThreeJS as Three
-import Web.HTML as HTML
-import Web.HTML.Window as HTML
 import Web.HTML.HTMLCanvasElement as HTML
-import Data.DateTime
-import Data.Time.Duration
+import Data.DateTime (DateTime, diff)
+import Data.Time.Duration (Milliseconds(..), Seconds)
+import Data.DateTime.Instant (instant, toDateTime)
 import Effect.Now (nowDateTime)
 import Data.Newtype (unwrap)
-import Data.Tempo
-import Data.Rational
-import Data.Tuple
-import Data.FoldableWithIndex (foldWithIndexM)
+import Data.Tempo (newTempo, origin, timeToCountNumber)
+import Data.Rational (toNumber, (%))
+import Data.Tuple (Tuple(..))
 import Data.TraversableWithIndex (traverseWithIndex)
 import Data.Traversable (traverse_)
 import Control.Monad.State (get,modify_)
-import Control.Monad.Reader (ask)
-import Effect.Class (liftEffect)
 
-import Value
-import Parser
+import Value (ValueMap, valueToInt, valueToNumber)
+import Parser (parseProgram)
 import ZoneMap (Zone,ZoneMap)
 import ZoneMap as ZoneMap
-import R
-import Program
-import ElementType
-import Dancer
-import Plane
-import Shapes
-import Lights
-import RenderEnvironment
+import R (Element(..), R, ZoneState, defaultZoneState, elementType, execR, setPixelRatioToDevicePixelRatio, updateCameraProperties, updatePosition, updateRotation, updateScale)
+import Program (Program, defaultCamera, defaultClear)
+import ElementType (ElementType(..))
+import Dancer (newDancer, removeDancer, updateDancer)
+import Plane (newPlane, removePlane, updatePlane)
+import Shapes (newBox, newSphere, removeBox, removeSphere, updateBox, updateSphere)
+import Lights (newAmbient, newDirectional, newHemisphere, newPoint, newRectArea, newSpot, removeAmbient, removeDirectional, removeHemisphere, removePoint, removeRectArea, removeSpot, updateAmbient, updateDirectional, updateHemisphere, updatePoint, updateRectArea, updateSpot)
+import RenderEnvironment (RenderEnvironment)
 
 type RenderEngine =
   {
@@ -121,9 +106,9 @@ clear re z = do
   -- TODO: if there are no active zones left, the canvas should be cleared to transparent somehow
 
 
-preAnimate :: RenderEngine -> Number -> Effect Unit
-preAnimate re _ = do
-  tNow <- nowDateTime
+preRender :: RenderEngine -> Number -> Effect Unit
+preRender re tNowNumber = do
+  let tNow = numberToDateTime tNowNumber
   tPrev <- read re.prevTNow
   write tNow re.prevTNow
   envPrev <- read re.renderEnvironment
@@ -135,14 +120,10 @@ preAnimate re _ = do
     delta = unwrap (diff tNow tPrev :: Seconds)
     }
   write envNew re.renderEnvironment
-  -- debugging
-  -- let td = unwrap (diff tNow envNew.tempo.time :: Milliseconds)
-  -- let df = td * toNumber envNew.tempo.freq / 1000.0
-  -- log $ show td <> " " <> show df <> " " <> show envNew.beat
 
 
-animateZone :: RenderEngine -> Number -> Zone -> Effect Unit
-animateZone re _ z = do
+render :: RenderEngine -> Number -> Zone -> Effect Unit
+render re tNowNumber z = do
   -- t0 <- nowDateTime
   x <- ZoneMap.read z re.programs
   case x of
@@ -155,12 +136,10 @@ animateZone re _ z = do
                         Just y' -> y'
                         Nothing -> defaultZoneState
       rEnv <- read re.renderEnvironment
+      let eTime = tNowNumber - prog.eTime
       let rEnv' = rEnv {
-        ...prog is program
-        ...prog.eTime is evaluation time in POSIX seconds
-        
-        eTime = 1.0,
-        eBeat = 1.0
+        eTime = eTime,
+        eBeat = eTime / toNumber rEnv.tempo.freq
         }
       zoneState' <- runProgram z rEnv' prog zoneState
       ZoneMap.write z zoneState' re.zoneStates
@@ -169,8 +148,8 @@ animateZone re _ z = do
   -- log $ "animateZone " <> show tDiff
 
 
-postAnimate :: RenderEngine -> Effect Unit
-postAnimate re = do
+postRender :: RenderEngine -> Effect Unit
+postRender re = do
   -- t0 <- nowDateTime
   n <- ZoneMap.count re.zoneStates
   when (n > 0) $ do
@@ -308,3 +287,9 @@ deleteZoneState :: RenderEnvironment -> ZoneState -> Effect Unit
 deleteZoneState re x = do
   _ <- execR re x $ traverse_ removeElement x.elements
   pure unit
+  
+  
+numberToDateTime :: Number -> DateTime
+numberToDateTime x = case instant (Milliseconds (x*1000.0)) of
+  Just i -> toDateTime i
+  Nothing -> toDateTime bottom

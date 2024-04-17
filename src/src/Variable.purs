@@ -115,7 +115,7 @@ safeDivide _ 0.0 = 0.0
 safeDivide x y = x/y
 
 osc :: Number -> Number -> Number -> Number
-osc nCycles f phs = sin $ (f * nCycles * 2.0 * pi) + (2.0 * pi * phs)
+osc nCycles f phs = (sin $ (f * nCycles * 2.0 * pi) + (2.0 * pi * phs)) * 0.5 + 0.5
 
 phase :: Number -> Number -> Number -> Number
 phase nCycles dur offset = x - floor x

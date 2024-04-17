@@ -1,7 +1,6 @@
 { name = "LocoMotion"
 , dependencies =
   [ "aff"
-  , "arraybuffer-types"
   , "arrays"
   , "bifunctors"
   , "console"
@@ -19,7 +18,6 @@
   , "ordered-collections"
   , "parsing"
   , "prelude"
-  , "psci-support"
   , "purescript-tempi"
   , "purescript-threejs"
   , "rationals"

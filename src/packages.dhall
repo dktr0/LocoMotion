@@ -4,7 +4,7 @@ let upstream =
 
 in  upstream
   with purescript-threejs =
-    { dependencies = [ "prelude", "effect" ]
+    { dependencies = [ "prelude", "effect", "arraybuffer-types" ]
     , repo = "https://github.com/dktr0/purescript-threejs"
     , version = "f1abee9dbb77a69b6e9d27b82cd07a0a036eff4e"
     }

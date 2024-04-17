@@ -1,19 +1,13 @@
 module Main where
 
-import Prelude
-import Data.Either
-import Data.Number
-import Data.Maybe
-import Effect
-import Effect.Class
-import Effect.Console (log)
+import Prelude (Unit, bind, pure, ($))
+import Data.Maybe (Maybe(..))
+import Effect (Effect)
 import Web.HTML.HTMLCanvasElement as HTML
-import Data.Tempo
+import Data.Tempo (ForeignTempo, fromForeignTempo)
 import Effect.Ref (write,read)
 
 import RenderEngine as RE
-import AST
-import Parser
 
 
 launch :: HTML.HTMLCanvasElement -> Effect RE.RenderEngine
@@ -48,4 +42,4 @@ render = RE.render
 
 
 postRender :: RE.RenderEngine -> Number -> Effect Unit
-postRender = RE.postRender
+postRender re _ = RE.postRender re
