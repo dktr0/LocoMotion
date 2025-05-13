@@ -7,49 +7,48 @@ LocoMotion is the operating system and API for a speculative world remembered an
 
 There are basically no "humans" in this world. (No one knows why, honestly the question doesn't come up very often.)
 
-Raccoons: Resourceful, curious, adaptable. Motion character: Usually appear in small groups (they are very social), with an interest in surrounding things, approaching things, formations (“tactical”). Expressive and communicative, for example, lots of hand motions, playful gestures, perhaps jumping, spinning, climbing. Perhaps a jazz or ballet dancer? 
-
 <img src="images/raccoon.png"></img>
 
-SunStones [former StoneFigure]: large robots made of escarpment limestone or Virginian blue slate, plus recycled solar power materials. Unclear origin but possibly a result of self-directed evolution. Motion and animation character: very slow animations and motion, tendency towards stillness when in the light. Usually appears as a solitary character, un-generatively patterned (with the exception of a special scenario, the council of sunstones). 
+Raccoons: Resourceful, curious, adaptable. Motion character: Usually appear in small groups (they are very social), with an interest in surrounding things, approaching things, formations (“tactical”). Expressive and communicative, for example, lots of hand motions, playful gestures, perhaps jumping, spinning, climbing. Perhaps a jazz or ballet dancer? 
 
-Saplings: [NatureGirl to Camille,Willy,Branch, Leafy, Lily, Daffy]: Saplings:Childlike creatures of the forest (nymphs). Unknown origin. Motion character: often seeking spatial arrangements where they curiously touch/overlap just a little bit with each other, and possibly other things.
+<img src="images/sunstone.png"></img>
 
-OrDroid [former CrackMan]: Former industrial worker robots. Motion character: Metric motion, nervous/anxious motion, higher speed animations, mechanical, repetitive, possibly work motions (grabbing, moving things, etc), possibly violent
+SunStones: large robots made of escarpment limestone or Virginian blue slate, plus recycled solar power materials. Unclear origin but possibly a result of self-directed evolution. Motion and animation character: very slow animations and motion, tendency towards stillness when in the light. Usually appears as a solitary character, un-generatively patterned (with the exception of a special scenario, the council of sunstones). The council of sunstones.
 
-DataGhost [former WireMan]: are not physically present but rather are seen by characters in our world as parts of a comprehensive virtual overlay of unknown origin and purpose, as wireframes (largely invariant to lighting). They can have different models and change/flicker between them, sometimes in glitchy ways. Everything from a default cube to a complete environmental model can be a dataghost. 
-Produced as an effect of the language rather than the model (ie. any model in “dataghost” mode). Motion character: Kind of depends on the underlying model, but with a lot of potential for glitchy, not physically realistic motion.
+<img src="images/sapling1.png"></img>
+<img src="images/sapling2.png"></img>
 
-Mushy: Mushrooms appear in huge clouds, unusual concept of personal space with lots of overlapping, can become environment/floor for Saplings; excessive in numbers
+Saplings: [NatureGirl to Camille,Willy,Branch, Leafy, Lily, Daffy]: Saplings:Childlike creatures of the forest (nymphs). Unknown origin. Motion character: 
+often seeking spatial arrangements where they curiously touch/overlap just a little bit with each other, and possibly other things.
 
-# Stories
-Entrances: Introductions to individual characters. Code below to give examples.
-
-OrDroid:
-dancer { url = “OrDroid”, animation = [ 15,1,17,1,23,1,21,1], size = 3, y = -5, z - -5, x = range -5 5  (osc 0.5), dur = 2, ry = 90};
-
-Saplings:
+```
 dancer { url = "Garden.glb", y = -2, size = 4}; 
-
 dancer { url = "camille", size = 4, y = -5, animation = [20,1,21,1, 28,1], dur = -4 };
 dancer { url = "Willy", size = 4, y = -5, x= 8, animation = 7, dur = 6 };
 dancer { url = "Lily", size = 4, y = -6, x= -3, animation = 0, dur = 6 };
-
 ambient { intensity = 4 };
 camera { z = range -2 12 (osc 0.02)};
+```
 
+<img src="images/ordroid.png"></img>
 
+OrDroid [former CrackMan]: Former industrial worker robots. Motion character: Metric motion, nervous/anxious motion, higher speed animations, mechanical, repetitive, possibly work motions (grabbing, moving things, etc), possibly violent
 
-Council of SunStones
+```
+dancer { url = “OrDroid”, animation = [ 15,1,17,1,23,1,21,1], size = 3, y = -5, z - -5, x = range -5 5  (osc 0.5), dur = 2, ry = 90};
+```
 
+<img src="images/dataghost.png"></img>
 
-Dance Battles - The Cypher
+DataGhost [former WireMan]: are not physically present but rather are seen by characters in our world as parts of a comprehensive virtual overlay of unknown origin and purpose, as wireframes (largely invariant to lighting). They might eventually have different models and change/flicker between them, sometimes in glitchy ways. Motion character: Kind of depends on the underlying model, but with a lot of potential for glitchy, not physically realistic motion.
 
+Mushy: Mushrooms appear in huge clouds, unusual concept of personal space with lots of overlapping, can become environment/floor for Saplings; excessive in numbers
 
-Building :boxes
-
+# Sets
 
 Quarry
+
+```
 clear { color = 0x5555A7};
 ambient {intensity = 0.1};
 point {color = 0x5555A7, x = 0, y = 3};
@@ -67,9 +66,11 @@ dancer { url="Willy",animation = 3, dur = 12, size = 1, x= 0, y = -3, z = 1};
 dancer { url="Willy",animation = 6, dur = 12, size = 1, x= 3, y = -3, z = 1};
 dancer { url="Willy",animation = 12, dur = 12, size = 1, x= -3, y = -3, z = 1};
 --camera { z = range 15 -15 (osc 0.01)};
-
+```
 
 Mushroom Floor
+
+```
 clear {color = 0x6988B5};
 ambient {intensity = 1};
 point {color = 0x5555A7, x = 0, y = 3};
@@ -83,9 +84,11 @@ for [0..100]  (\n -> dancer {url = "mushy.glb", dur = n*0.5, x = (n)+(-20), y = 
 dancer { url="Willy",animation = 3, dur = 12, size = 3.5, x= 0, y = -8, z = -3};
 dancer { url="Willy",animation = 6, dur = 12, size = 3.5, x= 3, y = -8, z = -5};
 dancer { url="Willy",animation = 12, dur = 12, size = 3.5, x= -3, y = -8, z = 1};
-
+```
 
 Warehouse Algorave
+
+```
 -- bar background
 for [-3..84]  (\n -> box {x = (n/2)-(20), y = (osc((0.5) + ((n/2)/(100)))*sin(n/2)) + (-7), z = -20, sy = 20, size=1.5, color = 0x2AFF00});
 
@@ -125,13 +128,13 @@ dancer { url="crackman.glb", size = 2.75, animation = 47, dur = 1, x = -16, y = 
 
 --back left boxes
 box {size = 1.5, z = -30, x = -12, y = -5, ry = -20};
+```
 
 
+# Notes
 
 
-
-
-LocoMotion is being developed as part of a research project lead by David Ogborn and Kate Sicchio, funded by the New Frontiers in Research Fund (Exploration stream) of Canada. Research assistants contributing to the project, at both McMaster University and Virginia Commonwealth University, are: Shaden Ahmed, Ashmeet Dhaliwal, Fatima Ghaderi, Milica Hinic, Misha Joao, Esther Kim, Raahil Mahetaji, Saiara Mashiat, Karthyayani Ramesh, and Vic Wojciechowska.
+LocoMotion was originally developed as part of a research project lead by David Ogborn and Kate Sicchio, funded by the New Frontiers in Research Fund (Exploration stream) of Canada. Research assistants contributing to the project, at both McMaster University and Virginia Commonwealth University were: Shaden Ahmed, Ashmeet Dhaliwal, Fatima Ghaderi, Milica Hinic, Misha Joao, Esther Kim, Raahil Mahetaji, Saiara Mashiat, Karthyayani Ramesh, and Vic Wojciechowska.
 
 We hesitate to document the language much at this point, as the notations are very much in flux - it is entirely possible that something that works in the language now would be removed at a moment's notice as we experiment with different possibilities. That said, enthusiastic onlookers may be able to intuit some of the possibilities from the demo program in the standalone at https://dktr0.github.io/LocoMotion or from videos that appear in this youtube playlist: https://www.youtube.com/watch?v=L1r62fG6fHM&list=PLz3wq0ad0gSYc0NhFG2ucAdnttFy5a99K
 
