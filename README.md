@@ -1,14 +1,141 @@
 
 # LocoMotion
 
-LocoMotion is web-based live coding language for choreography and movement. With LocoMotion, one can activate and move 3D models and motion capture data, via live coding, with brief programming notations inspired by choreographic/dance vocabulary and notation.
+LocoMotion is the operating system and API for a speculative world remembered and imagined by a loose network of individuals. It is also a live coding language for choreography and movement, and can be used by itself (at https://dktr0.github.io/LocoMotion) or in the Estuary collaborative live coding platform (at https://estuary.mcmaster.ca). LocoMotion is free-and-open-source software, released under the terms of the GNU Public License, version 3. 
+
+# Characters/Models/Avatars
+
+There are basically no "humans" in this world. (No one knows why, honestly the question doesn't come up very often.)
+
+Raccoons: Resourceful, curious, adaptable. Motion character: Usually appear in small groups (they are very social), with an interest in surrounding things, approaching things, formations (“tactical”). Expressive and communicative, for example, lots of hand motions, playful gestures, perhaps jumping, spinning, climbing. Perhaps a jazz or ballet dancer? 
+
+<img src="images/raccoon.png"></img>
+
+SunStones [former StoneFigure]: large robots made of escarpment limestone or Virginian blue slate, plus recycled solar power materials. Unclear origin but possibly a result of self-directed evolution. Motion and animation character: very slow animations and motion, tendency towards stillness when in the light. Usually appears as a solitary character, un-generatively patterned (with the exception of a special scenario, the council of sunstones). 
+
+Saplings: [NatureGirl to Camille,Willy,Branch, Leafy, Lily, Daffy]: Saplings:Childlike creatures of the forest (nymphs). Unknown origin. Motion character: often seeking spatial arrangements where they curiously touch/overlap just a little bit with each other, and possibly other things.
+
+OrDroid [former CrackMan]: Former industrial worker robots. Motion character: Metric motion, nervous/anxious motion, higher speed animations, mechanical, repetitive, possibly work motions (grabbing, moving things, etc), possibly violent
+
+DataGhost [former WireMan]: are not physically present but rather are seen by characters in our world as parts of a comprehensive virtual overlay of unknown origin and purpose, as wireframes (largely invariant to lighting). They can have different models and change/flicker between them, sometimes in glitchy ways. Everything from a default cube to a complete environmental model can be a dataghost. 
+Produced as an effect of the language rather than the model (ie. any model in “dataghost” mode). Motion character: Kind of depends on the underlying model, but with a lot of potential for glitchy, not physically realistic motion.
+
+Mushy: Mushrooms appear in huge clouds, unusual concept of personal space with lots of overlapping, can become environment/floor for Saplings; excessive in numbers
+
+# Stories
+Entrances: Introductions to individual characters. Code below to give examples.
+
+OrDroid:
+dancer { url = “OrDroid”, animation = [ 15,1,17,1,23,1,21,1], size = 3, y = -5, z - -5, x = range -5 5  (osc 0.5), dur = 2, ry = 90};
+
+Saplings:
+dancer { url = "Garden.glb", y = -2, size = 4}; 
+
+dancer { url = "camille", size = 4, y = -5, animation = [20,1,21,1, 28,1], dur = -4 };
+dancer { url = "Willy", size = 4, y = -5, x= 8, animation = 7, dur = 6 };
+dancer { url = "Lily", size = 4, y = -6, x= -3, animation = 0, dur = 6 };
+
+ambient { intensity = 4 };
+camera { z = range -2 12 (osc 0.02)};
+
+
+
+Council of SunStones
+
+
+Dance Battles - The Cypher
+
+
+Building :boxes
+
+
+Quarry
+clear { color = 0x5555A7};
+ambient {intensity = 0.1};
+point {color = 0x5555A7, x = 0, y = 3};
+
+box {rx = 1, ry = 1, rz = 1, size = 16, y = -9};
+
+for [0..9]  (\n -> box {x = -12, y = n*2, z = -10, rx = n*60, ry = n*30, rz = n*30, size=6});
+for [0..9]  (\n -> box {x = -8, y = n*2, z = -10, rx = n*60, ry = n*30, rz = n*30, size=6});
+for [0..9]  (\n -> box {x = -3, y = n*2, z = -10, rx = n*60, ry = n*30, rz = n*30, size=6});
+for [0..9]  (\n -> box {x = -0, y = n*2, z = -10, rx = n*60, ry = n*30, rz = n*30, size=6});
+for [0..9]  (\n -> box {x = 6, y = n*2, z = -10, rx = n*60, ry = n*30, rz = n*30, size=6});
+for [0..9]  (\n -> box {x = 12, y = n*2, z = -10, rx = n*60, ry = n*30, rz = n*30, size=6});
+
+dancer { url="Willy",animation = 3, dur = 12, size = 1, x= 0, y = -3, z = 1};
+dancer { url="Willy",animation = 6, dur = 12, size = 1, x= 3, y = -3, z = 1};
+dancer { url="Willy",animation = 12, dur = 12, size = 1, x= -3, y = -3, z = 1};
+--camera { z = range 15 -15 (osc 0.01)};
+
+
+Mushroom Floor
+clear {color = 0x6988B5};
+ambient {intensity = 1};
+point {color = 0x5555A7, x = 0, y = 3};
+directional { colour=0xf00f80, intensity = 2, z = 4, y = 10, x = -6 };
+
+--mushroom floor
+for [0..4]  (\n -> dancer {url = "Camille", dur = n*0.5, x = (n)+(-20), y = -8, z = -10, rx = 0, ry = 0, rz = 0, size=2});
+for [0..100]  (\n -> dancer {url = "mushy.glb", dur = n*0.5, x = (n)+(-20), y = -6, z = -10, rx = 0, ry = 0, rz = 0, size=2});
+for [0..100]  (\n -> dancer {url = "mushy.glb", dur = n*0.5, x = (n)+(-20), y = -4, z = -10, rx = 0, ry = 0, rz = 0, size=2});
+
+dancer { url="Willy",animation = 3, dur = 12, size = 3.5, x= 0, y = -8, z = -3};
+dancer { url="Willy",animation = 6, dur = 12, size = 3.5, x= 3, y = -8, z = -5};
+dancer { url="Willy",animation = 12, dur = 12, size = 3.5, x= -3, y = -8, z = 1};
+
+
+Warehouse Algorave
+-- bar background
+for [-3..84]  (\n -> box {x = (n/2)-(20), y = (osc((0.5) + ((n/2)/(100)))*sin(n/2)) + (-7), z = -20, sy = 20, size=1.5, color = 0x2AFF00});
+
+for [-3..84]  (\n -> box {x = (n/2)-(20), y = (osc((0.5) + ((n/2)/(100)))*sin(n/2)) + (-8), z = -10, sy = 20, size=1.5, color = 0xA6FF95});
+
+--front droid
+dancer { url="OrDroid", size = 5, animation = 66, x = 9, y = -14, z = 0, dur = 0.8, ry = -0.5};
+
+box {rx = 0, ry = 0, rz = 0, size = 20, y = -11};
+
+point {color = 0xFFFEE0, intensity = 0.4, x = -6, z = -6};
+point {color = 0xFFFEE0, intensity = 0.4, x = -5, z = 0};
+point {color = 0xFFFEE0, intensity = 0.4, x = -4, z = 4};
+
+point {color = 0xFFFEE0, intensity = 0.4, x = 6, z = -6};
+point {color = 0xFFFEE0, intensity = 0.4, x = 5, z = 0};
+point {color = 0xFFFEE0, intensity = 0.4, x = 4, z = 4};
+
+-- glitch droid
+dancer { url="OrDroid", size = 2.5, animation = 15, x = -3, y = -8, z = -5, dur = 0.5, ry = -0.5};
+dancer { url="OrDroid", size = 2.5, animation = 17, x = -2.9, y = -8, z = -4, dur = 0.5};
+
+-- assembling droid
+dancer { url="OrDroid", size = 2.5, animation = 2, x = 10, y = -8, z = -13, ry = 35, dur = 0.5};
+-- mid right boxes
+box {size = 1, z = -20, x = 12, y = -5};
+box {size = 1, z = -20, x = 13, y = -4};
+box {size = 1, z = -20, x = 13.5, y = -5};
+box {size = 1, z = -16, x = 13.5, y = -4, ry = 15};
+box {size = 1, z = -16, x = 13, y = -5, ry = 15};
+box {size = 1, z = -16, x = 15, y = -4.5, ry = 15};
+box {size = 1, z = -16, x = 12, y = -4.5, ry = 15};
+box {size = 1, z = -16, x = 14, y = -5.25, ry = 15};
+
+-- walking droid
+dancer { url="crackman.glb", size = 2.75, animation = 47, dur = 1, x = -16, y = -8, ry = 3.14, z = -15};
+
+--back left boxes
+box {size = 1.5, z = -30, x = -12, y = -5, ry = -20};
+
+
+
+
+
 
 LocoMotion is being developed as part of a research project lead by David Ogborn and Kate Sicchio, funded by the New Frontiers in Research Fund (Exploration stream) of Canada. Research assistants contributing to the project, at both McMaster University and Virginia Commonwealth University, are: Shaden Ahmed, Ashmeet Dhaliwal, Fatima Ghaderi, Milica Hinic, Misha Joao, Esther Kim, Raahil Mahetaji, Saiara Mashiat, Karthyayani Ramesh, and Vic Wojciechowska.
 
 We hesitate to document the language much at this point, as the notations are very much in flux - it is entirely possible that something that works in the language now would be removed at a moment's notice as we experiment with different possibilities. That said, enthusiastic onlookers may be able to intuit some of the possibilities from the demo program in the standalone at https://dktr0.github.io/LocoMotion or from videos that appear in this youtube playlist: https://www.youtube.com/watch?v=L1r62fG6fHM&list=PLz3wq0ad0gSYc0NhFG2ucAdnttFy5a99K
 
 
-LocoMotion is free-and-open-source software, released under the terms of the GNU Public License, version 3. In addition to the abovementioned standalone, it can be used in the Estuary collaborative live coding platform at https://estuary.mcmaster.ca. (Place the text ##locomotion in the first line of an Estuary code panel, with no language selected, to access LocoMotion.) Make sure you don't select a language type from the drop-down menu in the panel.
 
 <br></br>
 
