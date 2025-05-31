@@ -357,7 +357,7 @@ Working with the LocoMotion, There is a default ambient light.
 But overall there are currently 6 types of lights available in LocoMotion, 3 types are `ambient` `point` and `directional`. Each light can accept an `intensity` parameter to indicate how bright the light is. Point and Directional light can be given a position. A point light emits in all directions whereas directional emits in a specific direction.
 For making it darker or brighter you a=can use the code :
 ``` 
-ambient { intensity = rage 0.3 1.0 ( osc 0.5 )}
+ambient { intensity = range 0.3 1.0 ( osc 0.5 )}
 ``` 
 This can cause to lighter or dimmer the light accprsing to the background music being played.
 
