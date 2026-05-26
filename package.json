@@ -1,9 +1,11 @@
-{
+   {
   "name": "LocoMotion",
-  "version": "0.0.1",
+  "version": "0.2.0",
   "description": "LocoMotion",
   "private": true,
   "dependencies": {
+    "purescript": "^0.15.15",
+    "spago": "^0.21.0",
     "esbuild": "^0.15.18",
     "three": "^0.128.0"
   },

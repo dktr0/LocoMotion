@@ -20,6 +20,7 @@ import Data.Foldable (foldl)
 import Data.Number (sin,pi)
 import Control.Monad.State.Trans
 import Data.List (singleton)
+import Effect.Ref (Ref)
 
 import AST (Expression)
 import AST as AST
@@ -180,3 +181,9 @@ valueMapToTransformer vmNew vmOld = pure $ union vmNew vmOld
 appendTransformers :: Transformer -> Transformer -> Transformer
 appendTransformers fx fy = \thisMap -> fx thisMap >>= fy
 
+
+-- Libraries
+
+type Library = Map String Value
+
+type LibraryCache = Ref (Map String Library)

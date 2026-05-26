@@ -2,7 +2,7 @@ module Parser (parseProgram) where
 
 import Prelude
 import Effect
-import Effect.Console (log)
+import Effect.Class.Console (log)
 import Data.Number (sin,pi)
 import Data.Int (toNumber)
 import Data.Map (insert,empty,lookup,Map(..))
@@ -20,6 +20,11 @@ import Control.Monad.State.Trans (get,modify_)
 import Data.Bifunctor (lmap)
 import Control.Monad.State.Trans (evalStateT)
 import Data.Array as Array
+import Effect.Ref (Ref,new,read,write)
+import Effect.Aff (Aff,runAff_)
+import Effect.Aff.Class (liftAff)
+import Effect.Class (liftEffect)
+import Fetch (fetch)
 
 import Value
 import Value as Value
@@ -242,6 +247,66 @@ transformerToValue xs = do
 parseModifier :: Tuple String Expression -> P Transformer
 parseModifier (Tuple k e) = do
   s <- get
-  pure $ \tm -> evalP s.semiMap tm s.lambdaMap s.program $ do
+  pure $ \tm -> evalP s.semiMap tm s.lambdaMap s.program s.libCache $ do
     v <- expressionToValue e
     pure $ insert k v tm
+
+
+-- Libraries
+
+loadTextFile :: String -> Aff (Either String String)
+loadTextFile url = do
+  { text } <- fetch url {} -- { headers: {} }
+  text' <- text
+  log $ "loaded text file: " <> text'
+  pure $ Right text'
+
+parseLibrary :: LibraryCache -> String -> Aff (Either ParseError Library)
+parseLibrary libCache txt = do
+  case AST.parseAST txt of
+    Left err -> pure (Left err)
+    Right ast -> do
+      eErrTup <- runP libCache empty (traverseListStatement ast)
+      case eErrTup of
+        Left err -> pure (Left err)
+        Right (Tuple _ lib) -> pure $ Right lib
+
+traverseListStatement :: AST -> P Unit
+traverseListStatement = do
+  _ <- pure unit
+  traverse_ parseStatement
+
+{-
+importLibrary :: Position -> Value -> P Value
+importLibrary p v = do
+  url <- valueToString v
+  libCache <- ask
+  eErrLib <- liftAff $ loadLibrary libCache p url
+  case eErrLib of
+   Left err -> throwError err
+   Right lib -> do
+     modify_ $ \s -> Map.union lib s
+     pure $ ValueInt p 0
+
+loadLibrary :: LibraryCache -> Position -> URL -> Aff (Either ParseError Library)
+loadLibrary libCache p url = do
+  libraries <- liftEffect $ read libCache
+  case Map.lookup url libraries of
+    Just r -> do
+      log $ "using cached library " <> url
+      pure (Right r)
+    Nothing -> do
+      log $ "loading library " <> url <> "..."
+      eErrTxt <- loadTextFile url
+      case eErrTxt of
+        Left err -> pure $ Left $ ParseError err p
+        Right txt -> do
+          log $ "parsing library " <> url <> "..."
+          eErrLib <- parseLibrary libCache txt
+          case eErrLib of
+            Left err -> pure $ Left $ err
+            Right lib -> do
+              log $ "successfully parsed library " <> url
+              liftEffect $ write (Map.insert url lib libraries) libCache
+              pure $ Right $ lib
+-}
