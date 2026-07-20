@@ -7,13 +7,16 @@
     "purescript": "^0.15.15",
     "spago": "^0.21.0",
     "esbuild": "^0.15.18",
-    "three": "^0.128.0"
+    "three": "^0.128.0",
+    "http-server": "*"
   },
   "devDependencies": {
   },
   "scripts": {
+    "setup": "npm ci",
     "build": "cd src && spago build && cd .. && esbuild src/webpack-module.js --bundle --minify --format=esm --outfile=locoMotion.js",
-    "serve": "npx http-server -c-1"
+    "serve": "npx http-server -c-1",
+    "repl": "npx spago repl"
   },
   "repository": {
     "type": "git",
@@ -21,7 +24,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "GPLv3",
   "bugs": {
     "url": "https://github.com/dktr0/LocoMotion/issues"
   },
