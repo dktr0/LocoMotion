@@ -117,13 +117,11 @@ expressionToValue (AST.LiteralBoolean _ x) = pure $ ValueBoolean x
 expressionToValue (AST.ListExpression _ xs) = ValueList <$> traverse expressionToValue xs
 expressionToValue (AST.This p k) = do
   s <- get
-  let tMap = s.thisMap
-  case lookup k tMap of
+  case lookup k s.thisMap of
     Nothing -> throwError $ ParseError ("unknown this reference: " <> k) p
     Just v -> pure v
 expressionToValue (AST.Identifier p k) = do
   s <- get
-  let lMap = s.lambdaMap
   case lookup k s.lambdaMap of
     Just v -> pure v
     Nothing -> do
@@ -250,7 +248,6 @@ parseModifier (Tuple k e) = do
   pure $ \tm -> evalP s.semiMap tm s.lambdaMap s.program s.libCache $ do
     v <- expressionToValue e
     pure $ insert k v tm
-
 
 -- Libraries
 
